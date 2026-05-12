@@ -110,7 +110,7 @@ Mitigations the script applies:
 
 - All successful adds are recorded in `.adds_log.json`, which `playlist_contains_uri` consults first.
 - When `playlist_items` is detected to return no URIs at all, the script prints a one-time warning explaining the limitation and pointing at the dashboard.
-- Tracks that already existed in your playlists *before* this log was introduced (or added through the Spotify UI, not the script) are invisible to the duplicate guard until you either apply for Extended Quota Mode or add them to `.adds_log.json` manually.
+- Tracks that already existed in your playlists *before* this log was introduced (or added through the Spotify UI, not the script) are invisible to the duplicate guard. To cover them, use the `log-import` subcommand (see [commands.md → log-import](commands.md#log-import)) with a CSV export from a tool like [Exportify](https://exportify.net), which uses your *web* token and is not subject to the dev-tier quota.
 
 To lift the restriction: open https://developer.spotify.com/dashboard → your app → request Extended Quota Mode. Spotify reviews the app; once approved, the API returns full track data and the duplicate guard becomes authoritative without the local log.
 

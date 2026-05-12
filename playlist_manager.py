@@ -6,6 +6,7 @@ Default is dry-run: nothing is changed unless --execute is passed.
 import argparse
 import json
 import os
+import re
 import socket
 import sys
 
@@ -510,6 +511,72 @@ def smart_add(sp, track_input, execute, per_playlist):
         print(f"- {name}: ADDED (snapshot {snapshot[:10]}…)")
 
 
+_TRACK_REF_RE = re.compile(r"(?:spotify:track:|open\.spotify\.com/track/)([A-Za-z0-9]{22})")
+_BARE_ID_RE = re.compile(r"\b([A-Za-z0-9]{22})\b")
+
+
+def _extract_uri_from_line(line):
+    line = line.strip()
+    if not line:
+        return None
+    m = _TRACK_REF_RE.search(line)
+    if m:
+        return f"spotify:track:{m.group(1)}"
+    # Try the line as a bare 22-char ID, or as the first CSV/TSV field.
+    candidates = [line, line.split(",", 1)[0].strip(), line.split("\t", 1)[0].strip()]
+    for candidate in candidates:
+        if _BARE_ID_RE.fullmatch(candidate):
+            return f"spotify:track:{candidate}"
+    return None
+
+
+def log_import(playlist_name, file_path):
+    canonical_name = normalize_playlist_name(playlist_name)
+    playlist_id = PLAYLISTS[canonical_name]
+
+    try:
+        with open(file_path, encoding="utf-8") as f:
+            lines = f.readlines()
+    except FileNotFoundError:
+        print(f"File not found: {file_path}")
+        return
+
+    log = _load_adds_log()
+    existing = list(log.get(playlist_id, []))
+    pre_existing = set(existing)
+    seen_in_file = set()
+    added = 0
+    duplicates_in_file = 0
+    already_in_log = 0
+    invalid = 0
+
+    for raw in lines:
+        uri = _extract_uri_from_line(raw)
+        if uri is None:
+            if raw.strip():
+                invalid += 1
+            continue
+        if uri in pre_existing:
+            already_in_log += 1
+            continue
+        if uri in seen_in_file:
+            duplicates_in_file += 1
+            continue
+        seen_in_file.add(uri)
+        existing.append(uri)
+        added += 1
+
+    log[playlist_id] = existing
+    _save_adds_log(log)
+
+    print(f"Playlist: {canonical_name} ({playlist_id})")
+    print(f"  Imported new URIs: {added}")
+    print(f"  Already in log:    {already_in_log}")
+    print(f"  Duplicate in file: {duplicates_in_file}")
+    print(f"  Unparseable lines: {invalid}")
+    print(f"  Total URIs logged: {len(existing)}")
+
+
 def list_target_playlists():
     for name in PLAYLISTS:
         print(f"- {name}")
@@ -540,10 +607,27 @@ def main():
 
     subparsers.add_parser("list-playlists", help="List configured target playlists")
 
+    import_parser = subparsers.add_parser(
+        "log-import",
+        help="Import Spotify track URIs/URLs/IDs from a file into the local adds log "
+             "for a playlist (workaround for Spotify dev-tier API restrictions)",
+    )
+    import_parser.add_argument("playlist", help="Target playlist name")
+    import_parser.add_argument(
+        "file",
+        help="Path to a text/CSV/JSON file. Any line containing a Spotify track URI, "
+             "open.spotify.com/track URL, or bare 22-char ID is imported; other lines "
+             "are ignored.",
+    )
+
     args = parser.parse_args()
 
     if args.command == "list-playlists":
         list_target_playlists()
+        return 0
+
+    if args.command == "log-import":
+        log_import(args.playlist, args.file)
         return 0
 
     sp = get_spotify_client()

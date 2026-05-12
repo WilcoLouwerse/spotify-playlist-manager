@@ -137,6 +137,52 @@ Add this track to the listed playlists? [y/N]: ja
 
 `gpt-4.1-mini` (the default) costs roughly $0.0001–$0.0003 per `smart-add` call, depending on the size of the JSON prompt. Override the model via `OPENAI_MODEL` in `.env` if you want better classifications and don't mind the cost.
 
+## `log-import`
+
+Import a list of Spotify track URIs/URLs/IDs from a file into the local `.adds_log.json` for one playlist. Use this to seed the duplicate guard with the contents of a playlist Spotify's API refuses to expose (see [architecture.md → Extended Quota Mode](architecture.md#extended-quota-mode-development-tier-restrictions) for the why).
+
+```bash
+python playlist_manager.py log-import "House" path/to/file.csv
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `playlist` | Target playlist name — must match `PLAYLISTS` or an alias |
+| `file` | Path to a text/CSV/JSON file. Any line containing a Spotify track URI (`spotify:track:...`), URL (`https://open.spotify.com/track/...?...`), or a bare 22-character ID (as the whole line or the first CSV/TSV field) is imported. Other lines are reported as `Unparseable`. |
+
+### Recommended export tool: Exportify
+
+Spotify itself doesn't ship a built-in "export playlist to CSV." [Exportify](https://exportify.net) (open source, runs in your browser, uses your own Spotify *web* auth so it bypasses the dev-tier quota that blocks our app) produces a CSV with `Track URI` as the first column. That file imports cleanly:
+
+```bash
+# 1. Open https://exportify.net, log in with Spotify, export the "House" playlist.
+# 2. Save the CSV (e.g. ~/Downloads/house.csv).
+# 3. Seed the local log:
+python playlist_manager.py log-import "House" ~/Downloads/house.csv
+```
+
+After that, future `add` and `smart-add` runs will recognise everything in the imported playlist as a duplicate.
+
+### Example output
+
+```
+Playlist: House (0BEX4bI5xtkEVA4BfYTKg2)
+  Imported new URIs: 142
+  Already in log:    1
+  Duplicate in file: 0
+  Unparseable lines: 1   ← typically the CSV header row
+  Total URIs logged: 143
+```
+
+### Limits and caveats
+
+- Local-only. No Spotify API call is made.
+- One playlist per run — repeat the command for each playlist.
+- Doesn't *verify* that the imported tracks are actually in the playlist on Spotify — it trusts the file.
+- If you remove a track from a playlist via the Spotify UI, this log won't notice. Either re-run the import or delete the URI from `.adds_log.json` manually.
+
 ## `test_spotify.py`
 
 Not a subcommand — a standalone smoke test that authenticates with Spotify and lists all your playlists. Useful for confirming OAuth works.

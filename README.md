@@ -1,93 +1,30 @@
 # spotify-playlist-manager
 
-Local toolkit to manage my Spotify playlists via the [Spotify Web API](https://developer.spotify.com/documentation/web-api) using [Spotipy](https://spotipy.readthedocs.io/) and OAuth.
-
-The workflow: I run scripts locally, Spotify grants access via OAuth, and the script (or assistant-generated commands) reads/writes my playlists.
-
-## Setup
-
-### 1. Create a Spotify app
-
-1. Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
-2. Click **Create app**.
-3. Set the redirect URI to exactly: `http://127.0.0.1:8888/callback`
-4. Copy the **Client ID** and **Client Secret**.
-
-### 2. Local environment
+Local CLI to manage my Spotify playlists. Built on the [Spotify Web API](https://developer.spotify.com/documentation/web-api) via [Spotipy](https://spotipy.readthedocs.io/), with optional OpenAI-powered playlist classification for `smart-add`.
 
 ```bash
-cd ~/spotify-playlist-manager
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-### 3. Configure secrets
-
-```bash
-cp .env.example .env
-# edit .env and paste your Client ID / Client Secret
-```
-
-`.env` and `.spotify_token_cache` are gitignored — never commit them.
-
-### 4. Smoke test
-
-```bash
-python test_spotify.py
-```
-
-A browser tab opens for Spotify login + consent. After approving, the script prints your user info and lists all your playlists.
-
-## playlist_manager.py
-
-CLI for managing the configured target playlists. **Default is dry-run** — nothing is written without `--execute`.
-
-```bash
-# List the configured target playlists
+# After setup
 python playlist_manager.py list-playlists
-
-# Dry-run: show what would happen
-python playlist_manager.py add "https://open.spotify.com/track/<id>" "House"
-
-# Actually add the track
 python playlist_manager.py add "https://open.spotify.com/track/<id>" "House" --execute
-```
-
-Playlist names accept aliases (e.g. `dnb` → `Drum & Bass`, `chill` → `Rustig / 'anders'`). See `ALIASES` in [playlist_manager.py](playlist_manager.py).
-
-Duplicate protection is always enforced: if the track URI is already in the target playlist, the script reports `SKIP` and exits without changes. There is no override flag — duplicates are not allowed.
-
-### smart-add (OpenAI classifier)
-
-Asks OpenAI to suggest 1–5 of your configured playlists for a track, prints the suggestions with confidence + reason, and requires `y` confirmation before doing anything. With `--execute` it then adds the track to each accepted playlist (skipping duplicates).
-
-```bash
-# Dry-run: classify and confirm, no writes
-python playlist_manager.py smart-add "https://open.spotify.com/track/<id>"
-
-# Real run: same flow, writes to Spotify after confirmation
-python playlist_manager.py smart-add "https://open.spotify.com/track/<id>" --execute
-
-# Confirm per playlist instead of one y/N for all
 python playlist_manager.py smart-add "https://open.spotify.com/track/<id>" --execute --per-playlist
 ```
 
-`--per-playlist` asks `y/N` separately for each suggestion. Rejecting one keeps the rest of the run going. Without the flag the default is a single `y/N` that accepts all suggestions at once.
+## Documentation
 
-Requires `OPENAI_API_KEY` in `.env`. The model defaults to `gpt-4o-mini`; override with `OPENAI_MODEL` in `.env` if you want something else.
+- **[docs/setup.md](docs/setup.md)** — credentials, `.env` values, where to get them (Spotify Developer Dashboard + OpenAI platform), Python venv setup.
+- **[docs/commands.md](docs/commands.md)** — CLI reference for every subcommand, including aliases, dry-run behavior, and the duplicate guard.
+- **[docs/architecture.md](docs/architecture.md)** — how the code is structured, the OAuth flow, the OpenAI classifier, and the IPv4-only network workaround for WSL.
 
-## Scopes used
+## Safety defaults
 
-- `playlist-read-private`
-- `playlist-read-collaborative`
-- `playlist-modify-private`
-- `playlist-modify-public`
-- `user-library-read`
-- `user-read-private`
+Three layers protect against unintended writes:
+
+1. **Dry-run is the default.** Add `--execute` to actually write.
+2. **`smart-add` requires interactive confirmation** (single y/N for all, or `--per-playlist` for individual y/N).
+3. **Duplicate guard is always on.** A track already in the target playlist is skipped — no override flag.
 
 ## Security notes
 
-- **Never commit `.env` or `.spotify_token_cache`** — both contain credentials/tokens.
-- The Client Secret stays local; do not paste it into chats or issues.
-- Tokens cache locally in `.spotify_token_cache` and refresh automatically.
+- `.env` and `.spotify_token_cache` are gitignored. Never commit them.
+- If you leak your Spotify Client Secret, rotate it in the Dashboard immediately.
+- If you leak your OpenAI API key, revoke it on the OpenAI platform and create a new one.

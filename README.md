@@ -52,14 +52,11 @@ python playlist_manager.py add "https://open.spotify.com/track/<id>" "House"
 
 # Actually add the track
 python playlist_manager.py add "https://open.spotify.com/track/<id>" "House" --execute
-
-# Add even if the track is already in the playlist
-python playlist_manager.py add "<track>" "House" --execute --allow-duplicate
 ```
 
 Playlist names accept aliases (e.g. `dnb` → `Drum & Bass`, `chill` → `Rustig / 'anders'`). See `ALIASES` in [playlist_manager.py](playlist_manager.py).
 
-Duplicate protection is on by default: if the track URI is already in the target playlist, the script reports `SKIP` and exits without changes.
+Duplicate protection is always enforced: if the track URI is already in the target playlist, the script reports `SKIP` and exits without changes. There is no override flag — duplicates are not allowed.
 
 ## Scopes used
 

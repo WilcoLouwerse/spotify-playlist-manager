@@ -150,7 +150,7 @@ def playlist_contains_uri(sp, playlist_id, track_uri):
     return False
 
 
-def add_track(sp, track_input, playlist_name, execute, allow_duplicate):
+def add_track(sp, track_input, playlist_name, execute):
     canonical_name = normalize_playlist_name(playlist_name)
     playlist_id = PLAYLISTS[canonical_name]
     track_uri, label = get_track(sp, track_input)
@@ -159,8 +159,8 @@ def add_track(sp, track_input, playlist_name, execute, allow_duplicate):
     print(f"Target playlist: {canonical_name}")
     print(f"Playlist ID: {playlist_id}")
 
-    if not allow_duplicate and playlist_contains_uri(sp, playlist_id, track_uri):
-        print("\nSKIP: track already in playlist. Pass --allow-duplicate to add anyway.")
+    if playlist_contains_uri(sp, playlist_id, track_uri):
+        print("\nSKIP: track already in playlist. No changes made.")
         return
 
     if not execute:
@@ -184,11 +184,6 @@ def main():
     add_parser.add_argument("track", help="Spotify track URL, URI, or ID")
     add_parser.add_argument("playlist", help="Target playlist name")
     add_parser.add_argument("--execute", action="store_true", help="Actually perform the change")
-    add_parser.add_argument(
-        "--allow-duplicate",
-        action="store_true",
-        help="Add the track even if it is already in the playlist",
-    )
 
     subparsers.add_parser("list-playlists", help="List configured target playlists")
 
@@ -201,7 +196,7 @@ def main():
     sp = get_spotify_client()
 
     if args.command == "add":
-        add_track(sp, args.track, args.playlist, args.execute, args.allow_duplicate)
+        add_track(sp, args.track, args.playlist, args.execute)
 
     return 0
 

@@ -178,7 +178,13 @@ def suggest_playlists_from_openai(track_label):
         print("OPENAI_API_KEY not set in .env — cannot run smart-add.")
         return []
 
-    from openai import OpenAI
+    from openai import (
+        APIConnectionError,
+        APIError,
+        AuthenticationError,
+        OpenAI,
+        RateLimitError,
+    )
 
     client = OpenAI(api_key=api_key)
     model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
@@ -199,15 +205,39 @@ def suggest_playlists_from_openai(track_label):
         '"confidence": <0-100 integer>, "reason": "<short reason>"}]}'
     )
 
-    response = client.chat.completions.create(
-        model=model,
-        messages=[
-            {"role": "system", "content": system_msg},
-            {"role": "user", "content": user_msg},
-        ],
-        response_format={"type": "json_object"},
-        temperature=0.2,
-    )
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_msg},
+                {"role": "user", "content": user_msg},
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.2,
+        )
+    except RateLimitError as exc:
+        code = getattr(getattr(exc, "body", None), "get", lambda *_: None)("code")
+        if code == "insufficient_quota" or "insufficient_quota" in str(exc):
+            print(
+                "OpenAI: insufficient quota. Add credit or a payment method at "
+                "https://platform.openai.com/settings/organization/billing and retry."
+            )
+        else:
+            print(f"OpenAI rate-limited the request. Try again in a moment. Detail: {exc}")
+        return []
+    except AuthenticationError:
+        print(
+            "OpenAI: authentication failed. Check OPENAI_API_KEY in .env "
+            "(may have been revoked) — create a new key at "
+            "https://platform.openai.com/api-keys."
+        )
+        return []
+    except APIConnectionError as exc:
+        print(f"OpenAI: connection error — {exc}")
+        return []
+    except APIError as exc:
+        print(f"OpenAI API error: {exc}")
+        return []
 
     content = response.choices[0].message.content
     data = json.loads(content)

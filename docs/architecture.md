@@ -57,17 +57,33 @@ The redirect URI must match exactly what's configured in the Spotify Developer D
 
 ## OpenAI classifier (smart-add)
 
-`suggest_playlists_from_openai(track_label)` does the heavy lifting:
+`classify_track_with_openai(track)` does the heavy lifting:
 
-1. Reads `OPENAI_API_KEY` (and optional `OPENAI_MODEL`) from env.
+1. Reads `OPENAI_API_KEY` (and optional `OPENAI_MODEL`, default `gpt-4.1-mini`) from env.
 2. Builds a JSON-mode chat completion with:
-   - System: "You are a music classifier. Return JSON. Pick from the provided list."
-   - User: `Track: <Artist - Title>` plus the full list of `PLAYLISTS` names.
-3. Parses the response JSON (`{"suggestions": [{"playlist", "confidence", "reason"}, ...]}`).
-4. Filters out any suggestions whose `playlist` isn't in `PLAYLISTS` (hallucination guard).
-5. Truncates to 5 suggestions.
+   - **System**: "You are a strict music classification assistant. Return only valid JSON…"
+   - **User**: a structured prompt object containing the full track metadata (artists, album, popularity, etc.), the list of `PLAYLISTS` names, and a `rules` section that includes special-meaning playlists (`Funny meme`, `Ket420`, `Hooyah`) and the `Electronic Music` catch-all.
+3. Parses the response JSON. Expected schema:
+   ```json
+   {
+     "genres": [{"genre": "...", "confidence": 0, "reason": "..."}],
+     "playlist_matches": [{"playlist": "...", "confidence": 0, "reason": "..."}],
+     "short_summary": "..."
+   }
+   ```
+4. Hands the parsed object to `validate_classification`, which enforces: non-empty `playlist_matches`, ≤ 5 items, every `playlist` must exist in `PLAYLISTS`, every `confidence` must be an integer 0–100. A validation failure aborts the run cleanly.
 
 The model is locked into JSON mode (`response_format={"type": "json_object"}`), and `temperature=0.2` keeps results stable across runs.
+
+### Track metadata
+
+`get_track(sp, track_input)` returns a dict (not a tuple) so the same lookup feeds both `add` and the OpenAI prompt:
+
+| Key | Source | Notes |
+|-----|--------|-------|
+| `id`, `uri`, `name`, `artists`, `album`, `release_date`, `popularity`, `duration_ms`, `explicit`, `spotify_url` | Spotify track endpoint | |
+| `label` | derived | `"<first artist> - <title>"` used for printable headers |
+| `metadata_available` | derived | `False` when the catalog lookup fails — `smart-add` aborts cleanly in that case |
 
 ## Safety / guard rails
 

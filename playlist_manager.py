@@ -50,7 +50,7 @@ PLAYLISTS = {
     "Dubstep / Bass": "4kxvCA0xRslKisr9kA5y2y",
     "Hardstyle & Hardcore": "3jGm3qv2QQXmB6lxrgdDoR",
     "Synthwave": "5BFG9XBUWoYfPek8CcL3ea",
-    '"Electronic Music"': "3Y6OleDjCBkDtjlQC1JC4S",
+    "Electronic Music": "3Y6OleDjCBkDtjlQC1JC4S",
     "Party": "5UxXh0fjJzKCLY8DMNzWy5",
     "Happy tunes": "3nupbERYJs4woq5dOAFUCj",
     "Sad tunes": "5FLVYNGAqBLmrhFoD3ItbV",
@@ -62,8 +62,8 @@ PLAYLISTS = {
 }
 
 ALIASES = {
-    "electronic music": '"Electronic Music"',
-    "edm": '"Electronic Music"',
+    "electronic music": "Electronic Music",
+    "edm": "Electronic Music",
     "dnb": "Drum & Bass",
     "drum and bass": "Drum & Bass",
     "dubstep": "Dubstep / Bass",
@@ -126,13 +126,43 @@ def extract_track_id(track_input):
 def get_track(sp, track_input):
     track_id = extract_track_id(track_input)
     uri = f"spotify:track:{track_id}"
+    fallback = {
+        "id": track_id,
+        "uri": uri,
+        "name": "",
+        "artists": [],
+        "album": "",
+        "release_date": None,
+        "popularity": None,
+        "duration_ms": None,
+        "explicit": None,
+        "spotify_url": f"https://open.spotify.com/track/{track_id}",
+        "label": uri,
+        "metadata_available": False,
+    }
     try:
         track = sp.track(track_id)
-        label = f"{track['artists'][0]['name']} - {track['name']}"
-        return track["uri"], label
     except Exception as exc:  # noqa: BLE001 — best-effort lookup
         print(f"(track lookup failed: {exc.__class__.__name__}; continuing with URI only)")
-        return uri, uri
+        return fallback
+
+    artist_names = [a["name"] for a in track["artists"]]
+    album = track["album"]
+    label = f"{artist_names[0]} - {track['name']}" if artist_names else track["name"]
+    return {
+        "id": track["id"],
+        "uri": track["uri"],
+        "name": track["name"],
+        "artists": artist_names,
+        "album": album["name"],
+        "release_date": album.get("release_date"),
+        "popularity": track.get("popularity"),
+        "duration_ms": track.get("duration_ms"),
+        "explicit": track.get("explicit"),
+        "spotify_url": track["external_urls"]["spotify"],
+        "label": label,
+        "metadata_available": True,
+    }
 
 
 def playlist_contains_uri(sp, playlist_id, track_uri):
@@ -154,9 +184,10 @@ def playlist_contains_uri(sp, playlist_id, track_uri):
 def add_track(sp, track_input, playlist_name, execute):
     canonical_name = normalize_playlist_name(playlist_name)
     playlist_id = PLAYLISTS[canonical_name]
-    track_uri, label = get_track(sp, track_input)
+    track = get_track(sp, track_input)
+    track_uri = track["uri"]
 
-    print(f"Track: {label}")
+    print(f"Track: {track['label']}")
     print(f"Target playlist: {canonical_name}")
     print(f"Playlist ID: {playlist_id}")
 
@@ -172,11 +203,30 @@ def add_track(sp, track_input, playlist_name, execute):
     print("\nDONE: track added.")
 
 
-def suggest_playlists_from_openai(track_label):
+def validate_classification(data):
+    if not isinstance(data, dict):
+        raise ValueError("response is not an object")
+
+    matches = data.get("playlist_matches")
+    if not isinstance(matches, list) or not matches:
+        raise ValueError("playlist_matches must be a non-empty list")
+    if len(matches) > 5:
+        raise ValueError(f"too many playlist matches: {len(matches)}")
+
+    for match in matches:
+        playlist = match.get("playlist")
+        confidence = match.get("confidence")
+        if playlist not in PLAYLISTS:
+            raise ValueError(f"unknown playlist: {playlist}")
+        if not isinstance(confidence, int) or not 0 <= confidence <= 100:
+            raise ValueError(f"invalid confidence for {playlist}: {confidence}")
+
+
+def classify_track_with_openai(track):
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         print("OPENAI_API_KEY not set in .env — cannot run smart-add.")
-        return []
+        return None
 
     from openai import (
         APIConnectionError,
@@ -187,22 +237,47 @@ def suggest_playlists_from_openai(track_label):
     )
 
     client = OpenAI(api_key=api_key)
-    model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    model = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 
     playlist_names = list(PLAYLISTS.keys())
+    track_payload = {k: v for k, v in track.items() if k not in ("metadata_available", "label")}
+
+    prompt_data = {
+        "task": "Classify this Spotify track for playlist placement.",
+        "track": track_payload,
+        "available_playlists": playlist_names,
+        "rules": {
+            "max_playlists": 5,
+            "min_playlists": 1,
+            "only_use_available_playlists": True,
+            "special_playlists": {
+                "Funny meme": "Only for meme songs, internet classics, absurd/funny lyrics.",
+                "Ket420": "Only for stoned, psychedelic, spacey, mellow, ketamine/weed-friendly listening.",
+                "Hooyah": "Only for sexually tinted, sensual, suggestive songs.",
+            },
+            "electronic_music": (
+                "Use 'Electronic Music' as catch-all for electronic tracks that do "
+                "not clearly fit House, Techno, Trance, Drum & Bass, Dubstep / Bass, "
+                "Hardstyle & Hardcore, or Synthwave."
+            ),
+            "confidence": "0-100 integer.",
+        },
+        "required_json_schema": {
+            "genres": [
+                {"genre": "string", "confidence": "integer", "reason": "string"}
+            ],
+            "playlist_matches": [
+                {"playlist": "string", "confidence": "integer", "reason": "string"}
+            ],
+            "short_summary": "string",
+        },
+    }
+
     system_msg = (
-        "You are a music classifier. Given a track and a list of available "
-        "playlist names, choose between 1 and 5 playlists from the list that "
-        "best fit the track. Only return playlist names from the provided list, "
-        "spelled exactly as given. Return JSON."
-    )
-    user_msg = (
-        f"Track: {track_label}\n\n"
-        "Available playlists:\n"
-        + "\n".join(f"- {name}" for name in playlist_names)
-        + "\n\n"
-        'Return JSON with this schema: {"suggestions": [{"playlist": "<exact name>", '
-        '"confidence": <0-100 integer>, "reason": "<short reason>"}]}'
+        "You are a strict music classification assistant. "
+        "Return only valid JSON matching the required schema. "
+        "Only use playlist names from available_playlists, spelled exactly as given. "
+        "No markdown. No commentary."
     )
 
     try:
@@ -210,7 +285,7 @@ def suggest_playlists_from_openai(track_label):
             model=model,
             messages=[
                 {"role": "system", "content": system_msg},
-                {"role": "user", "content": user_msg},
+                {"role": "user", "content": json.dumps(prompt_data, ensure_ascii=False)},
             ],
             response_format={"type": "json_object"},
             temperature=0.2,
@@ -224,27 +299,61 @@ def suggest_playlists_from_openai(track_label):
             )
         else:
             print(f"OpenAI rate-limited the request. Try again in a moment. Detail: {exc}")
-        return []
+        return None
     except AuthenticationError:
         print(
             "OpenAI: authentication failed. Check OPENAI_API_KEY in .env "
             "(may have been revoked) — create a new key at "
             "https://platform.openai.com/api-keys."
         )
-        return []
+        return None
     except APIConnectionError as exc:
         print(f"OpenAI: connection error — {exc}")
-        return []
+        return None
     except APIError as exc:
         print(f"OpenAI API error: {exc}")
-        return []
+        return None
 
     content = response.choices[0].message.content
-    data = json.loads(content)
-    suggestions = data.get("suggestions", [])
+    try:
+        data = json.loads(content)
+    except json.JSONDecodeError:
+        print(f"OpenAI returned invalid JSON:\n{content[:300]}")
+        return None
 
-    valid = [s for s in suggestions if s.get("playlist") in PLAYLISTS][:5]
-    return valid
+    try:
+        validate_classification(data)
+    except ValueError as exc:
+        print(f"OpenAI classification rejected: {exc}")
+        return None
+
+    return data
+
+
+def print_recommendation(track, classification):
+    artists = ", ".join(track["artists"]) if track["artists"] else "(unknown artist)"
+    print("\n" + "=" * 60)
+    print(f"Track: {artists} - {track['name']}")
+    if track["album"]:
+        print(f"Album: {track['album']}")
+    if track.get("spotify_url"):
+        print(f"Spotify: {track['spotify_url']}")
+    print("=" * 60)
+
+    summary = classification.get("short_summary")
+    if summary:
+        print("\nSummary:")
+        print(summary)
+
+    genres = classification.get("genres") or []
+    if genres:
+        print("\nGenres:")
+        for g in genres:
+            print(f"- {g.get('genre')} — {g.get('confidence')}% — {g.get('reason')}")
+
+    print("\nSuggested playlists:")
+    for m in classification["playlist_matches"]:
+        print(f"- {m['playlist']} — {m['confidence']}% — {m['reason']}")
 
 
 def _prompt_yes(prompt):
@@ -252,63 +361,61 @@ def _prompt_yes(prompt):
         answer = input(prompt).strip().lower()
     except EOFError:
         answer = ""
-    return answer in ("y", "yes")
-
-
-def _process_suggestion(sp, name, track_uri, execute):
-    playlist_id = PLAYLISTS[name]
-    if playlist_contains_uri(sp, playlist_id, track_uri):
-        print(f"- {name}: SKIP (already in playlist)")
-        return
-    if not execute:
-        print(f"- {name}: DRY RUN (would add)")
-        return
-    sp.playlist_add_items(playlist_id, [track_uri])
-    print(f"- {name}: ADDED")
+    return answer in ("y", "yes", "j", "ja")
 
 
 def smart_add(sp, track_input, execute, per_playlist):
-    track_uri, label = get_track(sp, track_input)
-    if label == track_uri:
+    track = get_track(sp, track_input)
+    if not track["metadata_available"]:
         print("Cannot classify: track metadata lookup failed. Try again later.")
         return
 
-    print(f"Track: {label}\n")
-
-    suggestions = suggest_playlists_from_openai(label)
-    if not suggestions:
-        print("No playlist suggestions returned.")
+    classification = classify_track_with_openai(track)
+    if not classification:
         return
 
-    print("Suggested playlists:")
-    for s in suggestions:
-        confidence = s.get("confidence", "?")
-        reason = s.get("reason", "")
-        suffix = f" — {reason}" if reason else ""
-        print(f"- {s['playlist']} — {confidence}%{suffix}")
+    print_recommendation(track, classification)
+
+    print("\nPending actions:")
+    actions = []
+    for match in classification["playlist_matches"]:
+        name = match["playlist"]
+        playlist_id = PLAYLISTS[name]
+        confidence = match.get("confidence", "?")
+        if playlist_contains_uri(sp, playlist_id, track["uri"]):
+            print(f"- SKIP: already in {name}")
+        else:
+            print(f"- ADD: {name} ({confidence}%)")
+            actions.append((name, playlist_id, confidence))
+
+    if not actions:
+        print("\nNo changes needed.")
+        return
 
     if per_playlist:
+        accepted = []
         print()
-        any_accepted = False
-        for s in suggestions:
-            name = s["playlist"]
-            confidence = s.get("confidence", "?")
-            if not _prompt_yes(f"Add to '{name}' ({confidence}%)? [y/N]: "):
-                print(f"- {name}: SKIPPED (rejected)")
-                continue
-            any_accepted = True
-            _process_suggestion(sp, name, track_uri, execute)
-        if not any_accepted:
+        for name, playlist_id, confidence in actions:
+            if _prompt_yes(f"Add to '{name}' ({confidence}%)? [y/N]: "):
+                accepted.append((name, playlist_id))
+            else:
+                print(f"- {name}: rejected")
+        if not accepted:
             print("\nNo playlists accepted. No changes made.")
-        return
-
-    if not _prompt_yes("\nAdd this track to these playlists? [y/N]: "):
-        print("Cancelled. No changes made.")
-        return
+            return
+    else:
+        if not _prompt_yes("\nAdd this track to the listed playlists? [y/N]: "):
+            print("Cancelled. No changes made.")
+            return
+        accepted = [(name, pid) for name, pid, _ in actions]
 
     print()
-    for s in suggestions:
-        _process_suggestion(sp, s["playlist"], track_uri, execute)
+    for name, playlist_id in accepted:
+        if not execute:
+            print(f"- {name}: DRY RUN (would add)")
+            continue
+        sp.playlist_add_items(playlist_id, [track["uri"]])
+        print(f"- {name}: ADDED")
 
 
 def list_target_playlists():

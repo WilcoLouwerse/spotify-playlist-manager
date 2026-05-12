@@ -50,7 +50,7 @@ The `ALIASES` map in the script accepts common shorthands. Examples:
 | `chill`, `calm` | `Rustig / 'anders'` |
 | `pop` | `Pop / Mainstream` |
 | `metal`, `rock` | `Metal & Rock` |
-| `edm`, `electronic music` | `"Electronic Music"` |
+| `edm`, `electronic music` | `Electronic Music` |
 
 See the full list in [playlist_manager.py](../playlist_manager.py).
 
@@ -77,30 +77,47 @@ python playlist_manager.py smart-add "https://open.spotify.com/track/<id>" --exe
 
 ### Flow
 
-1. Look up the track on Spotify (artist + title).
-2. Ask OpenAI to pick 1–5 of the configured playlists that fit the track. It returns playlist + confidence + reason.
-3. Print the suggestions.
-4. Prompt for confirmation:
-   - **Default**: single `y/N` that accepts all suggestions at once.
-   - **`--per-playlist`**: ask `y/N` separately for each suggested playlist. Rejecting one keeps the rest of the run going.
-5. For each accepted playlist: enforce the duplicate guard, then either dry-run or POST the add (under `--execute`).
+1. Look up rich track metadata on Spotify (artists, album, release date, popularity, explicit flag, URL).
+2. Ask OpenAI to pick 1–5 of the configured playlists that fit the track. The prompt includes special rules for `Funny meme`, `Ket420`, and `Hooyah`, and an `Electronic Music` catch-all rule. The response also includes inferred genres and a short summary.
+3. Print the recommendation (track header, summary, genres, suggested playlists).
+4. Compute **Pending actions** — for each suggestion, the script checks the duplicate guard and labels it `ADD` or `SKIP` before any confirmation.
+5. Prompt for confirmation:
+   - **Default**: single `y/N` that accepts all `ADD` actions at once.
+   - **`--per-playlist`**: ask `y/N` separately for each `ADD` action. Rejecting one keeps the rest of the run going.
+6. For each accepted playlist: either dry-run print or POST the add (under `--execute`).
+
+`y`, `yes`, `j`, and `ja` are all accepted as confirmation.
 
 ### Example output
 
 ```
-Track: Bakermat - Walk That Walk
+============================================================
+Track: Bakermat, Nic Hanson - Walk That Walk
+Album: Walk That Walk
+Spotify: https://open.spotify.com/track/1W5mUuAOQSSKUbLOt7cDhq
+============================================================
+
+Summary:
+Bright, uplifting deep-house track with festival energy.
+
+Genres:
+- deep house — 88% — driving bassline with vocal hook
+- tropical house — 64% — bright melodies, summery vibe
 
 Suggested playlists:
 - House — 92% — uplifting deep-house with vocals
-- Party — 84% — high-energy, festival vibe
+- Party — 84% — high-energy festival vibe
 - Happy tunes — 78% — bright, major key
 
-Add to 'House' (92%)? [y/N]: y
+Pending actions:
+- ADD: House (92%)
+- SKIP: already in Party
+- ADD: Happy tunes (78%)
+
+Add this track to the listed playlists? [y/N]: ja
+
 - House: ADDED
-Add to 'Party' (84%)? [y/N]: n
-- Party: SKIPPED (rejected)
-Add to 'Happy tunes' (78%)? [y/N]: y
-- Happy tunes: SKIP (already in playlist)
+- Happy tunes: ADDED
 ```
 
 ### Arguments
@@ -118,7 +135,7 @@ Add to 'Happy tunes' (78%)? [y/N]: y
 
 ### Cost
 
-`gpt-4o-mini` at ~200 tokens in/out per call is roughly $0.0001 per `smart-add`. Override the model via `OPENAI_MODEL` in `.env` if you want better classifications and don't mind the cost.
+`gpt-4.1-mini` (the default) costs roughly $0.0001–$0.0003 per `smart-add` call, depending on the size of the JSON prompt. Override the model via `OPENAI_MODEL` in `.env` if you want better classifications and don't mind the cost.
 
 ## `test_spotify.py`
 

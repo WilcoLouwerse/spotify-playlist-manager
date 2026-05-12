@@ -12,7 +12,7 @@ This document walks through every credential the project needs, where to get it,
 | `SPOTIPY_CLIENT_SECRET` | All commands | Spotify Developer Dashboard |
 | `SPOTIPY_REDIRECT_URI` | OAuth flow | Set to `http://127.0.0.1:8888/callback` (must match the dashboard exactly) |
 | `OPENAI_API_KEY` | `smart-add` only | OpenAI platform (see below) |
-| `OPENAI_MODEL` | `smart-add` only (optional) | Defaults to `gpt-4o-mini` if unset |
+| `OPENAI_MODEL` | `smart-add` only (optional) | Defaults to `gpt-4.1-mini` if unset |
 
 ## Spotify credentials
 
@@ -58,10 +58,10 @@ Only required for `smart-add`. The plain `add` and `list-playlists` commands wor
 Override the default with `OPENAI_MODEL` in `.env`, e.g.:
 
 ```
-OPENAI_MODEL=gpt-4o-mini
+OPENAI_MODEL=gpt-4.1-mini
 ```
 
-`gpt-4o-mini` is the cheapest reasonable choice for this kind of short classification. If you want better classifications and don't mind the cost, try `gpt-4o`.
+`gpt-4.1-mini` is the default — strong classification quality at a low price (~$0.0001 per call). If you want to save more, try `gpt-4o-mini`. If you want better calls and don't mind paying, try `gpt-4.1` or `gpt-4o`.
 
 ## Putting it together
 
@@ -73,7 +73,7 @@ SPOTIPY_CLIENT_SECRET=...
 SPOTIPY_REDIRECT_URI=http://127.0.0.1:8888/callback
 
 OPENAI_API_KEY=sk-...
-# OPENAI_MODEL=gpt-4o-mini
+# OPENAI_MODEL=gpt-4.1-mini
 ```
 
 After editing `.env`, the next time you run any command the new values are picked up automatically — no restart needed.

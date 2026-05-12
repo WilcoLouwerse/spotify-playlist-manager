@@ -98,3 +98,10 @@ python playlist_manager.py list-playlists
 ```
 
 See [commands.md](commands.md) for the full CLI reference.
+
+## Useful Spotify links
+
+- [Spotify Web API documentation](https://developer.spotify.com/documentation/web-api) — endpoint reference, scopes, authorization flows.
+- [Web API concepts: quota modes](https://developer.spotify.com/documentation/web-api/concepts/quota-modes) — explains Development Mode (5-user limit, reduced data) vs Extended Quota Mode (companies only, ≥250k MAUs).
+- [Feb 2026 Dev Mode migration guide](https://developer.spotify.com/documentation/web-api/tutorials/february-2026-migration-guide) — endpoint renames, removed fields, new Premium requirement for app owners. Relevant to the script — see [architecture.md → February 2026 migration](architecture.md#february-2026-migration).
+- [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) — where you manage your app, secrets, and allow-listed users.

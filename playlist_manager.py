@@ -221,11 +221,10 @@ def playlist_contains_uri(sp, playlist_id, track_uri):
     global _WARNED_ABOUT_STRIPPED_DATA
     if not api_returned_any_uri and not _WARNED_ABOUT_STRIPPED_DATA:
         print(
-            "WARN: Spotify returned no track URIs from playlist_items. The Web "
-            "API is in development-tier mode and is stripping catalog data. "
-            "Duplicate detection falls back to the local log (.adds_log.json). "
-            "Apply for Extended Quota Mode at https://developer.spotify.com/dashboard "
-            "to get full data."
+            "WARN: Spotify returned no track URIs from playlist_items — the app is "
+            "in Development Mode and the API does not expose playlist contents. "
+            "Duplicate detection relies on .adds_log.json; use `log-import` to "
+            "seed it from a CSV export (e.g. https://exportify.net)."
         )
         _WARNED_ABOUT_STRIPPED_DATA = True
 

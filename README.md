@@ -21,7 +21,7 @@ Three layers protect against unintended writes:
 
 1. **Dry-run is the default.** Add `--execute` to actually write.
 2. **`smart-add` requires interactive confirmation** (single y/N for all, or `--per-playlist` for individual y/N).
-3. **Duplicate guard is always on.** A track already in the target playlist is skipped — no override flag.
+3. **Duplicate guard is always on.** Reads from a local `.adds_log.json` (every URI the script has successfully added) plus best-effort Spotify checks. Seed it once via `log-import` (see [docs/commands.md](docs/commands.md#log-import)) to cover tracks the script didn't add. Background on why the local log is necessary: [docs/architecture.md → Why duplicate detection needs a local log](docs/architecture.md#why-duplicate-detection-needs-a-local-log).
 
 ## Security notes
 

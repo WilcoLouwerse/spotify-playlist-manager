@@ -6,9 +6,10 @@ How the code is organised and why certain decisions exist.
 
 ```
 spotify-playlist-manager/
+├── .adds_log.json          # local duplicate-guard log (gitignored, auto-managed)
 ├── .env                    # secrets (gitignored)
 ├── .env.example            # template
-├── .gitignore              # excludes .env, .venv, token cache
+├── .gitignore              # excludes .env, .venv, token cache, adds log
 ├── .spotify_token_cache    # OAuth token cache (gitignored, auto-managed by Spotipy)
 ├── .venv/                  # local virtualenv (gitignored)
 ├── README.md               # short overview, points into docs/
@@ -25,11 +26,12 @@ spotify-playlist-manager/
 
 ### `playlist_manager.py`
 
-A single-file CLI built on `argparse` with three subcommands:
+A single-file CLI built on `argparse` with four subcommands:
 
 - `list-playlists` — prints the `PLAYLISTS` dict.
 - `add` — direct, single-target add with duplicate guard.
 - `smart-add` — OpenAI classifier + confirmation prompt + duplicate guard.
+- `log-import` — seeds the local `.adds_log.json` from a file of track URIs/URLs/IDs (e.g. an Exportify CSV), to cover playlist contents the dev-tier API refuses to expose.
 
 Key data structures:
 
@@ -54,6 +56,32 @@ Spotify's Authorization Code Flow, via [Spotipy](https://spotipy.readthedocs.io/
 5. Future runs read the cache; if the access token has expired, Spotipy uses the refresh token to renew it silently.
 
 The redirect URI must match exactly what's configured in the Spotify Developer Dashboard. `127.0.0.1` and `localhost` are *not* interchangeable — Spotify rejects mismatches.
+
+## Network quirks
+
+### IPv4-only resolution
+
+WSL2's IPv6 route to `api.spotify.com` is broken — the TCP connect silently hangs until the read timeout fires. Python's `getaddrinfo` returns IPv6 addresses first by default, so requests intermittently failed.
+
+The fix lives at the top of `playlist_manager.py` and `test_spotify.py`:
+
+```python
+import socket
+_orig_getaddrinfo = socket.getaddrinfo
+def _ipv4_only_getaddrinfo(*args, **kwargs):
+    return [info for info in _orig_getaddrinfo(*args, **kwargs) if info[0] == socket.AF_INET]
+socket.getaddrinfo = _ipv4_only_getaddrinfo
+```
+
+This filters out AAAA records before any HTTPS connection is opened. No system change required.
+
+### Request timeout and retries
+
+The Spotipy client is constructed with `requests_timeout=30, retries=5`. The default of 5 seconds was too aggressive for the occasionally slow catalog endpoints.
+
+### Best-effort track lookup
+
+`get_track()` wraps `sp.track(track_id)` in a try/except. If the catalog endpoint times out (a recurring Spotify-side issue), it falls back to using the bare URI. `add` still works in that case; `smart-add` aborts because it needs the artist + title to classify.
 
 ## OpenAI classifier (smart-add)
 
@@ -97,48 +125,41 @@ Three defences against unintended writes:
 1. **Dry-run default.** No write ever happens without `--execute`.
 2. **Interactive confirmation in `smart-add`.** Even with `--execute`, you must answer `y`. With `--per-playlist`, you confirm per playlist.
 3. **Duplicate guard.** Before every add, the script checks two sources for the track URI:
-   - **Local adds log** (`.adds_log.json`, gitignored) — every URI the script has successfully added, keyed by playlist ID. Authoritative for adds made through this script.
+   - **Local adds log** (`.adds_log.json`, gitignored) — every URI the script has successfully added, keyed by playlist ID. Authoritative for adds made through this script. Can be pre-seeded with the `log-import` subcommand.
    - **Spotify `playlist_items`** — best-effort fallback. Currently degraded for development-tier apps (see [Extended Quota Mode](#extended-quota-mode-development-tier-restrictions) below).
 
    If present → `SKIP`, no write. No override flag.
 
-### Extended Quota Mode (development-tier restrictions)
+### Why duplicate detection needs a local log
 
-Since November 2024 Spotify restricts the Web API for new/development apps. Relevant to us: `GET /v1/playlists/{id}/tracks` returns items where the embedded `track` object has empty `uri`, `id`, and `name`. Only `added_at` survives. This makes server-side duplicate detection effectively impossible.
+The Spotify Web API serves apps in one of two **quota modes** ([Spotify docs on quota modes](https://developer.spotify.com/documentation/web-api/concepts/quota-modes)):
+
+- **Development Mode** — what this app is in. Capped at 5 authenticated users, allow-listed via the dashboard, and several endpoints return reduced data.
+- **Extended Quota Mode** — wider audience, higher rate limits, full data. **Not available to individuals as of May 15, 2025**: it now requires a Partner Application submitted with a company email plus evidence of ≥250k monthly active users, with a review of up to six weeks. Personal/hobby projects effectively cannot reach this tier.
+
+So Development Mode is the steady state for this app, and the local `.adds_log.json` is the *primary* duplicate detector, not a temporary stopgap.
+
+Observed today: `GET /v1/playlists/{id}/tracks` returns items where the embedded `track` object has empty `uri`, `id`, and `name`. Only `added_at` survives. This makes server-side duplicate detection impossible from the API alone.
 
 Mitigations the script applies:
 
 - All successful adds are recorded in `.adds_log.json`, which `playlist_contains_uri` consults first.
-- When `playlist_items` is detected to return no URIs at all, the script prints a one-time warning explaining the limitation and pointing at the dashboard.
+- When `playlist_items` is detected to return no URIs at all, the script prints a one-time warning pointing at this section.
 - Tracks that already existed in your playlists *before* this log was introduced (or added through the Spotify UI, not the script) are invisible to the duplicate guard. To cover them, use the `log-import` subcommand (see [commands.md → log-import](commands.md#log-import)) with a CSV export from a tool like [Exportify](https://exportify.net), which uses your *web* token and is not subject to the dev-tier quota.
 
+### February 2026 migration
+
+Spotify's [Feb 2026 Dev Mode migration guide](https://developer.spotify.com/documentation/web-api/tutorials/february-2026-migration-guide) lists changes the script will need to track:
+
+- `GET/POST/DELETE/PUT /playlists/{id}/tracks` is renamed to `/playlists/{id}/items`. Spotipy's `playlist_items` and `playlist_add_items` will follow when the library is updated; if not, we'll need to call the new path directly.
+- The response shape changes: `tracks.items[].track` becomes `items.items[].item`.
+- Tracks lose `available_markets`, `external_ids`, `linked_from`, and `popularity` fields. We currently send `popularity` into the OpenAI prompt; after Feb 2026 it will simply be `None`, which the classifier still handles.
+- Batch endpoints (`GET /tracks`, `/albums`, `/artists`) are removed — fetch individually.
+- Owner-only constraint: playlist `items` are only returned for playlists the user owns or collaborates on. That matches our setup since every entry in `PLAYLISTS` is owned by the authenticated user.
+
+App owners must also have an active Spotify Premium subscription from Feb 2026 onwards.
+
 To lift the restriction: open https://developer.spotify.com/dashboard → your app → request Extended Quota Mode. Spotify reviews the app; once approved, the API returns full track data and the duplicate guard becomes authoritative without the local log.
-
-## Network quirks
-
-### IPv4-only resolution
-
-WSL2's IPv6 route to `api.spotify.com` is broken — the TCP connect silently hangs until the read timeout fires. Python's `getaddrinfo` returns IPv6 addresses first by default, so requests intermittently failed.
-
-The fix lives at the top of `playlist_manager.py` and `test_spotify.py`:
-
-```python
-import socket
-_orig_getaddrinfo = socket.getaddrinfo
-def _ipv4_only_getaddrinfo(*args, **kwargs):
-    return [info for info in _orig_getaddrinfo(*args, **kwargs) if info[0] == socket.AF_INET]
-socket.getaddrinfo = _ipv4_only_getaddrinfo
-```
-
-This filters out AAAA records before any HTTPS connection is opened. No system change required.
-
-### Request timeout and retries
-
-The Spotipy client is constructed with `requests_timeout=30, retries=5`. The default of 5 seconds was too aggressive for the occasionally slow catalog endpoints.
-
-### Best-effort track lookup
-
-`get_track()` wraps `sp.track(track_id)` in a try/except. If the catalog endpoint times out (a recurring Spotify-side issue), it falls back to using the bare URI. `add` still works in that case; `smart-add` aborts because it needs the artist + title to classify.
 
 ## Adding a new playlist target
 

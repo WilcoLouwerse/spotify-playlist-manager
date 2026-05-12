@@ -5,7 +5,7 @@ CLI reference for [playlist_manager.py](../playlist_manager.py). Run every comma
 ## Global behavior
 
 - **Dry-run by default.** Commands that write to Spotify (`add`, `smart-add`) print what they *would* do and exit. Add `--execute` to actually write.
-- **Duplicate guard is always on.** Before writing, the script fetches the target playlist's tracks and exits with `SKIP` if the track URI is already present. There is no override flag.
+- **Duplicate guard is always on.** Before writing, the script consults a local log (`.adds_log.json`) of everything it has previously added, plus Spotify's playlist contents. If the URI is found in either, it exits with `SKIP`. There is no override flag. See [architecture.md → Extended Quota Mode](architecture.md#extended-quota-mode-development-tier-restrictions) for why the local log exists.
 - **IPv4 only.** The script forces IPv4 resolution because WSL's IPv6 route to `api.spotify.com` is broken. See [architecture.md](architecture.md) for the why.
 
 ## `list-playlists`

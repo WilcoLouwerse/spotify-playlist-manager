@@ -165,19 +165,69 @@ def get_track(sp, track_input):
     }
 
 
+ADDS_LOG_PATH = ".adds_log.json"
+_WARNED_ABOUT_STRIPPED_DATA = False
+
+
+def _load_adds_log():
+    try:
+        with open(ADDS_LOG_PATH) as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def _save_adds_log(log):
+    with open(ADDS_LOG_PATH, "w") as f:
+        json.dump(log, f, indent=2)
+
+
+def log_successful_add(playlist_id, track_uri):
+    log = _load_adds_log()
+    uris = log.setdefault(playlist_id, [])
+    if track_uri not in uris:
+        uris.append(track_uri)
+        _save_adds_log(log)
+
+
 def playlist_contains_uri(sp, playlist_id, track_uri):
+    # First check the local log — Spotify's development-tier API strips
+    # track URIs from playlist_items responses (Nov 2024 restrictions),
+    # so we cannot rely on it alone.
+    log = _load_adds_log()
+    if track_uri in log.get(playlist_id, []):
+        return True
+
+    # Best-effort Spotify check. Will only catch items added before the
+    # log existed if the API returns real URIs (Extended Quota Mode).
     results = sp.playlist_items(
         playlist_id,
         fields="items(track(uri)),next",
         additional_types=("track",),
         limit=100,
     )
+    api_returned_any_uri = False
     while results:
         for item in results["items"]:
             t = item.get("track") or {}
-            if t.get("uri") == track_uri:
+            uri = t.get("uri")
+            if uri:
+                api_returned_any_uri = True
+            if uri == track_uri:
                 return True
         results = sp.next(results) if results.get("next") else None
+
+    global _WARNED_ABOUT_STRIPPED_DATA
+    if not api_returned_any_uri and not _WARNED_ABOUT_STRIPPED_DATA:
+        print(
+            "WARN: Spotify returned no track URIs from playlist_items. The Web "
+            "API is in development-tier mode and is stripping catalog data. "
+            "Duplicate detection falls back to the local log (.adds_log.json). "
+            "Apply for Extended Quota Mode at https://developer.spotify.com/dashboard "
+            "to get full data."
+        )
+        _WARNED_ABOUT_STRIPPED_DATA = True
+
     return False
 
 
@@ -208,6 +258,7 @@ def add_track(sp, track_input, playlist_name, execute):
     if not snapshot:
         print(f"\nWARN: Spotify returned no snapshot_id (response={resp!r}); add may not have persisted.")
         return
+    log_successful_add(playlist_id, track_uri)
     print(f"\nDONE: track added (snapshot {snapshot[:10]}…)")
 
 
@@ -455,6 +506,7 @@ def smart_add(sp, track_input, execute, per_playlist):
         if not snapshot:
             print(f"- {name}: WARN — Spotify returned no snapshot_id (response={resp!r})")
             continue
+        log_successful_add(playlist_id, track["uri"])
         print(f"- {name}: ADDED (snapshot {snapshot[:10]}…)")
 
 

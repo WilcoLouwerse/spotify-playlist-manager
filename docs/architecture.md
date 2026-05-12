@@ -96,7 +96,23 @@ Three defences against unintended writes:
 
 1. **Dry-run default.** No write ever happens without `--execute`.
 2. **Interactive confirmation in `smart-add`.** Even with `--execute`, you must answer `y`. With `--per-playlist`, you confirm per playlist.
-3. **Duplicate guard.** Before every add, the script paginates the target playlist's tracks and checks for the URI. If present → `SKIP`, no write. No override flag.
+3. **Duplicate guard.** Before every add, the script checks two sources for the track URI:
+   - **Local adds log** (`.adds_log.json`, gitignored) — every URI the script has successfully added, keyed by playlist ID. Authoritative for adds made through this script.
+   - **Spotify `playlist_items`** — best-effort fallback. Currently degraded for development-tier apps (see [Extended Quota Mode](#extended-quota-mode-development-tier-restrictions) below).
+
+   If present → `SKIP`, no write. No override flag.
+
+### Extended Quota Mode (development-tier restrictions)
+
+Since November 2024 Spotify restricts the Web API for new/development apps. Relevant to us: `GET /v1/playlists/{id}/tracks` returns items where the embedded `track` object has empty `uri`, `id`, and `name`. Only `added_at` survives. This makes server-side duplicate detection effectively impossible.
+
+Mitigations the script applies:
+
+- All successful adds are recorded in `.adds_log.json`, which `playlist_contains_uri` consults first.
+- When `playlist_items` is detected to return no URIs at all, the script prints a one-time warning explaining the limitation and pointing at the dashboard.
+- Tracks that already existed in your playlists *before* this log was introduced (or added through the Spotify UI, not the script) are invisible to the duplicate guard until you either apply for Extended Quota Mode or add them to `.adds_log.json` manually.
+
+To lift the restriction: open https://developer.spotify.com/dashboard → your app → request Extended Quota Mode. Spotify reviews the app; once approved, the API returns full track data and the duplicate guard becomes authoritative without the local log.
 
 ## Network quirks
 

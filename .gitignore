@@ -3,6 +3,7 @@
 .env.*
 !.env.example
 .spotify_token_cache
+.adds_log.json
 *.cache
 
 # Python

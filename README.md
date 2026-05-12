@@ -58,6 +58,20 @@ Playlist names accept aliases (e.g. `dnb` → `Drum & Bass`, `chill` → `Rustig
 
 Duplicate protection is always enforced: if the track URI is already in the target playlist, the script reports `SKIP` and exits without changes. There is no override flag — duplicates are not allowed.
 
+### smart-add (OpenAI classifier)
+
+Asks OpenAI to suggest 1–5 of your configured playlists for a track, prints the suggestions with confidence + reason, and requires `y` confirmation before doing anything. With `--execute` it then adds the track to each accepted playlist (skipping duplicates).
+
+```bash
+# Dry-run: classify and confirm, no writes
+python playlist_manager.py smart-add "https://open.spotify.com/track/<id>"
+
+# Real run: same flow, writes to Spotify after confirmation
+python playlist_manager.py smart-add "https://open.spotify.com/track/<id>" --execute
+```
+
+Requires `OPENAI_API_KEY` in `.env`. The model defaults to `gpt-4o-mini`; override with `OPENAI_MODEL` in `.env` if you want something else.
+
 ## Scopes used
 
 - `playlist-read-private`

@@ -4,6 +4,7 @@ Default is dry-run: nothing is changed unless --execute is passed.
 """
 
 import argparse
+import json
 import os
 import socket
 import sys
@@ -171,6 +172,94 @@ def add_track(sp, track_input, playlist_name, execute):
     print("\nDONE: track added.")
 
 
+def suggest_playlists_from_openai(track_label):
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        print("OPENAI_API_KEY not set in .env — cannot run smart-add.")
+        return []
+
+    from openai import OpenAI
+
+    client = OpenAI(api_key=api_key)
+    model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+
+    playlist_names = list(PLAYLISTS.keys())
+    system_msg = (
+        "You are a music classifier. Given a track and a list of available "
+        "playlist names, choose between 1 and 5 playlists from the list that "
+        "best fit the track. Only return playlist names from the provided list, "
+        "spelled exactly as given. Return JSON."
+    )
+    user_msg = (
+        f"Track: {track_label}\n\n"
+        "Available playlists:\n"
+        + "\n".join(f"- {name}" for name in playlist_names)
+        + "\n\n"
+        'Return JSON with this schema: {"suggestions": [{"playlist": "<exact name>", '
+        '"confidence": <0-100 integer>, "reason": "<short reason>"}]}'
+    )
+
+    response = client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": system_msg},
+            {"role": "user", "content": user_msg},
+        ],
+        response_format={"type": "json_object"},
+        temperature=0.2,
+    )
+
+    content = response.choices[0].message.content
+    data = json.loads(content)
+    suggestions = data.get("suggestions", [])
+
+    valid = [s for s in suggestions if s.get("playlist") in PLAYLISTS][:5]
+    return valid
+
+
+def smart_add(sp, track_input, execute):
+    track_uri, label = get_track(sp, track_input)
+    if label == track_uri:
+        print("Cannot classify: track metadata lookup failed. Try again later.")
+        return
+
+    print(f"Track: {label}\n")
+
+    suggestions = suggest_playlists_from_openai(label)
+    if not suggestions:
+        print("No playlist suggestions returned.")
+        return
+
+    print("Suggested playlists:")
+    for s in suggestions:
+        confidence = s.get("confidence", "?")
+        reason = s.get("reason", "")
+        suffix = f" — {reason}" if reason else ""
+        print(f"- {s['playlist']} — {confidence}%{suffix}")
+
+    try:
+        answer = input("\nAdd this track to these playlists? [y/N]: ").strip().lower()
+    except EOFError:
+        answer = ""
+
+    if answer not in ("y", "yes"):
+        print("Cancelled. No changes made.")
+        return
+
+    print()
+    for s in suggestions:
+        name = s["playlist"]
+        playlist_id = PLAYLISTS[name]
+        if playlist_contains_uri(sp, playlist_id, track_uri):
+            print(f"- {name}: SKIP (already in playlist)")
+            continue
+        if not execute:
+            print(f"- {name}: DRY RUN (would add)")
+            continue
+        sp.playlist_add_items(playlist_id, [track_uri])
+        print(f"- {name}: ADDED")
+
+
 def list_target_playlists():
     for name in PLAYLISTS:
         print(f"- {name}")
@@ -185,6 +274,15 @@ def main():
     add_parser.add_argument("playlist", help="Target playlist name")
     add_parser.add_argument("--execute", action="store_true", help="Actually perform the change")
 
+    smart_parser = subparsers.add_parser(
+        "smart-add",
+        help="Classify a track with OpenAI, confirm, then add to suggested playlists",
+    )
+    smart_parser.add_argument("track", help="Spotify track URL, URI, or ID")
+    smart_parser.add_argument(
+        "--execute", action="store_true", help="Actually perform the change after confirmation"
+    )
+
     subparsers.add_parser("list-playlists", help="List configured target playlists")
 
     args = parser.parse_args()
@@ -197,6 +295,8 @@ def main():
 
     if args.command == "add":
         add_track(sp, args.track, args.playlist, args.execute)
+    elif args.command == "smart-add":
+        smart_add(sp, args.track, args.execute)
 
     return 0
 

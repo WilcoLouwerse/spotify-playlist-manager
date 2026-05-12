@@ -39,6 +39,28 @@ python test_spotify.py
 
 A browser tab opens for Spotify login + consent. After approving, the script prints your user info and lists all your playlists.
 
+## playlist_manager.py
+
+CLI for managing the configured target playlists. **Default is dry-run** — nothing is written without `--execute`.
+
+```bash
+# List the configured target playlists
+python playlist_manager.py list-playlists
+
+# Dry-run: show what would happen
+python playlist_manager.py add "https://open.spotify.com/track/<id>" "House"
+
+# Actually add the track
+python playlist_manager.py add "https://open.spotify.com/track/<id>" "House" --execute
+
+# Add even if the track is already in the playlist
+python playlist_manager.py add "<track>" "House" --execute --allow-duplicate
+```
+
+Playlist names accept aliases (e.g. `dnb` → `Drum & Bass`, `chill` → `Rustig / 'anders'`). See `ALIASES` in [playlist_manager.py](playlist_manager.py).
+
+Duplicate protection is on by default: if the track URI is already in the target playlist, the script reports `SKIP` and exits without changes.
+
 ## Scopes used
 
 - `playlist-read-private`

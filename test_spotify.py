@@ -52,8 +52,14 @@ def main() -> int:
     results = sp.current_user_playlists(limit=50)
     while results:
         for playlist in results["items"]:
-            total = playlist["tracks"]["total"]
-            print(f"- {playlist['name']} | tracks: {total} | id: {playlist['id']}")
+            if not playlist:
+                print("- <unavailable playlist (None entry)>")
+                continue
+            name = playlist.get("name", "<no name>")
+            pid = playlist.get("id", "<no id>")
+            tracks = playlist.get("tracks") or {}
+            total = tracks.get("total", "?")
+            print(f"- {name} | tracks: {total} | id: {pid}")
         results = sp.next(results) if results.get("next") else None
 
     return 0

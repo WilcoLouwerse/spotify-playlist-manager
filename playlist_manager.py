@@ -217,7 +217,27 @@ def suggest_playlists_from_openai(track_label):
     return valid
 
 
-def smart_add(sp, track_input, execute):
+def _prompt_yes(prompt):
+    try:
+        answer = input(prompt).strip().lower()
+    except EOFError:
+        answer = ""
+    return answer in ("y", "yes")
+
+
+def _process_suggestion(sp, name, track_uri, execute):
+    playlist_id = PLAYLISTS[name]
+    if playlist_contains_uri(sp, playlist_id, track_uri):
+        print(f"- {name}: SKIP (already in playlist)")
+        return
+    if not execute:
+        print(f"- {name}: DRY RUN (would add)")
+        return
+    sp.playlist_add_items(playlist_id, [track_uri])
+    print(f"- {name}: ADDED")
+
+
+def smart_add(sp, track_input, execute, per_playlist):
     track_uri, label = get_track(sp, track_input)
     if label == track_uri:
         print("Cannot classify: track metadata lookup failed. Try again later.")
@@ -237,27 +257,28 @@ def smart_add(sp, track_input, execute):
         suffix = f" — {reason}" if reason else ""
         print(f"- {s['playlist']} — {confidence}%{suffix}")
 
-    try:
-        answer = input("\nAdd this track to these playlists? [y/N]: ").strip().lower()
-    except EOFError:
-        answer = ""
+    if per_playlist:
+        print()
+        any_accepted = False
+        for s in suggestions:
+            name = s["playlist"]
+            confidence = s.get("confidence", "?")
+            if not _prompt_yes(f"Add to '{name}' ({confidence}%)? [y/N]: "):
+                print(f"- {name}: SKIPPED (rejected)")
+                continue
+            any_accepted = True
+            _process_suggestion(sp, name, track_uri, execute)
+        if not any_accepted:
+            print("\nNo playlists accepted. No changes made.")
+        return
 
-    if answer not in ("y", "yes"):
+    if not _prompt_yes("\nAdd this track to these playlists? [y/N]: "):
         print("Cancelled. No changes made.")
         return
 
     print()
     for s in suggestions:
-        name = s["playlist"]
-        playlist_id = PLAYLISTS[name]
-        if playlist_contains_uri(sp, playlist_id, track_uri):
-            print(f"- {name}: SKIP (already in playlist)")
-            continue
-        if not execute:
-            print(f"- {name}: DRY RUN (would add)")
-            continue
-        sp.playlist_add_items(playlist_id, [track_uri])
-        print(f"- {name}: ADDED")
+        _process_suggestion(sp, s["playlist"], track_uri, execute)
 
 
 def list_target_playlists():
@@ -282,6 +303,11 @@ def main():
     smart_parser.add_argument(
         "--execute", action="store_true", help="Actually perform the change after confirmation"
     )
+    smart_parser.add_argument(
+        "--per-playlist",
+        action="store_true",
+        help="Ask y/N for each suggested playlist individually instead of one prompt for all",
+    )
 
     subparsers.add_parser("list-playlists", help="List configured target playlists")
 
@@ -296,7 +322,7 @@ def main():
     if args.command == "add":
         add_track(sp, args.track, args.playlist, args.execute)
     elif args.command == "smart-add":
-        smart_add(sp, args.track, args.execute)
+        smart_add(sp, args.track, args.execute, args.per_playlist)
 
     return 0
 

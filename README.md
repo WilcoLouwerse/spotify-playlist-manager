@@ -68,7 +68,12 @@ python playlist_manager.py smart-add "https://open.spotify.com/track/<id>"
 
 # Real run: same flow, writes to Spotify after confirmation
 python playlist_manager.py smart-add "https://open.spotify.com/track/<id>" --execute
+
+# Confirm per playlist instead of one y/N for all
+python playlist_manager.py smart-add "https://open.spotify.com/track/<id>" --execute --per-playlist
 ```
+
+`--per-playlist` asks `y/N` separately for each suggestion. Rejecting one keeps the rest of the run going. Without the flag the default is a single `y/N` that accepts all suggestions at once.
 
 Requires `OPENAI_API_KEY` in `.env`. The model defaults to `gpt-4o-mini`; override with `OPENAI_MODEL` in `.env` if you want something else.
 

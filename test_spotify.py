@@ -1,11 +1,23 @@
 """Smoke test: authenticate with Spotify and list the current user's playlists."""
 
 import os
+import socket
 import sys
 
 from dotenv import load_dotenv
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
+
+# WSL's IPv6 route to api.spotify.com is broken (connect hangs until read
+# timeout). Force IPv4 resolution so requests reliably reach Spotify.
+_orig_getaddrinfo = socket.getaddrinfo
+
+
+def _ipv4_only_getaddrinfo(*args, **kwargs):
+    return [info for info in _orig_getaddrinfo(*args, **kwargs) if info[0] == socket.AF_INET]
+
+
+socket.getaddrinfo = _ipv4_only_getaddrinfo
 
 SCOPE = " ".join(
     [
@@ -42,7 +54,9 @@ def main() -> int:
             scope=SCOPE,
             cache_path=".spotify_token_cache",
             open_browser=True,
-        )
+        ),
+        requests_timeout=30,
+        retries=5,
     )
 
     me = sp.current_user()

@@ -5,11 +5,23 @@ Default is dry-run: nothing is changed unless --execute is passed.
 
 import argparse
 import os
+import socket
 import sys
 
 from dotenv import load_dotenv
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
+
+# WSL's IPv6 route to api.spotify.com is broken (connect hangs until read
+# timeout). Force IPv4 resolution so requests reliably reach Spotify.
+_orig_getaddrinfo = socket.getaddrinfo
+
+
+def _ipv4_only_getaddrinfo(*args, **kwargs):
+    return [info for info in _orig_getaddrinfo(*args, **kwargs) if info[0] == socket.AF_INET]
+
+
+socket.getaddrinfo = _ipv4_only_getaddrinfo
 
 load_dotenv()
 
@@ -80,7 +92,9 @@ def get_spotify_client():
             scope=SCOPE,
             cache_path=".spotify_token_cache",
             open_browser=True,
-        )
+        ),
+        requests_timeout=30,
+        retries=5,
     )
 
 
@@ -110,9 +124,14 @@ def extract_track_id(track_input):
 
 def get_track(sp, track_input):
     track_id = extract_track_id(track_input)
-    track = sp.track(track_id)
-    label = f"{track['artists'][0]['name']} - {track['name']}"
-    return track["uri"], label
+    uri = f"spotify:track:{track_id}"
+    try:
+        track = sp.track(track_id)
+        label = f"{track['artists'][0]['name']} - {track['name']}"
+        return track["uri"], label
+    except Exception as exc:  # noqa: BLE001 — best-effort lookup
+        print(f"(track lookup failed: {exc.__class__.__name__}; continuing with URI only)")
+        return uri, uri
 
 
 def playlist_contains_uri(sp, playlist_id, track_uri):

@@ -48,7 +48,7 @@ You only consent once. The token is cached in `.spotify_token_cache` (also gitig
 Only required for `smart-add`. The plain `add` and `list-playlists` commands work without it.
 
 1. Open https://platform.openai.com/api-keys.
-2. Log in (or sign up) and add a payment method if you don't have one — the API is pay-as-you-go. `gpt-4o-mini` costs roughly $0.0001 per `smart-add` call.
+2. Log in (or sign up) and add a payment method if you don't have one — the API is pay-as-you-go. `gpt-4.1-mini` (the default model) costs roughly $0.0001–$0.0003 per `smart-add` call.
 3. Click **Create new secret key**.
 4. Give it a recognisable name (e.g. `wilco-playlist-manager`).
 5. Copy the key (it starts with `sk-...`) and paste it into `OPENAI_API_KEY` in `.env`. **You cannot see it again** after closing the dialog — if you lose it, revoke it on the same page and create a new one.

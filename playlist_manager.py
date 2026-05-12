@@ -199,8 +199,16 @@ def add_track(sp, track_input, playlist_name, execute):
         print("\nDRY RUN: no changes made. Add --execute to actually add the track.")
         return
 
-    sp.playlist_add_items(playlist_id, [track_uri])
-    print("\nDONE: track added.")
+    try:
+        resp = sp.playlist_add_items(playlist_id, [track_uri])
+    except spotipy.SpotifyException as exc:
+        print(f"\nFAILED: Spotify returned {exc.http_status} {exc.msg or exc.code}")
+        return
+    snapshot = (resp or {}).get("snapshot_id") if isinstance(resp, dict) else None
+    if not snapshot:
+        print(f"\nWARN: Spotify returned no snapshot_id (response={resp!r}); add may not have persisted.")
+        return
+    print(f"\nDONE: track added (snapshot {snapshot[:10]}…)")
 
 
 def validate_classification(data):
@@ -239,17 +247,41 @@ def classify_track_with_openai(track):
     client = OpenAI(api_key=api_key)
     model = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 
-    playlist_names = list(PLAYLISTS.keys())
     track_payload = {k: v for k, v in track.items() if k not in ("metadata_available", "label")}
+
+    available_playlists = {
+        "genre": [
+            "Rap", "Pop / Mainstream", "Alternative / Indie", "K-pop",
+            "Metal & Rock", "Instrumental Metal", "Jazz / Funk / Soul",
+            "House", "Techno", "Trance", "Drum & Bass", "Dubstep / Bass",
+            "Hardstyle & Hardcore", "Synthwave", "Electronic Music",
+        ],
+        "mood": ["Party", "Happy tunes", "Sad tunes", "Angry tunes", "Rustig / 'anders'"],
+        "theme": ["Funny meme", "Ket420", "Hooyah"],
+    }
 
     prompt_data = {
         "task": "Classify this Spotify track for playlist placement.",
         "track": track_payload,
-        "available_playlists": playlist_names,
+        "available_playlists": available_playlists,
         "rules": {
             "max_playlists": 5,
             "min_playlists": 1,
             "only_use_available_playlists": True,
+            "use_only_listed_names_exact_spelling": True,
+            "classification_signals": [
+                "genre", "BPM", "energy", "mood", "lyrics", "production",
+                "cultural context", "meme context", "listening scenario",
+            ],
+            "anti_shortcuts": [
+                "Do not classify based on artist name alone — a single artist can span multiple genres and moods.",
+                "Weigh track-specific signals (sound, BPM, lyrics, production) against artist tendencies.",
+                "Use multiple independent signals; if signals conflict, lower confidence rather than picking one source.",
+            ],
+            "category_balance": (
+                "Suggestions should usually combine at most one genre playlist with relevant mood "
+                "or theme playlists; do not return multiple overlapping subgenres from the genre list."
+            ),
             "special_playlists": {
                 "Funny meme": "Only for meme songs, internet classics, absurd/funny lyrics.",
                 "Ket420": "Only for stoned, psychedelic, spacey, mellow, ketamine/weed-friendly listening.",
@@ -260,7 +292,7 @@ def classify_track_with_openai(track):
                 "not clearly fit House, Techno, Trance, Drum & Bass, Dubstep / Bass, "
                 "Hardstyle & Hardcore, or Synthwave."
             ),
-            "confidence": "0-100 integer.",
+            "confidence": "0-100 integer; lower it when signals disagree or are weak.",
         },
         "required_json_schema": {
             "genres": [
@@ -414,8 +446,16 @@ def smart_add(sp, track_input, execute, per_playlist):
         if not execute:
             print(f"- {name}: DRY RUN (would add)")
             continue
-        sp.playlist_add_items(playlist_id, [track["uri"]])
-        print(f"- {name}: ADDED")
+        try:
+            resp = sp.playlist_add_items(playlist_id, [track["uri"]])
+        except spotipy.SpotifyException as exc:
+            print(f"- {name}: FAILED ({exc.http_status} {exc.msg or exc.code})")
+            continue
+        snapshot = (resp or {}).get("snapshot_id") if isinstance(resp, dict) else None
+        if not snapshot:
+            print(f"- {name}: WARN — Spotify returned no snapshot_id (response={resp!r})")
+            continue
+        print(f"- {name}: ADDED (snapshot {snapshot[:10]}…)")
 
 
 def list_target_playlists():

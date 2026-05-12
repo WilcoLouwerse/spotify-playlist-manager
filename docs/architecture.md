@@ -62,7 +62,12 @@ The redirect URI must match exactly what's configured in the Spotify Developer D
 1. Reads `OPENAI_API_KEY` (and optional `OPENAI_MODEL`, default `gpt-4.1-mini`) from env.
 2. Builds a JSON-mode chat completion with:
    - **System**: "You are a strict music classification assistant. Return only valid JSON…"
-   - **User**: a structured prompt object containing the full track metadata (artists, album, popularity, etc.), the list of `PLAYLISTS` names, and a `rules` section that includes special-meaning playlists (`Funny meme`, `Ket420`, `Hooyah`) and the `Electronic Music` catch-all.
+   - **User**: a structured prompt object containing the full track metadata (artists, album, popularity, etc.), the available playlists **grouped by category** (`genre` / `mood` / `theme`), and a `rules` section that includes:
+     - `classification_signals` — explicit checklist (genre, BPM, energy, mood, lyrics, production, cultural context, meme context, listening scenario).
+     - `anti_shortcuts` — forbids classifying on artist name alone, requires weighing multiple independent signals, and tells the model to lower confidence on conflict rather than pick a source.
+     - `category_balance` — discourages returning multiple overlapping subgenres from the genre list.
+     - `special_playlists` — semantics for `Funny meme`, `Ket420`, `Hooyah`.
+     - `electronic_music` — catch-all rule for electronic tracks that don't fit a specific subgenre.
 3. Parses the response JSON. Expected schema:
    ```json
    {

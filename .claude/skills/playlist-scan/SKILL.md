@@ -97,7 +97,7 @@ User-facing prose is **Dutch**. Keep SKILL.md, references, templates, and exampl
    - Execute via skill: "Klaar! {A} toegevoegd aan {TARGET}, {S} overgeslagen (al in playlist)."
    - Execute via user's terminal: "Commando staat klaar. Draai 'm in je terminal en typ y wanneer de prompt verschijnt."
 
-10. **Capture learnings**
+10. **Capture Learnings**
 
     If anything was non-obvious (an alias resolution surprise, a target that was the catch-all, a `--min-confidence` value that yielded too few/too many candidates), append a dated entry to `learning-candidates.md`. Promote to `learnings.md` after 3+ recurrences.
 

@@ -114,7 +114,7 @@ User-facing prose is **Dutch** (the user authored the format spec in Dutch). Kee
 
     f. **Fallback to `smart-add`.** If the user explicitly wants the project's own OpenAI-driven classifier to pick the playlists (instead of the genre analysis you just did), invoke `smart-add` instead — see `references/add-command.md`. Default is `add`; only use `smart-add` when the user asks for it.
 
-11. **Capture learnings**
+11. **Capture Learnings**
 
     If anything was non-obvious this run (a tricky classification, a source disagreement, a playlist edge case, a follow-up that revealed a missing rule, an `add` invocation that surprised the user), append a dated entry to `learning-candidates.md` under the matching section. Promote a candidate to `learnings.md` only after the same observation recurs across 3+ analyses or fixes a measured eval failure. Skip if nothing new came up.
 

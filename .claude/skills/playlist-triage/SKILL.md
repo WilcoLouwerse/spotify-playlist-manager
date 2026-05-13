@@ -101,7 +101,7 @@ Both classify every track in a source playlist with OpenAI and propose target pl
    - Execute via skill: "Klaar! {A} toegevoegd, {S} overgeslagen (al in playlist)."
    - Execute via user's terminal: "Commando staat klaar. Draai 'm in je terminal en typ y/N als de prompts verschijnen."
 
-10. **Capture learnings**
+10. **Capture Learnings**
 
     If anything was non-obvious (a CSV-path edge case, an aggressive classifier output, a tracking-log gap that caused unexpected re-adds), append a dated entry to `learning-candidates.md` under the matching section. Promote to `learnings.md` after 3+ recurrences. Skip if nothing new.
 

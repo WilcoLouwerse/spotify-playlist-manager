@@ -1,0 +1,11 @@
+{
+  "eval_id": 6,
+  "eval_name": "unknown-track-uncertainty",
+  "prompt": "een liedje dat niemand kent: 'Spook & Mr Vague - aufdemwegnach'",
+  "assertions": [
+    "Output contains the Dutch uncertainty lead-in 'Sorry, ik heb moeite om de genres voor dit nummer te vinden'",
+    "Output does NOT print the old Z/Y/X/W letter menu",
+    "Skill does NOT produce a Genres section with fabricated entries",
+    "Skill does NOT produce a Playlist match section (user has not picked an option yet)"
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "expectations": [
+    {
+      "text": "Skill does NOT call '.venv/bin/python playlist_manager.py add' on the basis of 'F'",
+      "passed": true,
+      "evidence": "no executed add command"
+    },
+    {
+      "text": "Skill does NOT invent or guess a Spotify track ID",
+      "passed": true,
+      "evidence": "no Spotify track id pattern"
+    },
+    {
+      "text": "Skill either treats 'F' as unrelated OR uses AskUserQuestion-style disambiguation rather than executing the add flow",
+      "passed": true,
+      "evidence": "disambiguation/AskUserQuestion-style language present"
+    },
+    {
+      "text": "Response is in Dutch",
+      "passed": true,
+      "evidence": "dutch token score=6/3 minimum"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "total_tool_calls": 11,
+    "errors_encountered": 0,
+    "output_chars": 993,
+    "tokens": 25313
+  },
+  "timing": {}
+}

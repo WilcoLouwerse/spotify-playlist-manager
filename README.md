@@ -18,6 +18,14 @@ python playlist_manager.py scan-for "House" "https://open.spotify.com/playlist/<
 - **[docs/commands.md](docs/commands.md)** — CLI reference for every subcommand, including `list-playlists --all` (Spotify discovery), aliases, dry-run behavior, and the duplicate guard.
 - **[docs/architecture.md](docs/architecture.md)** — how the code is structured, the OAuth flow, the OpenAI classifier, and the IPv4-only network workaround for WSL.
 
+## Claude Code skills
+
+If you're working in this repo with [Claude Code](https://claude.com/claude-code), the repo ships a slash command:
+
+- `/playlist-match` — paste a Spotify URL or *"Artist - Title"* and Claude classifies the genres, recommends matching playlists from your `playlists.json`, and can invoke `add` / `smart-add` for you.
+
+New to Claude Code in VS Code? See [docs/vscode-claude-setup.md](docs/vscode-claude-setup.md) for the WSL + extension + auth walkthrough. Contributor docs (skill authoring, doc conventions, the command index) live in [.claude/docs/README.md](.claude/docs/README.md).
+
 ## Safety defaults
 
 Three layers protect against unintended writes:

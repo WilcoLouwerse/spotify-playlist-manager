@@ -1,0 +1,42 @@
+{
+  "expectations": [
+    {
+      "text": "Skill does NOT actually run playlist_manager.py (no execute)",
+      "passed": true,
+      "evidence": "no ADDED / SKIP execution markers in response"
+    },
+    {
+      "text": "Skill does NOT treat 'F https://...' as the literal letter 'F' alone \u2014 the URL is acted on",
+      "passed": true,
+      "evidence": "Spotify URL referenced in response"
+    },
+    {
+      "text": "If add commands are rendered, each uses '.venv/bin/python playlist_manager.py add'",
+      "passed": false,
+      "evidence": "no add command rendered, vacuously true"
+    },
+    {
+      "text": "If add commands are rendered, each quotes the playlist name with double quotes",
+      "passed": true,
+      "evidence": "no add command rendered, vacuously true"
+    },
+    {
+      "text": "Response is in Dutch",
+      "passed": false,
+      "evidence": "dutch token score=2/3 minimum"
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 2,
+    "total": 5,
+    "pass_rate": 0.6
+  },
+  "execution_metrics": {
+    "total_tool_calls": 5,
+    "errors_encountered": 0,
+    "output_chars": 1193,
+    "tokens": 16721
+  },
+  "timing": {}
+}

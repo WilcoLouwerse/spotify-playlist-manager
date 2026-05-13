@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Skill Level Overview — Spotify Playlist Manager</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 2rem; background: #1e1e1e; color: #d4d4d4; }
+  h1 { color: #e0e0e0; }
+  h2 { color: #c0c0c0; margin-top: 2rem; }
+  table { border-collapse: collapse; width: 100%; margin-bottom: 2rem; }
+  th, td { border: 1px solid #444; padding: 8px 12px; text-align: left; }
+  th { background: #2d2d2d; cursor: pointer; user-select: none; position: relative; color: #e0e0e0; }
+  th:hover { background: #3a3a3a; }
+  th::after { content: ' \25B4\25BE'; font-size: 0.7em; color: #888; }
+  th.asc::after { content: ' \25B4'; color: #fff; }
+  th.desc::after { content: ' \25BE'; color: #fff; }
+  tr:nth-child(even) { background: #252525; }
+  tr:nth-child(odd) { background: #1e1e1e; }
+  tr:hover { background: #333; }
+
+  td a { color: #70a8f0; text-decoration: none; }
+  td a:hover { text-decoration: underline; }
+
+  /* Line count colours */
+  td.lines { text-align: right; font-size: 0.9em; }
+  .lines-perfect    { background: #0a2040; color: #60a8f0; }  /* ≤200 */
+  .lines-very-few { background: #0a3a1a; color: #60e070; }  /* 201–300 */
+  .lines-few      { background: #1c4a2a; color: #80d090; }  /* 301–400 */
+  .lines-medium      { background: #4a4400; color: #e0d850; }  /* 401–450 */
+  .lines-many        { background: #4a2800; color: #f09040; }  /* 451–500 */
+  .lines-very-many   { background: #5c0000; color: #ff8080; }  /* 501+ */
+
+  /* Level dots */
+  .level-dots { display: flex; gap: 3px; align-items: center; }
+  .level-dot {
+    width: 16px; height: 16px; border-radius: 50%;
+    display: inline-block; flex-shrink: 0;
+    cursor: default;
+    position: relative;
+  }
+  .level-dot.achieved   { background: #1c7a2c; box-shadow: 0 0 4px #1c7a2c88; }
+  .level-dot.gap-struct { background: transparent; border: 2px solid #c87800; box-shadow: 0 0 4px #c8780044; }
+  .level-dot.empty      { background: #3a3a3a; }
+  .level-dot.target-zone { background: #2a5090; box-shadow: 0 0 4px #2a509044; }
+  .level-dot.target-zone.gap-struct { background: #2a5090; border: 2px solid #c87800; box-shadow: 0 0 4px #c8780044; }
+
+  .level-dot[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    top: -28px; left: 50%; transform: translateX(-50%);
+    background: #444; color: #eee;
+    font-size: 0.7em; padding: 2px 5px; border-radius: 3px;
+    white-space: nowrap; pointer-events: none; z-index: 10;
+  }
+
+  /* Target level badges */
+  td.target-cell { text-align: center; white-space: nowrap; }
+  .target-badge {
+    display: inline-block;
+    padding: 2px 8px; border-radius: 10px;
+    font-weight: bold; font-size: 0.85em;
+  }
+  .tl1 { background: #2a2a2a; color: #888; }
+  .tl2 { background: #0a2050; color: #70a8f0; }
+  .tl3 { background: #073a3a; color: #50d0c0; }
+  .tl4 { background: #2a3a08; color: #a8cc40; }
+  .tl5 { background: #3a2800; color: #f0b840; }
+  .tl6 { background: #4a1800; color: #f07030; }
+  .tl7 { background: #3a0855; color: #cc60f0; }
+
+  /* Legend */
+  .legend { display: flex; gap: 3rem; flex-wrap: wrap; }
+  .legend-group { min-width: 320px; }
+  .legend-group table { width: auto; }
+  .legend-group td:first-child { min-width: 120px; text-align: center; font-weight: bold; }
+  .legend-group td { vertical-align: top; padding: 5px 10px; }
+  .legend-group td small { display: block; color: #888; font-weight: normal; margin-top: 2px; }
+
+  .legend-dot-row { display: flex; gap: 8px; align-items: flex-start; padding: 5px 0; }
+  .legend-dot { width: 14px; height: 14px; border-radius: 50%; display: inline-block; flex-shrink: 0; margin-top: 2px; }
+  .legend-dot.achieved   { background: #1c7a2c; }
+  .legend-dot.gap-struct { background: transparent; border: 2px solid #c87800; }
+  .legend-dot.empty      { background: #3a3a3a; }
+  .legend-dot.target-zone { background: #2a5090; }
+  .legend-dot-label small { display: block; color: #888; font-size: 0.85em; margin-top: 1px; }
+</style>
+</head>
+<body>
+
+<h1>Skill Level Overview — Spotify Playlist Manager</h1>
+<p style="margin-top: -0.5rem; color: #888;">Based on the <a href="https://github.com/BendeVanEllende/wordpress-docker/blob/main/.claude/docs/writing-skills.md" style="color: #70a8f0;">7-level skill maturity framework</a></p>
+
+<table id="skills">
+<thead>
+<tr>
+  <th data-col="0">Skill</th>
+  <th data-col="1">Description</th>
+  <th data-col="2">Current Level</th>
+  <th data-col="3">Target Level</th>
+  <th data-col="4">Lines</th>
+</tr>
+</thead>
+<tbody>
+<!--
+  data-maturity   = highest level where ALL criteria are fully met (1-7)
+  data-structural = highest level pattern structurally present (equals maturity if no gap)
+  data-target     = desired maximum level to reach (1-7)
+-->
+<tr data-maturity="5" data-structural="6" data-target="6" data-l5struct="1">
+  <td><a href="playlist-match/SKILL.md">playlist-match</a></td><td>Classifies a shared songs genres with confidence scores, recommends matching playlists from playlists.json, and can add the track via the projects ad…</td>
+  <td class="level-cell"></td>
+  <td class="target-cell"><span class="target-badge tl6">L6</span></td>
+  <td class="lines lines-perfect">136</td>
+</tr>
+<tr data-maturity="3" data-structural="1" data-target="3" data-l7struct="1">
+  <td><a href="skill-creator/SKILL.md">skill-creator</a></td><td>Create new skills, modify and improve existing skills, and measure skill performance. Use when users want to create a skill from scratch, edit, or op…</td>
+  <td class="level-cell"></td>
+  <td class="target-cell"><span class="target-badge tl3">L3</span></td>
+  <td class="lines lines-very-few">293</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Legend</h2>
+<div class="legend">
+  <div class="legend-group">
+    <h3>Current Level (maturity dots)</h3>
+    <div class="legend-dot-row">
+      <span class="legend-dot achieved"></span>
+      <div class="legend-dot-label">
+        <strong>Level achieved (maturity)</strong>
+        <small>All criteria for this level are fully met, including all lower levels.</small>
+      </div>
+    </div>
+    <div class="legend-dot-row">
+      <span class="legend-dot gap-struct"></span>
+      <div class="legend-dot-label">
+        <strong>Structurally present — gap exists</strong>
+        <small>Can appear at three levels: <strong>L5</strong> — <code>evals/</code> folder with 3+ scenarios exists, but full L5 maturity isn't reached yet: L3/L4 criteria may not be met, trigger tests may have fewer than 10 entries each, or evals haven't been run yet (<code>last_validated</code> is null in evals.json) (auto-detected). <strong>L6</strong> — <code>learnings.md</code> and a "Capture Learnings" step exist, but no dated entries yet (auto-detected). <strong>L7</strong> — agent-spawning or workflow-chain patterns are present, but lower levels aren't fully met (auto-detected). Multiple orange rings can appear on the same row.</small>
+      </div>
+    </div>
+    <div class="legend-dot-row">
+      <span class="legend-dot target-zone"></span>
+      <div class="legend-dot-label">
+        <strong>Target zone — not yet reached</strong>
+        <small>This level falls within the skill's target but is not yet achieved. Shows the remaining levels the skill is working towards.</small>
+      </div>
+    </div>
+    <div class="legend-dot-row">
+      <span class="legend-dot empty"></span>
+      <div class="legend-dot-label">
+        <strong>Not reached — beyond target</strong>
+        <small>Beyond the skill's target level. Not planned for this skill.</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend-group">
+    <h3>Maturity Levels</h3>
+    <table>
+      <tr>
+        <td><span class="target-badge tl1">L1</span></td>
+        <td>
+          <strong>Anatomy</strong>
+          <small>The skill has a valid SKILL.md with frontmatter (name, description, metadata), numbered self-contained steps, and explicit guardrails defining what it must never do.</small>
+        </td>
+      </tr>
+      <tr>
+        <td><span class="target-badge tl2">L2</span></td>
+        <td>
+          <strong>Triggering</strong>
+          <small>Auto-detected: SKILL.md is under 500 lines and the description field is present. Full criteria: description written in third person, front-loads key use case in 250 chars, uses specific trigger terms, and large blocks extracted to subfolders via progressive disclosure.</small>
+        </td>
+      </tr>
+      <tr>
+        <td><span class="target-badge tl3">L3</span></td>
+        <td>
+          <strong>Patterns</strong>
+          <small>Auto-detected: at least one common pattern (model guard, AskUserQuestion, quality gates, or subfolder references in SKILL.md) AND at least one supporting subfolder (examples/, references/, or templates/). Full criteria: built on proven foundations with consistent patterns and standards references.</small>
+        </td>
+      </tr>
+      <tr>
+        <td><span class="target-badge tl4">L4</span></td>
+        <td>
+          <strong>Domain</strong>
+          <small>Contains business-specific knowledge unique to this project — Spotify Web API conventions, playlist/track data shapes, project CLI commands, and domain configuration. Could not be dropped into a different project and work as-is.</small>
+        </td>
+      </tr>
+      <tr>
+        <td><span class="target-badge tl5">L5</span></td>
+        <td>
+          <strong>Measurement</strong>
+          <small>Auto-detected: 3+ eval scenarios, 10+/10+ trigger tests, <code>last_validated</code> is non-null in evals.json, and both <code>grading.json</code> and <code>timing.json</code> present under the <code>evals/</code> folder (<code>timing.json</code> proves evals were actually executed, not just simulated). Full criteria also requires: baseline measured without the skill and at least one improve cycle completed.</small>
+        </td>
+      </tr>
+      <tr>
+        <td><span class="target-badge tl6">L6</span></td>
+        <td>
+          <strong>Self-improvement</strong>
+          <small>Captures learnings during execution in a <code>learnings.md</code> file with dated, atomic entries. The skill includes a "capture learnings" step and consolidates insights back into SKILL.md guardrails and rules after ~80–100 entries.</small>
+        </td>
+      </tr>
+      <tr>
+        <td><span class="target-badge tl7">L7</span></td>
+        <td>
+          <strong>Orchestration</strong>
+          <small>Spawns and coordinates multiple sub-agents, or is part of a defined workflow chain with explicit handoff points. Uses isolated execution contexts where needed, supports parallel execution, and has autonomous operation capability for a defined scope.</small>
+        </td>
+      </tr>
+    </table>
+    <p style="margin-top: 0.5rem;"><a href="https://github.com/BendeVanEllende/wordpress-docker/blob/main/.claude/docs/writing-skills.md" style="color: #70a8f0; font-size: 0.85em;">Full level criteria in writing-skills.md</a></p>
+  </div>
+
+  <div class="legend-group">
+    <h3>Lines</h3>
+    <table>
+      <tr><td class="lines lines-perfect">≤ 200</td><td>Ideal — concise, well-extracted</td></tr>
+      <tr><td class="lines lines-very-few">201–300</td><td>Very lean</td></tr>
+      <tr><td class="lines lines-few">301–400</td><td>Lean</td></tr>
+      <tr><td class="lines lines-medium">401–450</td><td>Medium — consider extracting</td></tr>
+      <tr><td class="lines lines-many">451–500</td><td>Large — at the L2 limit</td></tr>
+      <tr><td class="lines lines-very-many">501+</td><td>Over limit — extraction needed</td></tr>
+    </table>
+  </div>
+</div>
+
+<script>
+const LEVEL_NAMES = ['', 'Anatomy', 'Triggering', 'Patterns', 'Domain', 'Measurement', 'Self-improvement', 'Orchestration'];
+
+// Render level dots for each row
+document.querySelectorAll('tr[data-maturity]').forEach(row => {
+  const maturity   = parseInt(row.dataset.maturity);
+  const target     = parseInt(row.dataset.target);
+  const l5struct   = row.dataset.l5struct === '1';
+  const l6infra    = row.dataset.l6infra === '1';
+  const l7struct   = row.dataset.l7struct === '1';
+  const cell = row.querySelector('.level-cell');
+  const wrapper = document.createElement('div');
+  wrapper.className = 'level-dots';
+
+  for (let i = 1; i <= 7; i++) {
+    const dot = document.createElement('span');
+    dot.className = 'level-dot';
+    dot.title = `L${i}: ${LEVEL_NAMES[i]}`;
+
+    if (i <= maturity) {
+      dot.classList.add('achieved');
+    } else {
+      dot.classList.add(i <= target ? 'target-zone' : 'empty');
+      if (i === 5 && l5struct && 5 > maturity) dot.classList.add('gap-struct');
+      if (i === 6 && l6infra  && 6 > maturity) dot.classList.add('gap-struct');
+      if (i === 7 && l7struct && 7 > maturity) dot.classList.add('gap-struct');
+    }
+    wrapper.appendChild(dot);
+  }
+  cell.appendChild(wrapper);
+});
+
+// Sortable columns
+const table = document.getElementById('skills');
+const headers = table.querySelectorAll('th');
+const tbody   = table.querySelector('tbody');
+let currentSort = { col: -1, asc: true };
+
+headers.forEach(th => {
+  th.addEventListener('click', () => {
+    const col = parseInt(th.dataset.col);
+    const asc = currentSort.col === col ? !currentSort.asc : true;
+    currentSort = { col, asc };
+
+    headers.forEach(h => h.classList.remove('asc', 'desc'));
+    th.classList.add(asc ? 'asc' : 'desc');
+
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    rows.sort((a, b) => {
+      let va, vb;
+
+      if (col === 2) {
+        // Green > blue > orange > lines (all descending when high-to-low)
+        const orangeCount = r => {
+          const m = parseInt(r.dataset.maturity);
+          let n = 0;
+          if (r.dataset.l5struct === '1' && 5 > m) n++;
+          if (r.dataset.l6infra  === '1' && 6 > m) n++;
+          if (r.dataset.l7struct === '1' && 7 > m) n++;
+          return n;
+        };
+        const lvl = r => {
+          const m = parseInt(r.dataset.maturity);
+          const t = parseInt(r.dataset.target);
+          const blue = Math.max(0, t - m);
+          const orange = orangeCount(r);
+          const lines = parseInt(r.cells[4].textContent.trim()) || 0;
+          return m * 100000000 + blue * 1000000 + orange * 10000 + lines;
+        };
+        va = lvl(a);
+        vb = lvl(b);
+      } else if (col === 3) {
+        va = parseInt(a.dataset.target);
+        vb = parseInt(b.dataset.target);
+      } else if (col === 4) {
+        va = parseInt(a.cells[col].textContent.trim()) || 0;
+        vb = parseInt(b.cells[col].textContent.trim()) || 0;
+      } else {
+        va = a.cells[col].textContent.trim();
+        vb = b.cells[col].textContent.trim();
+      }
+
+      if (typeof va === 'number' && typeof vb === 'number') {
+        return asc ? va - vb : vb - va;
+      }
+      return asc ? va.toString().localeCompare(vb.toString(), 'en') : vb.toString().localeCompare(va.toString(), 'en');
+    });
+
+    rows.forEach(row => tbody.appendChild(row));
+  });
+});
+
+// Default sort: Current Level, high to low
+headers[2].click();
+headers[2].click();
+</script>
+
+<h2>Updating</h2>
+<p>Run <code>bash <a href="update-skill-overview.sh" style="color: #70a8f0;">update-skill-overview.sh</a></code> to auto-update:</p>
+<ul style="color: #b0b0b0;">
+  <li>Maturity levels (L1, L2, L3, L5, L6, L7 auto-detected from SKILL.md)</li>
+  <li>Line counts and color classes</li>
+  <li>L5/L6/L7 struct flags (orange ring detection)</li>
+  <li>Skill descriptions (synced from SKILL.md frontmatter, truncated at 150 chars)</li>
+  <li>Skill name links (new rows link to SKILL.md)</li>
+  <li>New skill rows (auto-added when a new skill directory is detected)</li>
+  <li>Orphan detection (warns when a row's skill directory no longer exists)</li>
+</ul>
+<p style="color: #888;"><strong>Requires human judgment</strong> (the script flags mismatches, but can't verify quality):</p>
+<ul style="color: #888;">
+  <li><strong>L4 (Domain Knowledge)</strong> — never auto-set or auto-removed. The script prominently asks for your input when L4 blocks higher maturity. Requires verifying that business-specific references, templates, and architecture knowledge are present.</li>
+  <li><strong>L3 quality</strong> — the script detects examples/ and references/ folders + common patterns, but can't verify the quality of examples or whether patterns are applied correctly.</li>
+  <li><strong>L5 baseline</strong> — the script checks for 3+ eval scenarios, 10+/10+ trigger tests, and <code>last_validated</code> non-null in evals.json. It cannot verify if evals were actually executed against a true baseline.</li>
+  <li><strong>Target level</strong> — a product decision about where the skill should be headed.</li>
+</ul>
+
+</body>
+</html>

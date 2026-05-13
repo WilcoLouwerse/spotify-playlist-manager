@@ -164,6 +164,8 @@ Two paths:
 
 ## Local Python environment
 
+> Developing this repo from VS Code + Claude Code on Windows? Run through [vscode-claude-setup.md](vscode-claude-setup.md) first (WSL, the Claude Code extension, auth), then come back here for the Python venv.
+
 Once `.env` is filled in, set up the runtime once:
 
 ```bash

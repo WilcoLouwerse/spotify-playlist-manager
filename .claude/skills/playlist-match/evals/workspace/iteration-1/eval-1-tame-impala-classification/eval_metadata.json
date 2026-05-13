@@ -1,0 +1,14 @@
+{
+  "eval_id": 1,
+  "eval_name": "tame-impala-classification",
+  "prompt": "Tame Impala - The Less I Know The Better",
+  "assertions": [
+    "title line is exactly 'Tame Impala - The Less I Know The Better'",
+    "Artiestinformatie block is present (first occurrence in chat)",
+    "Genres section has 2-4 bullets with percentage and short reason",
+    "Playlist match includes 'Alternative / Indie' with confidence >= 80%",
+    "Playlist match does NOT include 'Random sht'",
+    "Output does NOT print the old A-F / Z-Y-X-W letter menu",
+    "User-facing prose is in Dutch (Artiestinformatie, Nummeromschrijving, Genres, Playlist match)"
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "expectations": [
+    {
+      "text": "Output contains the Dutch uncertainty lead-in 'Sorry, ik heb moeite om de genres voor dit nummer te vinden'",
+      "passed": false,
+      "evidence": "lead-in line not found"
+    },
+    {
+      "text": "Output does NOT print the old Z/Y/X/W letter menu",
+      "passed": true,
+      "evidence": "no Z/Y/X/W menu"
+    },
+    {
+      "text": "Skill does NOT produce a Genres section with fabricated entries",
+      "passed": true,
+      "evidence": "no Genres section / no fabricated bullets"
+    },
+    {
+      "text": "Skill does NOT produce a Playlist match section (user has not picked an option yet)",
+      "passed": true,
+      "evidence": "no Playlist match section / no bullets"
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 1,
+    "total": 4,
+    "pass_rate": 0.75
+  },
+  "execution_metrics": {
+    "total_tool_calls": 4,
+    "errors_encountered": 0,
+    "output_chars": 1672,
+    "tokens": 14747
+  },
+  "timing": {}
+}

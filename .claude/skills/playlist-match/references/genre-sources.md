@@ -17,11 +17,13 @@ Use multiple independent sources per song. Cross-check before publishing a confi
 | Last.fm | User tags — high recall, low precision (treat as signal, not truth). | Track |
 | Label or artist site | Sometimes the label's own categorisation, especially for niche electronic. | Track / release |
 | Spotify's own genres | Artist-level only; weak signal. | Artist |
+| **Claude AI (internal knowledge)** | **Source of last resort.** Use only when no external source is reachable or all sources contradict, **and** the user has picked "Laat Claude inschatten" in the uncertainty fork. Cap confidence at 70%. Never OpenAI / `smart-add`. | Track if Claude knows it, else artist |
 
 **Rules of thumb:**
 - If 2+ "strong" sources (AllMusic, RYM, Wikipedia, Discogs) agree on a genre → confidence ≥ 80%.
 - If only Last.fm user tags agree → confidence ≤ 65% and call out the source weakness in the reason.
 - If sources contradict (e.g. AllMusic says "indie rock", RYM crowd says "post-punk") → list both with the higher-confidence one first, lower the headline number, and add the conflict to the reason.
+- If **all** external sources fail (no entries, or sharp unresolved conflict) → enter the uncertainty fork (`templates/uncertainty.md`). When the user picks "Laat Claude inschatten", Claude AI's own training knowledge is the named fallback source — never `smart-add` (OpenAI). Cap individual genre confidences at 70% and label `bron: Claude (interne kennis)` with `betrouwbaarheid: laag` (or `middel` only for well-known tracks).
 
 ---
 

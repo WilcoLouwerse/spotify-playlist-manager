@@ -19,27 +19,27 @@ Sorry, ik heb moeite om de genres voor dit nummer te vinden. AllMusic en Wikiped
 Then the skill calls **AskUserQuestion**:
 
 > "Hoe wil je dat ik hiermee verder ga?"
+> - **Laat Claude inschatten** — Claude AI doet een best-effort schatting op basis van interne kennis, met expliciete betrouwbaarheidscaveats. Geen OpenAI / smart-add.
 > - **Schat op basis van artiest** — Gebruik artiestbrede tags / reputatie als bron, scope = artiestgebaseerd.
 > - **Minder betrouwbare bron** — Vertrouw op Last.fm tags, SoundCloud-tag of vergelijkbare losse signalen.
-> - **Combineer beide** — Artiestbron én minder-betrouwbare bron samen wegen.
 > - **Sla genres over** — Alleen playlist matching, geen harde genreclaim.
 
 Stop. Wait for the user.
 
 ---
 
-## Step 2 — user picks "Combineer beide"
+## Step 2 — user picks "Laat Claude inschatten"
 
-Response (note the per-genre fields required by `references/output-rules.md`):
+Claude AI is the named fallback source — **not** OpenAI / `smart-add`. Genre confidences are capped at 70% and every row labels `bron: Claude (interne kennis)`.
 
 ```
-Oké! Op basis van je keuze ('Combineer beide') zou ik zeggen dat dit nummer de volgende genres en playlist matches heeft:
+Oké! Op basis van je keuze ('Laat Claude inschatten') doe ik een best-effort schatting op basis van mijn eigen kennis. Let op: dit is een AI-only inschatting, niet gestaafd door externe bronnen — neem de percentages met een korreltje zout.
 
 Genres:
-- Future Bass — 62% — chopped vocal samples, supersaw stabs, snare-roll buildups (bron: Last.fm + soundcloud genre-tag, betrouwbaarheid: middel, scope: nummerspecifiek)
-- Chillwave — 55% — dromerige synthtexturen, mid-tempo, lo-fi-productie (bron: Last.fm tags + artiestbreed, betrouwbaarheid: laag, scope: artiestgebaseerd)
-- Alternative R&B — 48% — vocal-driven, gevoelig songschrijven, hybride met electronica (bron: Last.fm + artiestbreed, betrouwbaarheid: laag, scope: artiestgebaseerd)
-  Tegenstrijdigheid: bronnen zijn het niet eens — geen consensus tussen Last.fm tags en SoundCloud-tag.
+- Future Bass — 65% — chopped vocal samples, supersaw stabs, snare-roll buildups passen bij Galimatias' bekende sound (bron: Claude (interne kennis), betrouwbaarheid: middel, scope: nummerspecifiek)
+- Alternative R&B — 55% — vocaal-gedreven, hybride met electronica, past bij het bredere oeuvre (bron: Claude (interne kennis), betrouwbaarheid: laag, scope: artiestgebaseerd)
+- Chillwave — 45% — dromerige synthtexturen en lo-fi-productie, maar minder eenduidig (bron: Claude (interne kennis), betrouwbaarheid: laag, scope: artiestgebaseerd)
+  Caveat: alleen interne kennis als bron — geen cross-check tegen AllMusic / RYM / Wikipedia.
 
 Playlist matches:
 - Electronic Music — 78% — past in de elektronische umbrella, ongeacht welke micro-genre wint

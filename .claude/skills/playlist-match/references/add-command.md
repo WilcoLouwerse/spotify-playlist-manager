@@ -4,19 +4,17 @@ When the user picks **Voeg toe aan playlists** in the follow-up `AskUserQuestion
 
 ---
 
-## Which command — `add` vs `smart-add`
+## Which command — only `add`
 
-Default: **`add`** (one track, one playlist, no classifier).
+This skill always uses **`add`** (one track, one playlist, no Python-side classifier). Claude AI is the classifier — steps 5–6 of `SKILL.md` produce a multi-source classification, and step 10 loops `add` once per playlist the user picked.
 
-The skill has already produced a multi-source classification more rigorous than `smart-add`'s single OpenAI call. Re-running `smart-add` would discard your work and ask OpenAI to redo it. Use `add` once per chosen playlist instead.
+The project's `smart-add` and `analyze-only` commands call OpenAI to pick playlists. **This skill never invokes them.** If the user asks for "the classifier", "AI-picked playlists", or "use smart-add", re-do Claude AI's classification with whatever framing they want (stricter confidence band, different scope, etc.) and then loop `add` over the picks — never shell out to OpenAI.
 
-Use `smart-add` **only** if the user explicitly says: "let the project's classifier decide", "use smart-add", or similar. Don't substitute it on your own initiative.
-
-| Command | Picks playlists? | Confirmation | When the skill uses it |
-|---------|------------------|--------------|------------------------|
-| `add` | No — you pass the playlist name | None — writes immediately under `--execute` | Default. Loop once per playlist the user chose. |
-| `smart-add` | Yes — OpenAI picks | Interactive per-playlist y/N (or single bulk y/N with `--accept-all`) | Only when the user explicitly asks for it. |
-| `analyze-only` | Yes — classify only | None — no writes | Don't use from this skill; we did our own classification already. |
+| Command | Picks playlists? | This skill | Why |
+|---------|------------------|------------|-----|
+| `add` | No — you pass the playlist name | **Yes — only command used.** Loop once per playlist the user chose. | Claude AI already classified; `add` just executes the write. |
+| `smart-add` | Yes — OpenAI picks | **Never.** | Claude AI replaces the OpenAI classifier; re-do the analysis instead. |
+| `analyze-only` | Yes — OpenAI classifies, no write | **Never.** | Same reason — Claude AI is the classifier. |
 
 ---
 
@@ -91,22 +89,19 @@ The duplicate guard caught it. Surface the message to the user as-is; don't retr
 
 ---
 
-## When `smart-add` is the right call
+## When the user asks for "the classifier" / "smart-add" / "let AI pick"
 
-Only when the user explicitly opts in. Then:
+The skill **does not** call `smart-add` (OpenAI). Instead, Claude AI is the classifier — and a more thorough one (multiple independent sources vs. one OpenAI call). When the user asks for a classifier-driven flow, do this:
 
-```bash
-# Dry-run, per-playlist confirmation
-.venv/bin/python playlist_manager.py smart-add "<track>"
+1. Acknowledge briefly in Dutch — e.g. "Ik ben hier zelf de classifier; ik doe een verse analyse met de framing die je wil."
+2. Ask via **AskUserQuestion** what framing to use, so the user can steer the re-analysis:
+   - **Strenger** — alleen playlists boven een hogere drempel (bv. ≥ 80%).
+   - **Breder** — lagere drempel, meer kandidaten (bv. ≥ 50%).
+   - **Beperkt tot een categorie** — alleen genre / mood / theme.
+   - **Standaard opnieuw** — zelfde sweep, andere bron-weging.
+3. Re-run steps 5–6 with that framing, render the playlist match block, and loop step 10's `add` calls over the picks the user selects.
 
-# Execute, single bulk y/N
-.venv/bin/python playlist_manager.py smart-add "<track>" --execute --accept-all
-
-# Filter the classifier's output
-.venv/bin/python playlist_manager.py smart-add "<track>" --max-playlists 3 --min-confidence 75
-```
-
-The script handles its own y/N prompts on stdin. The skill should explain that the user will see interactive prompts in their terminal, and step back rather than scripting answers.
+Do **not** invoke `smart-add`, `analyze-only`, or any other OpenAI-driven command. The `add` command is the only Python entry point this skill uses.
 
 ---
 

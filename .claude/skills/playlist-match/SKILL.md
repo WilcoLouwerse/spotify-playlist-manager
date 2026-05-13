@@ -112,7 +112,7 @@ User-facing prose is **Dutch** (the user authored the format spec in Dutch). Kee
 
     e. **Run** each command via **Bash** sequentially. Report the script's output back to the user verbatim — it tells them `ADD` or `SKIP (already in playlist)`. Do not paraphrase the script's own messages.
 
-    f. **Fallback to `smart-add`.** If the user explicitly wants the project's own OpenAI-driven classifier to pick the playlists (instead of the genre analysis you just did), invoke `smart-add` instead — see `references/add-command.md`. Default is `add`; only use `smart-add` when the user asks for it.
+    f. **No `smart-add` fallback — Claude AI is the classifier.** The project's `smart-add` command calls OpenAI to pick playlists. This skill does **not** invoke it. Claude AI already classified the song in steps 5–6 with multi-source analysis that is more rigorous than `smart-add`'s single OpenAI call. If the user says "let the classifier decide", "use smart-add", or "let AI pick the playlists", explain that Claude AI is the classifier here and re-do the analysis with whatever framing they want (different sources, stricter confidence band, only electronic subgenres, broader sweep, etc.) — then loop step 10's `add` calls over the resulting picks. Never shell out to `smart-add` (or any OpenAI-driven command) from this skill.
 
 11. **Capture Learnings**
 
@@ -126,7 +126,8 @@ User-facing prose is **Dutch** (the user authored the format spec in Dutch). Kee
 - **Never** recommend `Random sht`. It is the script-side fallback under `playlists.json -> catch_all` and must not appear in user-facing output.
 - **Never** recommend a playlist that is not currently present in `playlists.json -> categories`. Read the file each run; user edits are authoritative.
 - **Never** print the internal step numbers (1./2./3./...) from the templates in user-facing output. They are an authoring scaffold only.
-- **Never** invoke `playlist_manager.py add` (or `smart-add`) without explicit user confirmation in the same turn — call **AskUserQuestion** to confirm before running any python script.
+- **Never** invoke `playlist_manager.py add` without explicit user confirmation in the same turn — call **AskUserQuestion** to confirm before running any python script.
+- **Never** invoke `smart-add` (or any other OpenAI-driven Python command) from this skill. Claude AI is the classifier; only the `add` command is run here. If the user asks for "the classifier" or "AI-picked playlists", do the classification yourself and loop `add` over the picks.
 - **Never** invent or guess a Spotify track ID. If the user only gave you `Artist - Title`, ask for a URL via **AskUserQuestion** before invoking `add`.
 - **Never** invoke `add` for a playlist that was not in the list you recommended in step 6 — unless the user explicitly typed a different one.
 - **Never** print the old letter-shortcut menu (A-F / Z/Y/X/W / ?). All follow-ups go through **AskUserQuestion**.

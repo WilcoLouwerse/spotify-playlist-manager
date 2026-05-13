@@ -33,9 +33,9 @@ Sorry, ik heb moeite om de genres voor dit nummer te vinden. [korte uitleg waaro
 ```
 
 Then call **AskUserQuestion** with the four uncertainty options from `templates/uncertainty.md`:
+- "Laat Claude inschatten" — primary Claude-AI fallback (best-effort estimate from internal knowledge, confidence capped at 70%). **Never** OpenAI / `smart-add`.
 - "Schat op basis van artiest"
 - "Minder betrouwbare bron"
-- "Combineer beide"
 - "Sla genres over"
 
 Do not print the option list as chat text — the user picks via the UI prompt. Wait for the user's reply before continuing.
@@ -62,6 +62,8 @@ Then call **AskUserQuestion** again (per `templates/followup.md`) so the user ca
 For each genre entry, **always include**: confidence %, source, reliability level, scope (track-specific or artist-based), and any source disagreement noted in `references/genre-sources.md`.
 
 The "Sla genres over" option is special: skip the Genres section entirely and only render Playlist matches with a one-line note that no hard genre claim was made.
+
+The "Laat Claude inschatten" option is special too: use `bron: Claude (interne kennis)`, `betrouwbaarheid: laag` (default) or `middel` (well-known tracks only), and **cap individual genre confidences at 70%** — Claude's internal knowledge is not a cross-checked source. Add a one-line caveat noting the analysis is AI-only, not corroborated. Never substitute OpenAI / `smart-add` for this path. See `templates/uncertainty.md → "Laat Claude inschatten" — specific response shape`.
 
 ---
 

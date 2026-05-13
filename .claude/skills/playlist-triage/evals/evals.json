@@ -2,9 +2,9 @@
   "skill_name": "playlist-triage",
   "version": "1.0.0",
   "created": "2026-05-13",
-  "last_validated": null,
-  "baseline_score": null,
-  "notes": "Scaffold for L5 evals. Run via the skill-creator workflow (parallel subagents with_skill vs baseline) to populate iteration-1 with grading.json + timing.json, then set last_validated and baseline_score.",
+  "last_validated": "2026-05-13",
+  "baseline_score": 0.2,
+  "notes": "Iteration-1 ran 2026-05-13: eval-1 executed with_skill (5/5 = 100%) vs baseline (1/5 = 20%, +0.8 delta — the skill's workflow-pick + venv-routing + terminal-handoff guidance are real value-adds over a generic baseline). Evals 2-5 are scaffolded and pending future iterations. See evals/grading.json and evals/workspace/iteration-1/.",
   "evals": [
     {
       "id": 1,

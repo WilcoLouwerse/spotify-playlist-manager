@@ -1,0 +1,74 @@
+Example output shapes the skill must parse.
+
+================================================================
+1. `list-playlists --all` against a populated playlists.json
+================================================================
+
+$ .venv/bin/python playlist_manager.py list-playlists --all
+
+Writable playlists on your Spotify account: 47 (3 tracked, 44 untracked)
+
+Already tracked in playlists.json:
+  "House": "0BEX4bI5xtkEVA4BfYTKg2"
+  "Techno": "7lRL294p8uvOOXTxNPIBhn"
+  "Drum & Bass": "0jECuEhrsvUJCkVy9fmGmN"
+
+Untracked (paste any of these into playlists.json -> "playlists"):
+  "Coffee Shop": "1def2345678901bcdefghi",
+  "My Workout Mix": "7abc1234567890abcdefgh",
+  "Roadtrip 2026": "5xyz0987654321abcdefgh",
+  ...
+
+Parsing notes:
+- Tracked block uses `"<Name>": "<id>"` with no trailing comma.
+- Untracked block uses `"<Name>": "<id>",` WITH trailing comma (so users can paste a range).
+- Both blocks are 2-space-indented under their header.
+- IDs are always 22 chars, base62 (alphanumeric, mixed case).
+- Names may contain spaces, `/`, `&`, `'`, and accented characters. Quote them verbatim.
+
+
+================================================================
+2. `list-playlists --all` with NO playlists.json
+================================================================
+
+$ .venv/bin/python playlist_manager.py list-playlists --all
+
+No 'playlists.json' yet — showing all writable playlists from your Spotify account.
+Copy entries below into 'playlists.json' under "playlists". See 'playlists.example.json' for the full schema.
+
+Writable playlists on your Spotify account: 47 (0 tracked, 47 untracked)
+
+Untracked (paste any of these into playlists.json -> "playlists"):
+  "Coffee Shop": "1def2345678901bcdefghi",
+  "House": "0BEX4bI5xtkEVA4BfYTKg2",
+  ...
+
+This is sub-flow B's trigger condition. The skill seeds from playlists.example.json
+and writes a fresh playlists.json with the user's picks plugged into "playlists".
+
+
+================================================================
+3. `list-playlists` (no --all)
+================================================================
+
+$ .venv/bin/python playlist_manager.py list-playlists
+- Rap
+- Pop / Mainstream
+- House
+- Techno
+...
+
+Just a flat list of the keys under "playlists" in the local config. No IDs, no Spotify API call.
+This is sub-flow A — purely informational. Surface verbatim.
+
+
+================================================================
+4. Error: stale OAuth token
+================================================================
+
+$ .venv/bin/python playlist_manager.py list-playlists --all
+spotipy.exceptions.SpotifyOauthError: ...
+
+Don't try to recover automatically. Surface the error, tell the user to re-auth
+(typically `rm -f .cache && .venv/bin/python tests/test_spotify.py` to trigger
+the browser flow), and stop.

@@ -1,0 +1,89 @@
+{
+  "skill_name": "playlist-triage",
+  "schema_version": "1.0.0",
+  "notes": "Iteration-1 ran 2026-05-13: 1 eval (eval-1) executed with_skill + baseline via parallel subagents. Remaining evals 2-5 are scaffolded in evals.json and pending in future iterations.",
+  "runs": [
+    {
+      "date": "2026-05-13",
+      "method": "parallel subagents (with_skill vs baseline) graded against assertions in evals.json",
+      "eval_id": 1,
+      "config": "with_skill",
+      "score": 1.0,
+      "assertions": [
+        {
+          "text": "Skill picks the review-playlist command (not bulk-playlist)",
+          "passed": true,
+          "evidence": "Output: 'dat mapt op review-playlist (per-track y/N/s/q)'."
+        },
+        {
+          "text": "Default mode is dry-run, with execute offered as an explicit second choice",
+          "passed": true,
+          "evidence": "Output starts with dry-run, separately offers --execute as a 'echte run' follow-up."
+        },
+        {
+          "text": "Planned command uses '.venv/bin/python playlist_manager.py review-playlist'",
+          "passed": true,
+          "evidence": "Code block: `.venv/bin/python playlist_manager.py review-playlist \"https://...\"`"
+        },
+        {
+          "text": "Source URL is double-quoted in the rendered command",
+          "passed": true,
+          "evidence": "URL is wrapped in double quotes."
+        },
+        {
+          "text": "Skill explicitly explains that --execute requires per-track y/N from the user's terminal",
+          "passed": true,
+          "evidence": "'Voor de echte run (--execute) kan ik de per-track y/N/s/q prompts niet vanuit chat beantwoorden. Dan krijg je het commando ... en draai je 'm zelf in je terminal.'"
+        }
+      ]
+    },
+    {
+      "date": "2026-05-13",
+      "method": "parallel subagents (with_skill vs baseline) graded against assertions in evals.json",
+      "eval_id": 1,
+      "config": "without_skill",
+      "score": 0.2,
+      "assertions": [
+        {
+          "text": "Skill picks the review-playlist command (not bulk-playlist)",
+          "passed": false,
+          "evidence": "Baseline offered three options (review-playlist, bulk-playlist, scan-for) without picking based on the user's 'reviewen' phrasing."
+        },
+        {
+          "text": "Default mode is dry-run, with execute offered as an explicit second choice",
+          "passed": false,
+          "evidence": "Baseline shows dry-run and --execute side-by-side without flagging dry-run as the safe default."
+        },
+        {
+          "text": "Planned command uses '.venv/bin/python playlist_manager.py review-playlist'",
+          "passed": false,
+          "evidence": "Baseline uses bare `python` — venv routing requirement not surfaced."
+        },
+        {
+          "text": "Source URL is double-quoted in the rendered command",
+          "passed": true,
+          "evidence": "URL is quoted in all variants."
+        },
+        {
+          "text": "Skill explicitly explains that --execute requires per-track y/N from the user's terminal",
+          "passed": false,
+          "evidence": "Baseline does not mention the per-track stdin limitation; suggests --execute as if it's a chat-runnable variant."
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "date": "2026-05-13",
+    "iteration": 1,
+    "eval_count": 1,
+    "evals_run": [1],
+    "evals_pending": [2, 3, 4, 5],
+    "pass_threshold": 0.8,
+    "with_skill_pass_rate": 1.0,
+    "without_skill_pass_rate": 0.2,
+    "delta": 0.8,
+    "passing_evals": 1,
+    "below_threshold": [],
+    "improve_cycle_next": "Strong skill value-add on eval-1 (+0.8). Expand iteration-2 to evals 2-5 to verify the bulk/review workflow split, ambiguous-phrase routing, and cross-skill handoff hold up equally well."
+  }
+}

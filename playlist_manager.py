@@ -4,6 +4,7 @@ Default is dry-run: nothing is changed unless --execute is passed.
 """
 
 import argparse
+import csv
 import json
 import os
 import re
@@ -36,53 +37,93 @@ SCOPE = (
     "user-read-private"
 )
 
-PLAYLISTS = {
-    "Rap": "0IKLWWkZTJ0zk9mX8BatJC",
-    "Pop / Mainstream": "6Z28iv4DlEyMYytBb8bjKd",
-    "Alternative / Indie": "4cXn8rebxCzVvsK0XxYU8S",
-    "K-pop": "4RXXB8PxXK7Jm3Ysoi4EiC",
-    "Metal & Rock": "22jVRahS7rhanx3pmIwWCD",
-    "Instrumental Metal": "2imtHkNm6dZIj8xc0i2n2F",
-    "Jazz / Funk / Soul": "64VfxKOeVr1noBgNPqZCWQ",
-    "House": "0BEX4bI5xtkEVA4BfYTKg2",
-    "Techno": "7lRL294p8uvOOXTxNPIBhn",
-    "Trance": "3eh9PL5diEtYoxxAmIUh38",
-    "Drum & Bass": "0jECuEhrsvUJCkVy9fmGmN",
-    "Dubstep / Bass": "4kxvCA0xRslKisr9kA5y2y",
-    "Hardstyle & Hardcore": "3jGm3qv2QQXmB6lxrgdDoR",
-    "Synthwave": "5BFG9XBUWoYfPek8CcL3ea",
-    "Electronic Music": "3Y6OleDjCBkDtjlQC1JC4S",
-    "Party": "5UxXh0fjJzKCLY8DMNzWy5",
-    "Happy tunes": "3nupbERYJs4woq5dOAFUCj",
-    "Sad tunes": "5FLVYNGAqBLmrhFoD3ItbV",
-    "Angry tunes": "6n9atJab6utXK1SRHoixSp",
-    "Rustig / 'anders'": "1ALotvr2UUPqWUHKTmEQdp",
-    "Funny meme": "3ks35C34IFNPhW3Clw9zym",
-    "Ket420": "3viX7Yo3jzYVZ4a6WMIR3S",
-    "Hooyah": "2e4z5WbyQEsZ6I4YXkd5Np",
-}
+CONFIG_PATH = "playlists.json"
+EXAMPLE_CONFIG_PATH = "playlists.example.json"
+_SPOTIFY_ID_RE = re.compile(r"[A-Za-z0-9]{22}")
+_config_cache = None
 
-ALIASES = {
-    "electronic music": "Electronic Music",
-    "edm": "Electronic Music",
-    "dnb": "Drum & Bass",
-    "drum and bass": "Drum & Bass",
-    "dubstep": "Dubstep / Bass",
-    "bass": "Dubstep / Bass",
-    "hardcore": "Hardstyle & Hardcore",
-    "hardstyle": "Hardstyle & Hardcore",
-    "indie": "Alternative / Indie",
-    "alternative": "Alternative / Indie",
-    "pop": "Pop / Mainstream",
-    "jazz": "Jazz / Funk / Soul",
-    "funk": "Jazz / Funk / Soul",
-    "soul": "Jazz / Funk / Soul",
-    "rock": "Metal & Rock",
-    "metal": "Metal & Rock",
-    "calm": "Rustig / 'anders'",
-    "chill": "Rustig / 'anders'",
-    "meme": "Funny meme",
-}
+
+def load_config(required=True):
+    global _config_cache
+    if _config_cache is not None:
+        return _config_cache
+    try:
+        with open(CONFIG_PATH) as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        if not required:
+            return None
+        print(
+            f"Config file '{CONFIG_PATH}' not found.\n"
+            f"Copy '{EXAMPLE_CONFIG_PATH}' to '{CONFIG_PATH}' and edit it for your own playlists.\n"
+            f"See docs/setup.md for the full walkthrough."
+        )
+        sys.exit(1)
+    except json.JSONDecodeError as exc:
+        print(f"Config file '{CONFIG_PATH}' is not valid JSON: {exc}")
+        sys.exit(1)
+
+    try:
+        _validate_config(data)
+    except ValueError as exc:
+        print(f"Config file '{CONFIG_PATH}' is invalid: {exc}")
+        sys.exit(1)
+
+    data.setdefault("aliases", {})
+    data.setdefault("categories", {})
+    data.setdefault("special_rules", {})
+    _config_cache = data
+    return data
+
+
+def _validate_config(data):
+    if not isinstance(data, dict):
+        raise ValueError("must be a JSON object")
+
+    playlists = data.get("playlists")
+    if not isinstance(playlists, dict) or not playlists:
+        raise ValueError("'playlists' must be a non-empty object of name -> Spotify ID")
+    for name, pid in playlists.items():
+        if not isinstance(pid, str) or not _SPOTIFY_ID_RE.fullmatch(pid):
+            raise ValueError(f"playlist ID for '{name}' is not a 22-char Spotify ID: {pid!r}")
+
+    aliases = data.get("aliases", {})
+    if not isinstance(aliases, dict):
+        raise ValueError("'aliases' must be an object")
+    for alias, target in aliases.items():
+        if target not in playlists:
+            raise ValueError(f"alias '{alias}' -> '{target}' does not match any playlist")
+
+    categories = data.get("categories", {})
+    if not isinstance(categories, dict):
+        raise ValueError("'categories' must be an object of category -> [playlist names]")
+    for cat, names in categories.items():
+        if not isinstance(names, list):
+            raise ValueError(f"category '{cat}' must be a list of playlist names")
+        for n in names:
+            if n not in playlists:
+                raise ValueError(f"category '{cat}' references unknown playlist: {n}")
+
+    special_rules = data.get("special_rules", {})
+    if not isinstance(special_rules, dict):
+        raise ValueError("'special_rules' must be an object of playlist -> rule string")
+    for name in special_rules:
+        if name not in playlists:
+            raise ValueError(f"special_rules references unknown playlist: {name}")
+
+    catch_all = data.get("catch_all")
+    if catch_all is not None:
+        if not isinstance(catch_all, dict):
+            raise ValueError("'catch_all' must be an object")
+        if catch_all.get("playlist") not in playlists:
+            raise ValueError(
+                f"catch_all.playlist '{catch_all.get('playlist')}' must match a key in 'playlists'"
+            )
+        threshold = catch_all.get("threshold", 85)
+        if not isinstance(threshold, int) or not 0 <= threshold <= 100:
+            raise ValueError(f"catch_all.threshold must be an int 0-100, got {threshold!r}")
+        if "rule" in catch_all and not isinstance(catch_all["rule"], str):
+            raise ValueError("catch_all.rule must be a string when present")
 
 
 def get_spotify_client():
@@ -101,14 +142,18 @@ def get_spotify_client():
 
 
 def normalize_playlist_name(name):
-    if name in PLAYLISTS:
+    config = load_config()
+    playlists = config["playlists"]
+    aliases = config["aliases"]
+
+    if name in playlists:
         return name
 
     key = name.strip().lower()
-    if key in ALIASES:
-        return ALIASES[key]
+    if key in aliases:
+        return aliases[key]
 
-    matches = [p for p in PLAYLISTS if p.lower() == key]
+    matches = [p for p in playlists if p.lower() == key]
     if matches:
         return matches[0]
 
@@ -122,6 +167,15 @@ def extract_track_id(track_input):
     if track_input.startswith("spotify:track:"):
         return track_input.split(":")[-1]
     return track_input
+
+
+def extract_playlist_id(playlist_input):
+    if "open.spotify.com/playlist/" in playlist_input:
+        part = playlist_input.split("open.spotify.com/playlist/")[1]
+        return part.split("?")[0].split("/")[0]
+    if playlist_input.startswith("spotify:playlist:"):
+        return playlist_input.split(":")[-1]
+    return playlist_input
 
 
 def get_track(sp, track_input):
@@ -192,15 +246,15 @@ def log_successful_add(playlist_id, track_uri):
 
 
 def playlist_contains_uri(sp, playlist_id, track_uri):
-    # First check the local log — Spotify's development-tier API strips
-    # track URIs from playlist_items responses (Nov 2024 restrictions),
-    # so we cannot rely on it alone.
+    # The local log is authoritative for everything the script has added
+    # and everything seeded via log-import. The Spotify API in this app's
+    # tier returns playlist_items with empty track URIs, so it cannot be
+    # the primary source of truth.
     log = _load_adds_log()
     if track_uri in log.get(playlist_id, []):
         return True
 
-    # Best-effort Spotify check. Will only catch items added before the
-    # log existed if the API returns real URIs (Extended Quota Mode).
+    # Best-effort Spotify check as a secondary signal.
     results = sp.playlist_items(
         playlist_id,
         fields="items(track(uri)),next",
@@ -233,7 +287,7 @@ def playlist_contains_uri(sp, playlist_id, track_uri):
 
 def add_track(sp, track_input, playlist_name, execute):
     canonical_name = normalize_playlist_name(playlist_name)
-    playlist_id = PLAYLISTS[canonical_name]
+    playlist_id = load_config()["playlists"][canonical_name]
     track = get_track(sp, track_input)
     track_uri = track["uri"]
 
@@ -269,19 +323,18 @@ def validate_classification(data):
     matches = data.get("playlist_matches")
     if not isinstance(matches, list) or not matches:
         raise ValueError("playlist_matches must be a non-empty list")
-    if len(matches) > 5:
-        raise ValueError(f"too many playlist matches: {len(matches)}")
 
+    playlists = load_config()["playlists"]
     for match in matches:
         playlist = match.get("playlist")
         confidence = match.get("confidence")
-        if playlist not in PLAYLISTS:
+        if playlist not in playlists:
             raise ValueError(f"unknown playlist: {playlist}")
         if not isinstance(confidence, int) or not 0 <= confidence <= 100:
             raise ValueError(f"invalid confidence for {playlist}: {confidence}")
 
 
-def classify_track_with_openai(track):
+def classify_track_with_openai(track, max_playlists, min_playlists):
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         print("OPENAI_API_KEY not set in .env — cannot run smart-add.")
@@ -298,53 +351,57 @@ def classify_track_with_openai(track):
     client = OpenAI(api_key=api_key)
     model = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 
+    config = load_config()
     track_payload = {k: v for k, v in track.items() if k not in ("metadata_available", "label")}
 
-    available_playlists = {
-        "genre": [
-            "Rap", "Pop / Mainstream", "Alternative / Indie", "K-pop",
-            "Metal & Rock", "Instrumental Metal", "Jazz / Funk / Soul",
-            "House", "Techno", "Trance", "Drum & Bass", "Dubstep / Bass",
-            "Hardstyle & Hardcore", "Synthwave", "Electronic Music",
+    catch_all = config.get("catch_all")
+    catch_all_playlist = catch_all["playlist"] if catch_all else None
+
+    def _filter(names):
+        return [n for n in names if n != catch_all_playlist]
+
+    categories = config["categories"]
+    if categories:
+        available_playlists = {cat: _filter(names) for cat, names in categories.items()}
+        available_playlists = {cat: names for cat, names in available_playlists.items() if names}
+    else:
+        available_playlists = {"all": _filter(list(config["playlists"].keys()))}
+
+    rules = {
+        "max_playlists": max_playlists,
+        "min_playlists": min_playlists,
+        "only_use_available_playlists": True,
+        "use_only_listed_names_exact_spelling": True,
+        "classification_signals": [
+            "genre", "BPM", "energy", "mood", "lyrics", "production",
+            "cultural context", "meme context", "listening scenario",
         ],
-        "mood": ["Party", "Happy tunes", "Sad tunes", "Angry tunes", "Rustig / 'anders'"],
-        "theme": ["Funny meme", "Ket420", "Hooyah"],
+        "anti_shortcuts": [
+            "Do not classify based on artist name alone — a single artist can span multiple genres and moods.",
+            "Weigh track-specific signals (sound, BPM, lyrics, production) against artist tendencies.",
+            "Use multiple independent signals; if signals conflict, lower confidence rather than picking one source.",
+        ],
+        "category_balance": (
+            "Generally combine at most one subgenre from the genre bucket with relevant mood or "
+            "theme playlists; do not return multiple overlapping subgenres. Umbrella playlists "
+            "called out in special_playlists are an exception — include them in addition to the "
+            "matching subgenre, not instead of it."
+        ),
+        "confidence": "0-100 integer; lower it when signals disagree or are weak.",
     }
+
+    special_rules = {
+        name: rule for name, rule in config["special_rules"].items()
+        if name != catch_all_playlist
+    }
+    if special_rules:
+        rules["special_playlists"] = special_rules
 
     prompt_data = {
         "task": "Classify this Spotify track for playlist placement.",
         "track": track_payload,
         "available_playlists": available_playlists,
-        "rules": {
-            "max_playlists": 5,
-            "min_playlists": 1,
-            "only_use_available_playlists": True,
-            "use_only_listed_names_exact_spelling": True,
-            "classification_signals": [
-                "genre", "BPM", "energy", "mood", "lyrics", "production",
-                "cultural context", "meme context", "listening scenario",
-            ],
-            "anti_shortcuts": [
-                "Do not classify based on artist name alone — a single artist can span multiple genres and moods.",
-                "Weigh track-specific signals (sound, BPM, lyrics, production) against artist tendencies.",
-                "Use multiple independent signals; if signals conflict, lower confidence rather than picking one source.",
-            ],
-            "category_balance": (
-                "Suggestions should usually combine at most one genre playlist with relevant mood "
-                "or theme playlists; do not return multiple overlapping subgenres from the genre list."
-            ),
-            "special_playlists": {
-                "Funny meme": "Only for meme songs, internet classics, absurd/funny lyrics.",
-                "Ket420": "Only for stoned, psychedelic, spacey, mellow, ketamine/weed-friendly listening.",
-                "Hooyah": "Only for sexually tinted, sensual, suggestive songs.",
-            },
-            "electronic_music": (
-                "Use 'Electronic Music' as catch-all for electronic tracks that do "
-                "not clearly fit House, Techno, Trance, Drum & Bass, Dubstep / Bass, "
-                "Hardstyle & Hardcore, or Synthwave."
-            ),
-            "confidence": "0-100 integer; lower it when signals disagree or are weak.",
-        },
+        "rules": rules,
         "required_json_schema": {
             "genres": [
                 {"genre": "string", "confidence": "integer", "reason": "string"}
@@ -447,23 +504,557 @@ def _prompt_yes(prompt):
     return answer in ("y", "yes", "j", "ja")
 
 
-def smart_add(sp, track_input, execute, per_playlist):
+def _apply_catch_all(matches, catch_all):
+    if not catch_all:
+        return matches
+    threshold = catch_all.get("threshold", 85)
+    catch_all_name = catch_all["playlist"]
+    if any(m["playlist"] == catch_all_name for m in matches):
+        return matches
+    max_conf = max((m.get("confidence", 0) for m in matches), default=0)
+    if max_conf >= threshold:
+        return matches
+    return matches + [{
+        "playlist": catch_all_name,
+        "confidence": 100,
+        "reason": f"Programmatic fallback: no other playlist scored >= {threshold}%.",
+    }]
+
+
+def _classify_and_filter(sp, track_input, max_playlists, min_playlists, min_confidence):
+    """Look up the track, classify with OpenAI, apply catch-all + min-confidence.
+
+    Returns (track, classification) on success, or (None, None) on failure. The
+    caller is responsible for printing the recommendation and deciding what to
+    do next (write to Spotify, or just stop).
+    """
     track = get_track(sp, track_input)
     if not track["metadata_available"]:
         print("Cannot classify: track metadata lookup failed. Try again later.")
+        return None, None
+
+    classification = classify_track_with_openai(track, max_playlists, min_playlists)
+    if not classification:
+        return None, None
+
+    matches = sorted(
+        classification["playlist_matches"],
+        key=lambda m: m.get("confidence", 0),
+        reverse=True,
+    )[:max_playlists]
+
+    config = load_config()
+    matches = _apply_catch_all(matches, config.get("catch_all"))
+
+    if min_confidence > 0:
+        before = len(matches)
+        matches = [m for m in matches if m.get("confidence", 0) >= min_confidence]
+        if len(matches) < before:
+            print(f"(filtered out {before - len(matches)} match(es) below --min-confidence {min_confidence})")
+
+    classification["playlist_matches"] = matches
+    return track, classification
+
+
+def analyze_only(sp, track_input, max_playlists, min_playlists, min_confidence):
+    track, classification = _classify_and_filter(
+        sp, track_input, max_playlists, min_playlists, min_confidence
+    )
+    if track is None:
         return
 
-    classification = classify_track_with_openai(track)
-    if not classification:
+    if not classification["playlist_matches"]:
+        print_recommendation(track, classification)
+        print("\nNo playlists remained after filtering.")
+        print("No Spotify changes made.")
+        return
+
+    print_recommendation(track, classification)
+    print("\nNo Spotify changes made.")
+
+
+def _prompt_review_action(prompt):
+    """Return one of: 'yes', 'no', 'skip', 'quit'. Default (empty/N) is 'no'."""
+    try:
+        answer = input(prompt).strip().lower()
+    except EOFError:
+        return "quit"
+    if answer in ("y", "yes", "j", "ja"):
+        return "yes"
+    if answer in ("q", "quit", "exit"):
+        return "quit"
+    if answer in ("s", "skip"):
+        return "skip"
+    return "no"
+
+
+def _iter_playlist_tracks(sp, playlist_id):
+    """Return a list of dicts ({uri, id, name, artists, label}) for every track in the playlist.
+
+    Items with stripped URIs (Spotify dev-tier behavior) are skipped silently — the caller
+    surfaces an empty result with a help message.
+    """
+    items = []
+    results = sp.playlist_items(
+        playlist_id,
+        fields="items(track(id,uri,name,artists(name))),next",
+        additional_types=("track",),
+        limit=100,
+    )
+    while results:
+        for item in results.get("items") or []:
+            t = item.get("track") or {}
+            uri = t.get("uri")
+            if not uri:
+                continue
+            artists = [a.get("name") for a in (t.get("artists") or []) if a.get("name")]
+            name = t.get("name") or ""
+            label = f"{artists[0]} - {name}" if artists and name else uri
+            items.append({
+                "uri": uri,
+                "id": t.get("id"),
+                "name": name,
+                "artists": artists,
+                "label": label,
+            })
+        results = sp.next(results) if results.get("next") else None
+    return items
+
+
+EXPORTIFY_DIR = "exportify-exports"
+
+
+def _normalize_for_csv_match(name):
+    """Normalize a name to match exportify's filename mangling.
+
+    Exportify replaces spaces with underscores and strips '/' separators
+    (e.g. 'Pop / Mainstream' -> 'Pop_Mainstream.csv'). This lowercases and
+    collapses whitespace/underscores so both forms compare equal.
+    """
+    if not name:
+        return ""
+    s = name.lower().replace("/", " ")
+    return re.sub(r"[\s_]+", "_", s).strip("_")
+
+
+def _csv_path_for_name(name):
+    """Return path to an exportify CSV whose stem matches `name`, else None."""
+    if not name or not os.path.isdir(EXPORTIFY_DIR):
+        return None
+    target = _normalize_for_csv_match(name)
+    if not target:
+        return None
+    for fname in os.listdir(EXPORTIFY_DIR):
+        if not fname.lower().endswith(".csv"):
+            continue
+        if _normalize_for_csv_match(fname[:-4]) == target:
+            return os.path.join(EXPORTIFY_DIR, fname)
+    return None
+
+
+def _resolve_csv_path(source_input):
+    """If source_input refers to a local exportify CSV, return its path; else None."""
+    if not source_input:
+        return None
+    if "open.spotify.com" in source_input or source_input.startswith("spotify:"):
+        return None
+    if source_input.lower().endswith(".csv"):
+        return source_input if os.path.isfile(source_input) else None
+    if _SPOTIFY_ID_RE.fullmatch(source_input):
+        return None
+    if "/" in source_input or "\\" in source_input:
+        return None
+    return _csv_path_for_name(source_input)
+
+
+def _load_tracks_from_csv(path):
+    """Parse an exportify CSV and return items shaped like _iter_playlist_tracks."""
+    items = []
+    with open(path, encoding="utf-8-sig", newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            uri = _extract_uri_from_line(row.get("Track URI") or "")
+            if not uri:
+                continue
+            track_id = uri.split(":")[-1]
+            name = (row.get("Track Name") or "").strip()
+            artists_raw = (row.get("Artist Name(s)") or "").strip()
+            artists = [a.strip() for a in artists_raw.split(";") if a.strip()]
+            label = f"{artists[0]} - {name}" if artists and name else uri
+            items.append({
+                "uri": uri,
+                "id": track_id,
+                "name": name,
+                "artists": artists,
+                "label": label,
+            })
+    return items
+
+
+def _resolve_source(sp, source_input):
+    """Resolve a source playlist input to its track list and a display locator.
+
+    `source_input` may be a Spotify playlist URL/URI/ID, a path to an exportify
+    CSV file, or a bare name matching `exportify-exports/<name>.csv`. If a Spotify
+    URL returns no readable tracks (dev-tier strips playlist contents), look for
+    a matching CSV and prompt the user to use it instead.
+
+    Returns (source_name, source_locator, items) on success, (None, None, None)
+    on failure. `source_locator` is the playlist ID or CSV path for display.
+    """
+    csv_path = _resolve_csv_path(source_input)
+    if csv_path:
+        items = _load_tracks_from_csv(csv_path)
+        source_name = os.path.splitext(os.path.basename(csv_path))[0]
+        if not items:
+            print(f"No readable tracks in {csv_path}.")
+            return None, None, None
+        return source_name, csv_path, items
+
+    playlist_id = extract_playlist_id(source_input)
+    try:
+        info = sp.playlist(playlist_id, fields="name,id")
+    except spotipy.SpotifyException as exc:
+        print(f"Could not load playlist {playlist_id}: {exc.http_status} {exc.msg or exc.code}")
+        return None, None, None
+
+    source_name = info.get("name") or playlist_id
+    items = _iter_playlist_tracks(sp, playlist_id)
+    if items:
+        return source_name, playlist_id, items
+
+    csv_path = _csv_path_for_name(source_name)
+    if csv_path:
+        print(
+            f"\nSpotify returned no readable tracks for '{source_name}' ({playlist_id}). "
+            "The app is likely in Development Mode where playlist contents are stripped."
+        )
+        if _prompt_yes(f"Found local export at {csv_path} — use that instead? [y/N]: "):
+            items = _load_tracks_from_csv(csv_path)
+            if items:
+                return source_name, csv_path, items
+            print("Local export has no readable tracks.")
+
+    print(
+        "Spotify returned no readable tracks from this playlist. The app is likely "
+        "in Development Mode where playlist contents are stripped. Export the playlist "
+        "via https://exportify.net and use `smart-add` per track, or `log-import` to seed "
+        "the duplicate log. See docs/architecture.md → Duplicate detection."
+    )
+    return None, None, None
+
+
+def review_playlist(sp, playlist_input, execute, max_playlists, min_playlists, min_confidence):
+    source_name, source_locator, items = _resolve_source(sp, playlist_input)
+    if items is None:
+        return
+
+    print(f"Reviewing source: {source_name} ({source_locator})")
+
+    total = len(items)
+    accepted_count = 0
+    skipped_count = 0
+    quit_early = False
+
+    for idx, item in enumerate(items, start=1):
+        print()
+        print("=" * 60)
+        print(f"Track {idx}/{total}: {item['label']}")
+        print("=" * 60)
+
+        track, classification = _classify_and_filter(
+            sp, item["uri"], max_playlists, min_playlists, min_confidence
+        )
+        if track is None or classification is None:
+            print("(classification failed — skipping)")
+            skipped_count += 1
+            continue
+
+        matches = classification["playlist_matches"]
+        if not matches:
+            print("No playlists remained after filtering — skipping.")
+            skipped_count += 1
+            continue
+
+        print("\nSuggested playlists:")
+        for m in matches:
+            print(f"- {m['playlist']} — {m.get('confidence', '?')}% — {m.get('reason', '')}")
+
+        action = _prompt_review_action("\nAdd this track to these playlists? [y/N/s/q]: ")
+        if action == "quit":
+            print("\nReview stopped by user.")
+            quit_early = True
+            break
+        if action in ("no", "skip"):
+            print("- Skipped.")
+            skipped_count += 1
+            continue
+
+        playlists = load_config()["playlists"]
+        wrote_any = False
+        print()
+        for match in matches:
+            name = match["playlist"]
+            target_pid = playlists[name]
+            if playlist_contains_uri(sp, target_pid, track["uri"]):
+                print(f"- {name}: SKIP (already in playlist)")
+                continue
+            if not execute:
+                print(f"- {name}: DRY RUN (would add)")
+                wrote_any = True
+                continue
+            try:
+                resp = sp.playlist_add_items(target_pid, [track["uri"]])
+            except spotipy.SpotifyException as exc:
+                print(f"- {name}: FAILED ({exc.http_status} {exc.msg or exc.code})")
+                continue
+            snapshot = (resp or {}).get("snapshot_id") if isinstance(resp, dict) else None
+            if not snapshot:
+                print(f"- {name}: WARN — Spotify returned no snapshot_id (response={resp!r})")
+                continue
+            log_successful_add(target_pid, track["uri"])
+            print(f"- {name}: ADDED (snapshot {snapshot[:10]}…)")
+            wrote_any = True
+
+        if wrote_any:
+            accepted_count += 1
+        else:
+            skipped_count += 1
+
+    print()
+    print("=" * 60)
+    mode = "EXECUTED" if execute else "DRY RUN"
+    reviewed = accepted_count + skipped_count
+    summary = (
+        f"Review complete ({mode}): accepted {accepted_count}, "
+        f"skipped {skipped_count}, reviewed {reviewed}/{total}."
+    )
+    if quit_early:
+        summary += " (stopped early)"
+    print(summary)
+
+
+def scan_for(sp, target_playlist_name, source_playlist_input, execute, min_confidence):
+    # Always ask the classifier for its full top-5 matches so the target has
+    # the maximum chance to appear if it's a reasonable fit. The user only
+    # tunes how strong that fit must be via --min-confidence.
+    max_playlists = 5
+    min_playlists = 5
+
+    target_name = normalize_playlist_name(target_playlist_name)
+    target_pid = load_config()["playlists"][target_name]
+
+    source_name, source_locator, items = _resolve_source(sp, source_playlist_input)
+    if items is None:
+        return
+
+    print(f"Target playlist: {target_name} ({target_pid})")
+    print(f"Scanning source:  {source_name} ({source_locator})")
+
+    total = len(items)
+    print(f"Found {total} tracks. Classifying...\n")
+
+    log = _load_adds_log()
+    already_in_target = set(log.get(target_pid, []))
+
+    candidates = []
+    classification_failures = 0
+    not_a_fit = 0
+    already_present = 0
+
+    for idx, item in enumerate(items, start=1):
+        print(f"  [{idx}/{total}] {item['label']}", flush=True)
+        if item["uri"] in already_in_target:
+            already_present += 1
+            continue
+        track, classification = _classify_and_filter(
+            sp, item["uri"], max_playlists, min_playlists, min_confidence
+        )
+        if track is None or classification is None:
+            classification_failures += 1
+            continue
+        matching = next(
+            (m for m in classification["playlist_matches"] if m["playlist"] == target_name),
+            None,
+        )
+        if not matching:
+            not_a_fit += 1
+            continue
+        candidates.append({
+            "label": track["label"],
+            "uri": track["uri"],
+            "confidence": matching.get("confidence", 0),
+            "reason": matching.get("reason", ""),
+        })
+
+    candidates.sort(key=lambda c: c["confidence"], reverse=True)
+
+    print()
+    print(f"Found {total} tracks.")
+    if already_present:
+        print(f"  Already in {target_name}: {already_present}")
+    if classification_failures:
+        print(f"  Classification failures: {classification_failures}")
+    if not_a_fit:
+        print(f"  Not a fit for {target_name}: {not_a_fit}")
+
+    if not candidates:
+        print(f"\nNo candidates for {target_name}.")
+        return
+
+    print(f"\n{len(candidates)} candidate(s) for {target_name}:")
+    for c in candidates:
+        print(f"- {c['confidence']}% — {c['label']}")
+        if c["reason"]:
+            print(f"    {c['reason']}")
+
+    if not _prompt_yes(f"\nAdd all {len(candidates)} to '{target_name}'? [y/N]: "):
+        print("Cancelled. No changes made.")
+        return
+
+    print()
+    added = 0
+    failed = 0
+    for c in candidates:
+        if not execute:
+            print(f"- DRY RUN (would add {c['label']})")
+            continue
+        try:
+            resp = sp.playlist_add_items(target_pid, [c["uri"]])
+        except spotipy.SpotifyException as exc:
+            print(f"- FAILED ({c['label']}: {exc.http_status} {exc.msg or exc.code})")
+            failed += 1
+            continue
+        snapshot = (resp or {}).get("snapshot_id") if isinstance(resp, dict) else None
+        if not snapshot:
+            print(f"- WARN no snapshot_id for {c['label']} (response={resp!r})")
+            failed += 1
+            continue
+        log_successful_add(target_pid, c["uri"])
+        print(f"- ADDED {c['label']} (snapshot {snapshot[:10]}…)")
+        added += 1
+
+    print()
+    print("=" * 60)
+    mode = "EXECUTED" if execute else "DRY RUN"
+    print(f"Scan complete ({mode}): {added} added, {failed} failed.")
+
+
+def bulk_playlist(sp, playlist_input, execute, max_playlists, min_playlists, min_confidence):
+    source_name, source_locator, items = _resolve_source(sp, playlist_input)
+    if items is None:
+        return
+
+    print(f"Reading source: {source_name} ({source_locator})")
+
+    total = len(items)
+    print(f"Found {total} tracks. Classifying...\n")
+
+    playlists = load_config()["playlists"]
+    # Trust the local adds log for duplicate detection here — the dev-tier API
+    # strips playlist contents anyway, and per-match API checks would multiply
+    # request volume by tracks × suggestions × pages.
+    log = _load_adds_log()
+    already_in = {pid: set(uris) for pid, uris in log.items()}
+
+    plan = {}
+    classification_failures = 0
+    no_match_after_filter = 0
+
+    for idx, item in enumerate(items, start=1):
+        print(f"  [{idx}/{total}] {item['label']}", flush=True)
+        track, classification = _classify_and_filter(
+            sp, item["uri"], max_playlists, min_playlists, min_confidence
+        )
+        if track is None or classification is None:
+            classification_failures += 1
+            continue
+        matches = classification["playlist_matches"]
+        if not matches:
+            no_match_after_filter += 1
+            continue
+        for match in matches:
+            name = match["playlist"]
+            target_pid = playlists[name]
+            if track["uri"] in already_in.get(target_pid, set()):
+                continue
+            plan.setdefault(name, []).append({
+                "label": track["label"],
+                "uri": track["uri"],
+                "target_pid": target_pid,
+                "confidence": match.get("confidence", 0),
+            })
+            already_in.setdefault(target_pid, set()).add(track["uri"])
+
+    print()
+    print(f"Found {total} tracks.")
+    if classification_failures:
+        print(f"  Classification failures: {classification_failures}")
+    if no_match_after_filter:
+        print(f"  No match after filtering: {no_match_after_filter}")
+
+    if not plan:
+        print("\nNo additions to make.")
+        return
+
+    print("\nRecommendations:")
+    for name, entries in sorted(plan.items(), key=lambda kv: len(kv[1]), reverse=True):
+        print(f"- {len(entries)} → {name}")
+
+    if not _prompt_yes("\nProceed? [y/N]: "):
+        print("Cancelled. No changes made.")
+        return
+
+    print()
+    added = 0
+    failed = 0
+    for name, entries in plan.items():
+        for entry in entries:
+            if not execute:
+                print(f"- {name}: DRY RUN (would add {entry['label']})")
+                continue
+            try:
+                resp = sp.playlist_add_items(entry["target_pid"], [entry["uri"]])
+            except spotipy.SpotifyException as exc:
+                print(f"- {name}: FAILED ({entry['label']}: {exc.http_status} {exc.msg or exc.code})")
+                failed += 1
+                continue
+            snapshot = (resp or {}).get("snapshot_id") if isinstance(resp, dict) else None
+            if not snapshot:
+                print(f"- {name}: WARN — no snapshot_id for {entry['label']} (response={resp!r})")
+                failed += 1
+                continue
+            log_successful_add(entry["target_pid"], entry["uri"])
+            print(f"- {name}: ADDED {entry['label']} (snapshot {snapshot[:10]}…)")
+            added += 1
+
+    print()
+    print("=" * 60)
+    mode = "EXECUTED" if execute else "DRY RUN"
+    print(f"Bulk add complete ({mode}): {added} added, {failed} failed.")
+
+
+def smart_add(sp, track_input, execute, accept_all, max_playlists, min_playlists, min_confidence):
+    track, classification = _classify_and_filter(
+        sp, track_input, max_playlists, min_playlists, min_confidence
+    )
+    if track is None:
+        return
+
+    matches = classification["playlist_matches"]
+    if not matches:
+        print_recommendation(track, classification)
+        print("\nNo playlists remained after filtering. No changes made.")
         return
 
     print_recommendation(track, classification)
 
     print("\nPending actions:")
     actions = []
+    playlists = load_config()["playlists"]
     for match in classification["playlist_matches"]:
         name = match["playlist"]
-        playlist_id = PLAYLISTS[name]
+        playlist_id = playlists[name]
         confidence = match.get("confidence", "?")
         if playlist_contains_uri(sp, playlist_id, track["uri"]):
             print(f"- SKIP: already in {name}")
@@ -475,7 +1066,12 @@ def smart_add(sp, track_input, execute, per_playlist):
         print("\nNo changes needed.")
         return
 
-    if per_playlist:
+    if accept_all:
+        if not _prompt_yes("\nAdd this track to all listed playlists? [y/N]: "):
+            print("Cancelled. No changes made.")
+            return
+        accepted = [(name, pid) for name, pid, _ in actions]
+    else:
         accepted = []
         print()
         for name, playlist_id, confidence in actions:
@@ -486,11 +1082,6 @@ def smart_add(sp, track_input, execute, per_playlist):
         if not accepted:
             print("\nNo playlists accepted. No changes made.")
             return
-    else:
-        if not _prompt_yes("\nAdd this track to the listed playlists? [y/N]: "):
-            print("Cancelled. No changes made.")
-            return
-        accepted = [(name, pid) for name, pid, _ in actions]
 
     print()
     for name, playlist_id in accepted:
@@ -531,7 +1122,7 @@ def _extract_uri_from_line(line):
 
 def log_import(playlist_name, file_path):
     canonical_name = normalize_playlist_name(playlist_name)
-    playlist_id = PLAYLISTS[canonical_name]
+    playlist_id = load_config()["playlists"][canonical_name]
 
     try:
         with open(file_path, encoding="utf-8") as f:
@@ -577,8 +1168,68 @@ def log_import(playlist_name, file_path):
 
 
 def list_target_playlists():
-    for name in PLAYLISTS:
+    config = load_config()
+    for name in config["playlists"]:
         print(f"- {name}")
+
+
+def list_all_spotify_playlists(sp):
+    config = load_config(required=False)
+    tracked_ids = set(config["playlists"].values()) if config else set()
+
+    me = sp.current_user()
+    my_id = me["id"]
+
+    all_pls = []
+    results = sp.current_user_playlists(limit=50)
+    while results:
+        all_pls.extend(results["items"])
+        results = sp.next(results) if results.get("next") else None
+
+    writable = [
+        p for p in all_pls
+        if p.get("owner", {}).get("id") == my_id or p.get("collaborative")
+    ]
+    writable.sort(key=lambda p: p["name"].lower())
+
+    tracked = [p for p in writable if p["id"] in tracked_ids]
+    untracked = [p for p in writable if p["id"] not in tracked_ids]
+
+    if config is None:
+        print(
+            f"No '{CONFIG_PATH}' yet — showing all writable playlists from your Spotify account.\n"
+            f"Copy entries below into '{CONFIG_PATH}' under \"playlists\". "
+            f"See '{EXAMPLE_CONFIG_PATH}' for the full schema.\n"
+        )
+    print(
+        f"Writable playlists on your Spotify account: {len(writable)} "
+        f"({len(tracked)} tracked, {len(untracked)} untracked)"
+    )
+
+    if tracked:
+        print("\nAlready tracked in playlists.json:")
+        for p in tracked:
+            print(f'  "{p["name"]}": "{p["id"]}"')
+
+    if untracked:
+        print("\nUntracked (paste any of these into playlists.json -> \"playlists\"):")
+        for p in untracked:
+            print(f'  "{p["name"]}": "{p["id"]}",')
+
+    if not writable:
+        print("\nNo writable playlists found on your Spotify account.")
+
+
+def _ranged_int(min_val, max_val):
+    def _parse(s):
+        try:
+            v = int(s)
+        except ValueError:
+            raise argparse.ArgumentTypeError(f"{s!r} is not an integer")
+        if not min_val <= v <= max_val:
+            raise argparse.ArgumentTypeError(f"{v} not in range [{min_val}, {max_val}]")
+        return v
+    return _parse
 
 
 def main():
@@ -599,12 +1250,163 @@ def main():
         "--execute", action="store_true", help="Actually perform the change after confirmation"
     )
     smart_parser.add_argument(
-        "--per-playlist",
+        "--accept-all",
         action="store_true",
-        help="Ask y/N for each suggested playlist individually instead of one prompt for all",
+        help="Ask one bulk y/N for the whole suggested set instead of the default per-playlist y/N",
+    )
+    smart_parser.add_argument(
+        "--max-playlists",
+        type=_ranged_int(1, 5),
+        default=5,
+        help="Maximum number of playlist suggestions (1-5, default 5). The catch_all fallback "
+             "in playlists.json may push the count to max+1 when triggered.",
+    )
+    smart_parser.add_argument(
+        "--min-playlists",
+        type=_ranged_int(1, 5),
+        default=3,
+        help="Minimum number of playlist suggestions to ask the classifier for (1-5, default 3)",
+    )
+    smart_parser.add_argument(
+        "--min-confidence",
+        type=_ranged_int(0, 100),
+        default=0,
+        help="Drop any suggestion below this confidence (0-100, default 0 = no filter). The "
+             "programmatic catch_all entry is added with confidence 100 and survives any filter.",
     )
 
-    subparsers.add_parser("list-playlists", help="List configured target playlists")
+    review_parser = subparsers.add_parser(
+        "review-playlist",
+        help="Walk every track in a source playlist, classify each, and ask y/N/s/q per track "
+             "whether to add it to its suggested playlists.",
+    )
+    review_parser.add_argument(
+        "playlist",
+        help="Source to read tracks from: a Spotify playlist URL/URI/ID, a path to an "
+             "exportify CSV (e.g. exportify-exports/House.csv), or a bare name matching "
+             "a file in exportify-exports/ (e.g. House). When a URL returns no readable "
+             "tracks (dev-tier strips contents), the script offers a matching CSV as fallback.",
+    )
+    review_parser.add_argument(
+        "--execute", action="store_true", help="Actually write accepted additions to Spotify"
+    )
+    review_parser.add_argument(
+        "--max-playlists",
+        type=_ranged_int(1, 5),
+        default=3,
+        help="Maximum number of playlist suggestions per track (1-5, default 3). The catch_all "
+             "fallback in playlists.json may push the count to max+1 when triggered.",
+    )
+    review_parser.add_argument(
+        "--min-playlists",
+        type=_ranged_int(1, 5),
+        default=1,
+        help="Minimum number of playlist suggestions to ask the classifier for (1-5, default 1)",
+    )
+    review_parser.add_argument(
+        "--min-confidence",
+        type=_ranged_int(0, 100),
+        default=80,
+        help="Drop any suggestion below this confidence (0-100, default 80). The "
+             "programmatic catch_all entry is added with confidence 100 and survives any filter.",
+    )
+
+    scan_parser = subparsers.add_parser(
+        "scan-for",
+        help="Pick one of your playlists and scan a source playlist for tracks that fit it. "
+             "Classifies each source track, lists the matches, then bulk-adds after one y/N.",
+    )
+    scan_parser.add_argument(
+        "target", help="Target playlist name (must match a key under 'playlists' or an alias in playlists.json)"
+    )
+    scan_parser.add_argument(
+        "source",
+        help="Source to scan for candidates: a Spotify playlist URL/URI/ID, a path to an "
+             "exportify CSV (e.g. exportify-exports/House.csv), or a bare name matching "
+             "a file in exportify-exports/ (e.g. House). When a URL returns no readable "
+             "tracks (dev-tier strips contents), the script offers a matching CSV as fallback.",
+    )
+    scan_parser.add_argument(
+        "--execute", action="store_true", help="Actually add the accepted tracks to the target playlist"
+    )
+    scan_parser.add_argument(
+        "--min-confidence",
+        type=_ranged_int(0, 100),
+        default=80,
+        help="Drop matches below this confidence before checking for the target (0-100, default 80)",
+    )
+
+    bulk_parser = subparsers.add_parser(
+        "bulk-playlist",
+        help="Classify every track in a source playlist, show a per-target tally, then add them all "
+             "after a single y/N confirmation.",
+    )
+    bulk_parser.add_argument(
+        "playlist",
+        help="Source to read tracks from: a Spotify playlist URL/URI/ID, a path to an "
+             "exportify CSV (e.g. exportify-exports/House.csv), or a bare name matching "
+             "a file in exportify-exports/ (e.g. House). When a URL returns no readable "
+             "tracks (dev-tier strips contents), the script offers a matching CSV as fallback.",
+    )
+    bulk_parser.add_argument(
+        "--execute", action="store_true", help="Actually write accepted additions to Spotify"
+    )
+    bulk_parser.add_argument(
+        "--max-playlists",
+        type=_ranged_int(1, 5),
+        default=3,
+        help="Maximum number of playlist suggestions per track (1-5, default 3). The catch_all "
+             "fallback in playlists.json may push the count to max+1 when triggered.",
+    )
+    bulk_parser.add_argument(
+        "--min-playlists",
+        type=_ranged_int(1, 5),
+        default=1,
+        help="Minimum number of playlist suggestions to ask the classifier for (1-5, default 1)",
+    )
+    bulk_parser.add_argument(
+        "--min-confidence",
+        type=_ranged_int(0, 100),
+        default=80,
+        help="Drop any suggestion below this confidence (0-100, default 80). The "
+             "programmatic catch_all entry is added with confidence 100 and survives any filter.",
+    )
+
+    analyze_parser = subparsers.add_parser(
+        "analyze-only",
+        help="Classify a track with OpenAI and print suggested playlists. Makes no Spotify changes.",
+    )
+    analyze_parser.add_argument("track", help="Spotify track URL, URI, or ID")
+    analyze_parser.add_argument(
+        "--max-playlists",
+        type=_ranged_int(1, 10),
+        default=10,
+        help="Maximum number of playlist suggestions (1-10, default 10). The catch_all fallback "
+             "in playlists.json may push the count to max+1 when triggered.",
+    )
+    analyze_parser.add_argument(
+        "--min-playlists",
+        type=_ranged_int(1, 10),
+        default=5,
+        help="Minimum number of playlist suggestions to ask the classifier for (1-10, default 5)",
+    )
+    analyze_parser.add_argument(
+        "--min-confidence",
+        type=_ranged_int(0, 100),
+        default=0,
+        help="Drop any suggestion below this confidence (0-100, default 0 = no filter). The "
+             "programmatic catch_all entry is added with confidence 100 and survives any filter.",
+    )
+
+    list_parser = subparsers.add_parser(
+        "list-playlists",
+        help="List configured target playlists (or --all to discover from Spotify)",
+    )
+    list_parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Fetch every writable playlist from your Spotify account (helps populate playlists.json)",
+    )
 
     import_parser = subparsers.add_parser(
         "log-import",
@@ -614,15 +1416,19 @@ def main():
     import_parser.add_argument("playlist", help="Target playlist name")
     import_parser.add_argument(
         "file",
-        help="Path to a text/CSV/JSON file. Any line containing a Spotify track URI, "
-             "open.spotify.com/track URL, or bare 22-char ID is imported; other lines "
-             "are ignored.",
+        help="Path to a text/CSV/JSON file (e.g. exportify-exports/house.csv). Any line "
+             "containing a Spotify track URI, open.spotify.com/track URL, or bare 22-char "
+             "ID is imported; other lines are ignored.",
     )
 
     args = parser.parse_args()
 
     if args.command == "list-playlists":
-        list_target_playlists()
+        if args.all:
+            sp = get_spotify_client()
+            list_all_spotify_playlists(sp)
+        else:
+            list_target_playlists()
         return 0
 
     if args.command == "log-import":
@@ -634,7 +1440,78 @@ def main():
     if args.command == "add":
         add_track(sp, args.track, args.playlist, args.execute)
     elif args.command == "smart-add":
-        smart_add(sp, args.track, args.execute, args.per_playlist)
+        if args.min_playlists > args.max_playlists:
+            print(
+                f"--min-playlists ({args.min_playlists}) cannot exceed "
+                f"--max-playlists ({args.max_playlists})."
+            )
+            return 2
+        smart_add(
+            sp,
+            args.track,
+            args.execute,
+            args.accept_all,
+            args.max_playlists,
+            args.min_playlists,
+            args.min_confidence,
+        )
+    elif args.command == "analyze-only":
+        if args.min_playlists > args.max_playlists:
+            print(
+                f"--min-playlists ({args.min_playlists}) cannot exceed "
+                f"--max-playlists ({args.max_playlists})."
+            )
+            return 2
+        analyze_only(
+            sp,
+            args.track,
+            args.max_playlists,
+            args.min_playlists,
+            args.min_confidence,
+        )
+    elif args.command == "review-playlist":
+        if args.min_playlists > args.max_playlists:
+            print(
+                f"--min-playlists ({args.min_playlists}) cannot exceed "
+                f"--max-playlists ({args.max_playlists})."
+            )
+            return 2
+        review_playlist(
+            sp,
+            args.playlist,
+            args.execute,
+            args.max_playlists,
+            args.min_playlists,
+            args.min_confidence,
+        )
+    elif args.command == "scan-for":
+        try:
+            normalize_playlist_name(args.target)
+        except ValueError as exc:
+            print(str(exc))
+            return 2
+        scan_for(
+            sp,
+            args.target,
+            args.source,
+            args.execute,
+            args.min_confidence,
+        )
+    elif args.command == "bulk-playlist":
+        if args.min_playlists > args.max_playlists:
+            print(
+                f"--min-playlists ({args.min_playlists}) cannot exceed "
+                f"--max-playlists ({args.max_playlists})."
+            )
+            return 2
+        bulk_playlist(
+            sp,
+            args.playlist,
+            args.execute,
+            args.max_playlists,
+            args.min_playlists,
+            args.min_confidence,
+        )
 
     return 0
 

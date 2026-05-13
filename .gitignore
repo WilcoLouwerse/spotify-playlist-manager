@@ -6,6 +6,13 @@
 .adds_log.json
 *.cache
 
+# Local playlist config — sample lives in playlists.example.json
+playlists.json
+
+# Local Exportify CSV dumps — folder is tracked, contents are not
+exportify-exports/*
+!exportify-exports/.gitkeep
+
 # Python
 .venv/
 venv/

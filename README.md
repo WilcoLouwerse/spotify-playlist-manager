@@ -6,13 +6,16 @@ Local CLI to manage my Spotify playlists. Built on the [Spotify Web API](https:/
 # After setup
 python playlist_manager.py list-playlists
 python playlist_manager.py add "https://open.spotify.com/track/<id>" "House" --execute
-python playlist_manager.py smart-add "https://open.spotify.com/track/<id>" --execute --per-playlist
+python playlist_manager.py smart-add "https://open.spotify.com/track/<id>" --execute --accept-all
+python playlist_manager.py review-playlist "https://open.spotify.com/playlist/<id>" --execute
+python playlist_manager.py bulk-playlist "https://open.spotify.com/playlist/<id>" --execute
+python playlist_manager.py scan-for "House" "https://open.spotify.com/playlist/<id>" --execute
 ```
 
 ## Documentation
 
-- **[docs/setup.md](docs/setup.md)** — credentials, `.env` values, where to get them (Spotify Developer Dashboard + OpenAI platform), Python venv setup.
-- **[docs/commands.md](docs/commands.md)** — CLI reference for every subcommand, including aliases, dry-run behavior, and the duplicate guard.
+- **[docs/setup.md](docs/setup.md)** — credentials, `.env` values, where to get them (Spotify Developer Dashboard + OpenAI platform), `playlists.json` config (see [playlists.example.json](playlists.example.json) for the schema), Python venv setup.
+- **[docs/commands.md](docs/commands.md)** — CLI reference for every subcommand, including `list-playlists --all` (Spotify discovery), aliases, dry-run behavior, and the duplicate guard.
 - **[docs/architecture.md](docs/architecture.md)** — how the code is structured, the OAuth flow, the OpenAI classifier, and the IPv4-only network workaround for WSL.
 
 ## Safety defaults
@@ -20,11 +23,11 @@ python playlist_manager.py smart-add "https://open.spotify.com/track/<id>" --exe
 Three layers protect against unintended writes:
 
 1. **Dry-run is the default.** Add `--execute` to actually write.
-2. **`smart-add` requires interactive confirmation** (single y/N for all, or `--per-playlist` for individual y/N).
-3. **Duplicate guard is always on.** Reads from a local `.adds_log.json` (every URI the script has successfully added) plus best-effort Spotify checks. Seed it once via `log-import` (see [docs/commands.md](docs/commands.md#log-import)) to cover tracks the script didn't add. Background on why the local log is necessary: [docs/architecture.md → Why duplicate detection needs a local log](docs/architecture.md#why-duplicate-detection-needs-a-local-log).
+2. **`smart-add` requires interactive confirmation** (per-playlist y/N by default, or `--accept-all` for a single bulk y/N).
+3. **Duplicate guard is always on.** Reads from a local `.adds_log.json` — every URI the script has successfully added or has been seeded with via `log-import`. Run `log-import` once per playlist after setup (see [docs/commands.md → log-import](docs/commands.md#log-import)) to cover tracks the script didn't add. Background: [docs/architecture.md → Duplicate detection](docs/architecture.md#duplicate-detection).
 
 ## Security notes
 
-- `.env` and `.spotify_token_cache` are gitignored. Never commit them.
+- `.env`, `.spotify_token_cache`, and `playlists.json` are gitignored. Never commit them.
 - If you leak your Spotify Client Secret, rotate it in the Dashboard immediately.
 - If you leak your OpenAI API key, revoke it on the OpenAI platform and create a new one.

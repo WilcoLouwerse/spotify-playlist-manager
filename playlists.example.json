@@ -1,0 +1,85 @@
+{
+  "playlists": {
+    "Rap": "0IKLWWkZTJ0zk9mX8BatJC",
+    "Pop / Mainstream": "6Z28iv4DlEyMYytBb8bjKd",
+    "Alternative / Indie": "4cXn8rebxCzVvsK0XxYU8S",
+    "K-pop": "4RXXB8PxXK7Jm3Ysoi4EiC",
+    "Metal & Rock": "22jVRahS7rhanx3pmIwWCD",
+    "Instrumental Metal": "2imtHkNm6dZIj8xc0i2n2F",
+    "Jazz / Funk / Soul": "64VfxKOeVr1noBgNPqZCWQ",
+    "House": "0BEX4bI5xtkEVA4BfYTKg2",
+    "Techno": "7lRL294p8uvOOXTxNPIBhn",
+    "Trance": "3eh9PL5diEtYoxxAmIUh38",
+    "Drum & Bass": "0jECuEhrsvUJCkVy9fmGmN",
+    "Dubstep / Bass": "4kxvCA0xRslKisr9kA5y2y",
+    "Hardstyle & Hardcore": "3jGm3qv2QQXmB6lxrgdDoR",
+    "Synthwave": "5BFG9XBUWoYfPek8CcL3ea",
+    "Electronic Music": "3Y6OleDjCBkDtjlQC1JC4S",
+    "Party": "5UxXh0fjJzKCLY8DMNzWy5",
+    "Happy tunes": "3nupbERYJs4woq5dOAFUCj",
+    "Sad tunes": "5FLVYNGAqBLmrhFoD3ItbV",
+    "Angry tunes": "6n9atJab6utXK1SRHoixSp",
+    "Rustig / 'anders'": "1ALotvr2UUPqWUHKTmEQdp",
+    "Funny meme": "3ks35C34IFNPhW3Clw9zym",
+    "Ket420": "3viX7Yo3jzYVZ4a6WMIR3S",
+    "Hooyah": "2e4z5WbyQEsZ6I4YXkd5Np",
+    "Random sht": "1PMqc20PYGO1nqOeqY0zRe"
+  },
+
+  "aliases": {
+    "electronic music": "Electronic Music",
+    "edm": "Electronic Music",
+    "dnb": "Drum & Bass",
+    "drum and bass": "Drum & Bass",
+    "dubstep": "Dubstep / Bass",
+    "bass": "Dubstep / Bass",
+    "hardcore": "Hardstyle & Hardcore",
+    "hardstyle": "Hardstyle & Hardcore",
+    "indie": "Alternative / Indie",
+    "alternative": "Alternative / Indie",
+    "pop": "Pop / Mainstream",
+    "jazz": "Jazz / Funk / Soul",
+    "funk": "Jazz / Funk / Soul",
+    "soul": "Jazz / Funk / Soul",
+    "rock": "Metal & Rock",
+    "metal": "Metal & Rock",
+    "calm": "Rustig / 'anders'",
+    "chill": "Rustig / 'anders'",
+    "meme": "Funny meme"
+  },
+
+  "categories": {
+    "genre": [
+      "Rap",
+      "Pop / Mainstream",
+      "Alternative / Indie",
+      "K-pop",
+      "Metal & Rock",
+      "Instrumental Metal",
+      "Jazz / Funk / Soul",
+      "House",
+      "Techno",
+      "Trance",
+      "Drum & Bass",
+      "Dubstep / Bass",
+      "Hardstyle & Hardcore",
+      "Synthwave",
+      "Electronic Music"
+    ],
+    "mood": ["Party", "Happy tunes", "Sad tunes", "Angry tunes", "Rustig / 'anders'"],
+    "theme": ["Funny meme", "Ket420", "Hooyah"]
+  },
+
+  "special_rules": {
+    "Funny meme": "Only for meme songs, internet classics, absurd/funny lyrics.",
+    "Ket420": "Only for stoned, psychedelic, spacey, mellow, ketamine/weed-friendly listening.",
+    "Hooyah": "Only for sexually tinted, sensual, suggestive songs.",
+    "Electronic Music": "Suggest 'Electronic Music' for ALL electronic tracks — house, techno, trance, drum & bass, dubstep, hardstyle, synthwave, ambient electronic, etc. It is an inclusive umbrella, not a fallback: include it ALONGSIDE the matching electronic subgenre, not instead of it."
+  },
+
+  "catch_all": {
+    "playlist": "Random sht",
+    "threshold": 85,
+    "rule": "Programmatic fallback: if no other playlist scores at least 'threshold' confidence, the script appends this playlist with confidence 100. This entry is NOT shown to the OpenAI classifier; it is a script-side safety net for tracks that don't fit anywhere."
+  }
+}

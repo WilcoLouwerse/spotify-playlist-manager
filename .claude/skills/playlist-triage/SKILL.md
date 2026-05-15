@@ -13,7 +13,9 @@ Wraps the project's two source-to-many-targets workflows:
 - **`review-playlist`** — per-track `y/N/s/q` prompts. Use when the user wants veto power on each track.
 - **`bulk-playlist`** — single `y/N` for the whole plan. Use when the user trusts the classifier and just wants the triage drained.
 
-Both classify every track in a source playlist with OpenAI and propose target playlists from [`playlists.json`](../../../playlists.json). User-facing prose is **Dutch** (consistent with the rest of this project's skills). Keep SKILL.md, references, templates, and examples in English.
+Both classify every track in a source playlist and propose target playlists from [`playlists.json`](../../../playlists.json). The **default classifier is Claude AI + live web search** (same multi-source methodology as [`/playlist-match`](../playlist-match/SKILL.md)) for smaller playlists. For larger playlists, the OpenAI-backed CLI commands are the faster fallback.
+
+User-facing prose is **Dutch** (consistent with the rest of this project's skills). Keep SKILL.md, references, templates, and examples in English.
 
 **Input**: A Spotify playlist URL / URI / ID, a path to an exportify CSV, or a bare name matching a CSV in [`exportify-exports/`](../../../exportify-exports/). Also fires on natural phrases like "sorteer mijn 'to triage'", "review this playlist", "haal mijn triage leeg".
 
@@ -40,15 +42,27 @@ Both classify every track in a source playlist with OpenAI and propose target pl
    - CSV path → use as-is (verify it exists).
    - Bare name → list `exportify-exports/*.csv` and offer matches via **AskUserQuestion**. Spotify display names map to underscored, slash-tolerant filenames; let the user pick from the actual filenames rather than guessing.
 
-3. **Pick the workflow — review vs bulk**
+3. **Pick the workflow**
 
-   Use **AskUserQuestion** (single-select):
-   - **Review (per-track y/N)** — keep control; reject individual tracks.
-   - **Bulk (one y/N for everything)** — faster; trust the classifier.
+   Use **AskUserQuestion** (single-select). Three options — recommend based on playlist size and user phrasing:
 
-   Recommend **Review** for triage playlists ≤ 30 tracks or when the user said "review/check/curate". Recommend **Bulk** when the user said "sort", "drain", "empty", "leeghalen", or for playlists > 30 tracks.
+   | Option | When to recommend | How it works |
+   |--------|------------------|--------------|
+   | **Claude + web (per-track)** | ≤ 20 tracks, or user says "nauwkeurig/check/curate" | Claude AI + live WebSearch per track (AllMusic, Wikipedia, RYM, Discogs, Last.fm). Same methodology as `/playlist-match`. Slower but most accurate. No CLI round-trip — uses `list-tracks` + `add --execute` per accepted track. |
+   | **Review (CLI, per-track y/N)** | 20–50 tracks, or user says "review/controleer" | `review-playlist` CLI wraps OpenAI classification. Interactive per-track prompt (requires terminal for `--execute`). |
+   | **Bulk (CLI, one y/N)** | > 50 tracks, or user says "sort/drain/leeghalen" | `bulk-playlist` CLI wraps OpenAI classification. Single y/N for the whole batch. Fastest. |
 
-4. **Tune the classifier**
+   **Web-first path (Claude + web):**
+   - Run `list-tracks "<source>"` to get the track list. Parse the tab-separated output.
+   - For each track: use **WebSearch** + **WebFetch** (AllMusic, Wikipedia, RYM, Discogs, Last.fm) to determine genres, then match against `playlists.json` taxonomy — same steps 5-6 of `/playlist-match`. Score 1–5 target playlists per track.
+   - Ask the user per-track via **AskUserQuestion**:
+     - **Voeg toe aan [playlists]** — run `add --execute` for each accepted playlist
+     - **Overslaan** — skip this track
+     - **Stop** — end the flow
+   - After each track, confirm before running `add --execute` — or if the user pre-approved "voeg alles toe met ≥X%", run automatically within that session turn.
+   - This path does NOT use `review-playlist` or `bulk-playlist` CLI. `add` is the only write command.
+
+4. **Tune the classifier (CLI paths only)**
 
    Defaults per [`docs/commands.md`](../../../docs/commands.md):
    - `review-playlist`: `--max-playlists 3 --min-playlists 1 --min-confidence 80`
@@ -58,15 +72,17 @@ Both classify every track in a source playlist with OpenAI and propose target pl
    - "stricter classifier" → `--min-confidence 90`
    - "more suggestions per track" → `--max-playlists 5`
 
-   Don't surface the flags unless the user wants to tune — the defaults are sensible.
+   Don't surface the flags unless the user wants to tune — the defaults are sensible. For the web-first path, confidence tuning is done by describing the desired strictness in plain Dutch ("alleen nummers boven 80%"); the skill applies that when presenting per-track matches.
 
-5. **Dry-run vs execute**
+5. **Dry-run vs execute (CLI paths only)**
 
    Default: **dry-run**. Use **AskUserQuestion**:
    - **Dry-run** *(recommended)* — classify and show the plan, write nothing.
    - **Execute** — actually write the accepted adds to Spotify.
 
-6. **Render the planned command**
+   For the **web-first path**, there is no dry-run — the skill confirms each track via **AskUserQuestion** before running `add --execute`, so confirmation is built-in per track.
+
+6. **Render the planned command (CLI paths only)**
 
    Use `templates/plan.md`. Single command, in a code block, from the repo root:
 
@@ -77,7 +93,9 @@ Both classify every track in a source playlist with OpenAI and propose target pl
 
    (`bulk-playlist` follows the same pattern.) Quote the source verbatim; the script accepts URL / URI / ID / CSV path / bare name.
 
-7. **Confirm (execute only)**
+   For the **web-first path**: show the `add --execute` commands for accepted tracks in a code block as they are confirmed, so the user can see what is being run.
+
+7. **Confirm (execute only, CLI paths)**
 
    Both `review-playlist` (per-track `y/N/s/q`) and `bulk-playlist` (single `y/N`) prompt on **stdin**. The skill cannot drive those prompts from chat. Before running the execute path, use **AskUserQuestion**:
 
@@ -89,17 +107,19 @@ Both classify every track in a source playlist with OpenAI and propose target pl
 
 8. **Run and surface output verbatim**
 
-   - **Dry-run**: run via Bash, print the script's output verbatim, then summarise in Dutch.
+   - **Dry-run (CLI)**: run via Bash, print the script's output verbatim, then summarise in Dutch.
    - **Execute (terminal path)**: do NOT run. Show the user the exact command + a "run dit in je terminal vanuit de repo-root" hint.
    - **Execute (bulk + `yes |` path)**: run as `yes | .venv/bin/python playlist_manager.py bulk-playlist "<source>" --execute`, print output verbatim, then summarise.
+   - **Web-first path**: run `add --execute` per accepted track after per-track confirmation. Print each command's output verbatim.
 
    Don't paraphrase the script's `ADDED ...`, `SKIP: already in playlist`, `DRY RUN: would add ...` messages — those come from the CLI and are the user's contract.
 
 9. **Summarise (one Dutch line)**
 
-   - Dry-run: "Dry-run klaar — {N} kandidaten verdeeld over {M} playlists. Niets geschreven."
+   - Dry-run (CLI): "Dry-run klaar — {N} kandidaten verdeeld over {M} playlists. Niets geschreven."
    - Execute via skill: "Klaar! {A} toegevoegd, {S} overgeslagen (al in playlist)."
    - Execute via user's terminal: "Commando staat klaar. Draai 'm in je terminal en typ y/N als de prompts verschijnen."
+   - Web-first path: "Triage klaar! {A} nummers toegevoegd aan {M} playlists, {S} overgeslagen, {K} overgeslagen door jou."
 
 10. **Capture Learnings**
 
@@ -112,7 +132,7 @@ Both classify every track in a source playlist with OpenAI and propose target pl
 - **Never** run `--execute` without explicit user confirmation in the same turn.
 - **Never** drive `review-playlist`'s per-track stdin from chat — recommend the terminal path instead. `bulk-playlist`'s single y/N may be piped with `yes |` only after the user opts in.
 - **Never** invent a Spotify playlist URL or a CSV filename. If the source doesn't match anything, ask.
-- **Never** seed `.adds_log.json` from this skill — that is the `log-import` command's job. If the user mentions "duplicate guard", point them at [`docs/commands.md`](../../../docs/commands.md#log-import).
+- **Never** seed `.tracks_log.json` from this skill — that is the `log-import` command's job. If the user mentions "duplicate guard", point them at [`docs/commands.md`](../../../docs/commands.md#log-import).
 - Always invoke the venv python (`.venv/bin/python`) from the repo root — IPv4 routing and venv state both depend on it.
 - Always quote source arguments to survive playlist names with spaces, `/`, or `'`.
 - If `playlist_items` returns stripped data (Spotify Developer Mode), the CLI itself offers a CSV fallback — let it. Don't pre-empt that path.

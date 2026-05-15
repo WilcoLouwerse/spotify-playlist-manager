@@ -4,8 +4,8 @@ CLI reference for [playlist_manager.py](../playlist_manager.py). Run every comma
 
 ## Global behavior
 
-- **Dry-run by default.** Commands that write to Spotify (`add`, `smart-add`, `review-playlist`, `bulk-playlist`, `scan-for`) print what they *would* do and exit. Add `--execute` to actually write.
-- **Duplicate guard is always on.** Before writing, the script consults the local log (`.adds_log.json`) of every URI it has successfully added or that has been seeded via `log-import`. If the URI is found, it exits with `SKIP`. There is no override flag. See [architecture.md → Duplicate detection](architecture.md#duplicate-detection) for why the local log is authoritative and how to seed it.
+- **Dry-run by default.** Commands that write to Spotify (`add`, `remove`, `smart-add`, `review-playlist`, `bulk-playlist`, `scan-for`) print what they *would* do and exit. Add `--execute` to actually write.
+- **Duplicate guard is always on.** Before writing, the script consults the local log (`.tracks_log.json`) of every URI it has successfully added or that has been seeded via `log-import`. If the URI is found, it exits with `SKIP`. There is no override flag. See [architecture.md → Duplicate detection](architecture.md#duplicate-detection) for why the local log is authoritative and how to seed it.
 - **IPv4 only.** The script forces IPv4 resolution because WSL's IPv6 route to `api.spotify.com` is broken. See [architecture.md](architecture.md) for the why.
 
 ## `list-playlists`
@@ -55,7 +55,7 @@ If `playlists.json` doesn't exist yet, `--all` still works — it shows everythi
 
 ## `log-import`
 
-Import a list of Spotify track URIs/URLs/IDs from a file into the local `.adds_log.json` for one playlist. This is the **primary way** to teach the duplicate guard about songs already in your playlists — run it once per playlist after the initial setup, then again whenever you've added a lot of tracks through the Spotify UI. See [architecture.md → Duplicate detection](architecture.md#duplicate-detection) for the why.
+Import a list of Spotify track URIs/URLs/IDs from a file into the local `.tracks_log.json` for one playlist. This is the **primary way** to teach the duplicate guard about songs already in your playlists — run it once per playlist after the initial setup, then again whenever you've added a lot of tracks through the Spotify UI. See [architecture.md → Duplicate detection](architecture.md#duplicate-detection) for the why.
 
 By convention, drop your export files in [exportify-exports/](../exportify-exports/) at the repo root. The folder is tracked but its contents are gitignored, so personal exports don't end up in the repo.
 
@@ -99,7 +99,7 @@ Playlist: House (0BEX4bI5xtkEVA4BfYTKg2)
 - Local-only. No Spotify API call is made.
 - One playlist per run — repeat the command for each playlist.
 - Doesn't *verify* that the imported tracks are actually in the playlist on Spotify — it trusts the file.
-- If you remove a track from a playlist via the Spotify UI, this log won't notice. Either re-run the import or delete the URI from `.adds_log.json` manually.
+- If you remove a track from a playlist via the Spotify UI, this log won't notice. Either re-run the import or delete the URI from `.tracks_log.json` manually.
 
 ## `add`
 
@@ -141,6 +141,41 @@ Each value must match a key in `"playlists"` — that's enforced at config load 
 - Track already in playlist → prints `SKIP: track already in playlist` and exits.
 - Playlist name not recognised → raises `ValueError: Unknown playlist: ...`.
 - Spotify catalog endpoint times out → still adds, but prints `(track lookup failed: ReadTimeout; continuing with URI only)` and uses the URI instead of "Artist - Title" in output.
+
+## `remove`
+
+Remove a single track from one specific playlist.
+
+```bash
+# Dry-run — shows what would happen, writes nothing
+python playlist_manager.py remove "https://open.spotify.com/track/<id>" "House"
+
+# Actually remove the track
+python playlist_manager.py remove "https://open.spotify.com/track/<id>" "House" --execute
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `track` | Spotify track URL (`https://open.spotify.com/track/...`), URI (`spotify:track:...`), or bare ID |
+| `playlist` | Target playlist name — must match a key under `"playlists"` in [playlists.json](../playlists.json) or an alias under `"aliases"` (case-insensitive) |
+| `--execute` | Without this flag, nothing is written |
+
+### How it checks the track is in the playlist
+
+`remove` uses the same two-layer check as `add` — first the local `.tracks_log.json`, then a best-effort Spotify API call. In Spotify Developer Mode, `playlist_items` returns empty URIs, so the API check may show "not found" even when the track is present. If the log doesn't know about the track (e.g. it was added through the Spotify UI), the script prints `SKIP: track not found in playlist` and exits without writing.
+
+### Effect on `.tracks_log.json`
+
+On a successful removal, the script removes the track URI from `.tracks_log.json` for that playlist. This means a future `add` call for the same track will no longer see it as a duplicate and can add it back cleanly.
+
+### Exit behavior
+
+- Track not found in playlist (not in log, not confirmed by API) → prints `SKIP: track not found in playlist. No changes made.` and exits.
+- Track removed successfully → prints `DONE: track removed (snapshot …)`.
+- Playlist name not recognised → raises `ValueError: Unknown playlist: ...`.
+- Spotify API error → prints `FAILED: Spotify returned <status> <msg>`.
 
 ## `smart-add`
 
@@ -404,7 +439,7 @@ Bulk add complete (EXECUTED): 59 added, 0 failed.
 ### Limits and caveats
 
 - Each track costs one OpenAI classification call — a 132-track playlist is a few minutes of API time and ~$0.01–$0.05 of credit on `gpt-4.1-mini`.
-- Duplicate detection here uses **only** the local adds log (`.adds_log.json`), not a per-target Spotify scan. For untracked target playlists, seed the log first with [log-import](#log-import) or the script will happily re-add tracks the playlist already contains.
+- Duplicate detection here uses **only** the local adds log (`.tracks_log.json`), not a per-target Spotify scan. For untracked target playlists, seed the log first with [log-import](#log-import) or the script will happily re-add tracks the playlist already contains.
 - Single y/N — there's no per-track override. Use [review-playlist](#review-playlist) when you need to vet tracks individually.
 - If `playlist_items` returns stripped data (Spotify Developer Mode), the script offers a matching CSV in [exportify-exports/](../exportify-exports/) as a fallback — same behavior as [review-playlist](#review-playlist).
 
@@ -495,6 +530,105 @@ The classifier is always asked for its full top-5 matches per track so the targe
 - Duplicate detection uses the local adds log only — seed via [log-import](#log-import) if the target playlist isn't already tracked there, or the script may re-add tracks already in it.
 - If a track somewhat fits the target but the classifier didn't include it in its top-5 matches at all, it won't be flagged. Lower `--min-confidence` for more lenient scans, or fall back to per-track [smart-add](#smart-add).
 - If `playlist_items` returns stripped data (Spotify Developer Mode), the script offers a matching CSV in [exportify-exports/](../exportify-exports/) as a fallback — same behavior as [review-playlist](#review-playlist).
+
+## `list-tracks`
+
+Print every track in a playlist as tab-separated `URI<TAB>Artist - Title`. Useful for feeding a track list to the `/playlist-audit` or `/playlist-triage` skills without running a full classification.
+
+```bash
+# From a playlist name in playlists.json
+python playlist_manager.py list-tracks "House"
+
+# From a Spotify playlist URL
+python playlist_manager.py list-tracks "https://open.spotify.com/playlist/<id>"
+
+# From an exportify CSV (works without Spotify auth)
+python playlist_manager.py list-tracks exportify-exports/House.csv
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `playlist` | Playlist name from `playlists.json`, Spotify playlist URL/URI/ID, or path to an exportify CSV |
+
+### Output format
+
+```
+Playlist: House (42 tracks)
+spotify:track:abc123	Martin Garrix - Animals
+spotify:track:def456	Dua Lipa - Levitating
+...
+```
+
+The first line is a summary header. Every subsequent line is `<spotify_uri>\t<Artist - Title>`.
+
+### Empty output
+
+If the Spotify API returns no tracks (Spotify Developer Mode strips `playlist_items`), pass an exportify CSV path instead. The command does not auto-fallback in this path — that fallback is handled by `review-playlist`, `bulk-playlist`, and `scan-for`.
+
+## `audit-playlist`
+
+Classify every track in one of your playlists against that playlist's own expected genre or theme using OpenAI, and print a confidence score per track. Tracks below `--min-confidence` are listed as removal candidates with their Spotify URIs.
+
+> **Note**: For Claude AI + live web-search classification (more accurate, no OpenAI required), use the `/playlist-audit` skill instead. This command is the faster OpenAI-based fallback for larger playlists.
+
+```bash
+# Audit House playlist (reads tracks from Spotify API, uses default --min-confidence 60)
+python playlist_manager.py audit-playlist "House"
+
+# With exportify CSV fallback (needed in Spotify Developer Mode)
+python playlist_manager.py audit-playlist "House" --csv exportify-exports/House.csv
+
+# Lower the removal-candidate threshold to 40%
+python playlist_manager.py audit-playlist "House" --min-confidence 40
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `playlist` | Playlist name or alias to audit — must be in `playlists.json` |
+| `--csv PATH` | Path to an exportify CSV — workaround when Spotify dev-tier strips playlist contents |
+| `--min-confidence N` | Tracks below this confidence (0–100, default 60) are listed as removal candidates |
+
+### How classification works
+
+The command fetches the track list (from Spotify API or CSV), then classifies each track with OpenAI against all playlists in your config. It reports the confidence score for the target playlist specifically. If the target playlist doesn't appear in the top-10 OpenAI results for a track, the track scores 0%.
+
+This is the same OpenAI classifier used by `smart-add`, `review-playlist`, `bulk-playlist`, and `scan-for`.
+
+### Example output
+
+```
+Auditing 'House' — 12 tracks
+Source: 0BEX4bI5xtkEVA4BfYTKg2
+============================================================
+
+[1/12] Martin Garrix - Animals
+  92% — progressive house anthem; AllMusic confirms house genre
+
+[2/12] Dua Lipa - Levitating
+  38% — disco-pop with mild house elements; primarily mainstream pop
+...
+
+============================================================
+
+Audit complete: House
+  Classified:              11/12
+  High match   (≥80%): 9 tracks
+  Medium match (60-79%): 1 track
+  Low match    (<60%): 1 track
+  Classification failed:   1 track
+
+Tracks below 60% — candidates for removal:
+   38% — Dua Lipa - Levitating
+          URI: spotify:track:463CkQjx2Zk1yXoBuierM9
+```
+
+### What to do with the candidates
+
+Copy the URIs from the output and pass them to [`remove`](#remove) one by one, or use the `/playlist-audit` skill which automates the whole flow (audit → threshold → confirmation → removal).
 
 ## `tests/test_spotify.py`
 

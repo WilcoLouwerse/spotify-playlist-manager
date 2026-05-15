@@ -45,8 +45,8 @@ Special playlist-name characters to handle:
 From [`docs/commands.md`](../../../../docs/commands.md):
 
 - **Dry-run by default in the CLI.** Without `--execute`, the script prints the planned action and exits without writing. The skill always passes `--execute` because it has already confirmed with the user via **AskUserQuestion**.
-- **Duplicate guard is always on.** Before writing, the script consults the local `.adds_log.json`. If the track is already logged for that playlist, the script prints `SKIP: track already in playlist` and exits. There is no override flag.
-- **Development Mode WARN.** When the script prints `WARN: Spotify returned no track URIs from playlist_items — the app is in Development Mode...`, surface it verbatim and add a Dutch tip: *"Gebruik `/playlist-log-import` om `.adds_log.json` te seeden vanuit een Exportify CSV-export, zodat de duplicate-guard weet welke tracks al in je playlists zitten."* The WARN does not mean the add failed — check the line after it for `DONE` or `SKIP`.
+- **Duplicate guard is always on.** Before writing, the script consults the local `.tracks_log.json`. If the track is already logged for that playlist, the script prints `SKIP: track already in playlist` and exits. There is no override flag.
+- **Development Mode WARN.** When the script prints `WARN: Spotify returned no track URIs from playlist_items — the app is in Development Mode...`, surface it verbatim and add a Dutch tip: *"Gebruik `/playlist-log-import` om `.tracks_log.json` te seeden vanuit een Exportify CSV-export, zodat de duplicate-guard weet welke tracks al in je playlists zitten."* The WARN does not mean the add failed — check the line after it for `DONE` or `SKIP`.
 - **IPv4 only.** Spotify's IPv6 route is broken on WSL; the script forces IPv4. No skill action needed — just know that the first call may take a moment.
 - **Unknown playlist** → `ValueError: Unknown playlist: ...`. The skill should have already validated names against `playlists.json`; if this fires, the file probably changed mid-flow — re-read it. If the playlist the user wants genuinely isn't in the config yet, mention `/playlist-config` to add it.
 

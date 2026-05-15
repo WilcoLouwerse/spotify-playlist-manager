@@ -113,7 +113,7 @@
       "Maak een nieuwe playlist met de naam Workouts",
       "Geef me de syntax voor de Spotify OAuth flow",
       "Wat doet de bulk-playlist subcommand precies?",
-      "Hoe seed ik .adds_log.json met log-import?",
+      "Hoe seed ik .tracks_log.json met log-import?",
       "Refactor de smart-add functie zodat hij retries doet"
     ]
   }

@@ -13,7 +13,7 @@ For the end-user CLI reference (`python playlist_manager.py …`), see [docs/com
 | [`/playlist-match`](#playlist-match) | Workflow | Classifies a shared song's genres with confidence scores, recommends matching playlists from `playlists.json`, and can invoke `add` / `smart-add` to write the result |
 | [`/playlist-triage`](#playlist-triage) | Workflow | Triages a source playlist into target playlists via `review-playlist` (per-track y/N) or `bulk-playlist` (single y/N) |
 | [`/playlist-scan`](#playlist-scan) | Workflow | Scans a source playlist for tracks that fit a chosen target playlist via `scan-for` |
-| [`/playlist-log-import`](#playlist-log-import) | Workflow | Seeds the local duplicate-guard log (`.adds_log.json`) from an Exportify CSV via `log-import` |
+| [`/playlist-log-import`](#playlist-log-import) | Workflow | Seeds the local duplicate-guard log (`.tracks_log.json`) from an Exportify CSV via `log-import` |
 | [`/playlist-config`](#playlist-config) | Workflow | Bootstraps or extends `playlists.json` from your Spotify account via `list-playlists --all` |
 
 All five skills produce **Dutch** user-facing prose (the user's preference); their `SKILL.md`, `references/`, `templates/`, and `examples/` stay in English so triggers and steering remain model-readable. See [writing-docs.md → Language](writing-docs.md) for the convention.
@@ -129,7 +129,7 @@ find house-fitting tracks in my triage
 
 **Category:** Workflow
 
-Seeds the local duplicate-guard log (`.adds_log.json`) for one playlist from an Exportify CSV (or any file containing Spotify track URIs/URLs/IDs). Wraps the project's [`log-import`](../../docs/commands.md#log-import) CLI subcommand.
+Seeds the local duplicate-guard log (`.tracks_log.json`) for one playlist from an Exportify CSV (or any file containing Spotify track URIs/URLs/IDs). Wraps the project's [`log-import`](../../docs/commands.md#log-import) CLI subcommand.
 
 **Usage:**
 

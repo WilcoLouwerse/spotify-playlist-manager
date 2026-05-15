@@ -1,0 +1,93 @@
+{
+  "skill_name": "playlist-audit",
+  "version": "1.0.0",
+  "created": "2026-05-15",
+  "last_validated": null,
+  "baseline_score": null,
+  "notes": "Initial evals scaffolded 2026-05-15. Run via /skill-creator to populate grading.json and timing data.",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Controleer mijn House playlist — welke nummers passen er niet in?",
+      "expected_output": "Skill resolves 'House' from playlists.json. Runs list-tracks to get the track list. Offers web-first vs quick mode via AskUserQuestion. Produces an audit report with confidence scores. Asks threshold. Offers removal via AskUserQuestion.",
+      "expectations": [
+        "Skill resolves 'House' from playlists.json (not invented)",
+        "Skill runs .venv/bin/python playlist_manager.py list-tracks 'House' via Bash",
+        "Skill offers audit mode choice (web-first vs quick) via AskUserQuestion",
+        "Skill produces an audit report showing score distribution (✅/⚠️/❌)",
+        "Skill asks for removal threshold via AskUserQuestion"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "audit mijn House playlist, maar gebruik de snelle mode",
+      "expected_output": "Skill skips the mode-choice AskUserQuestion and goes directly to quick (OpenAI CLI) mode. Runs audit-playlist CLI. Shows output. Offers removal.",
+      "expectations": [
+        "Skill uses quick mode (audit-playlist CLI) without asking for mode choice",
+        "Planned command uses '.venv/bin/python playlist_manager.py audit-playlist'",
+        "Playlist name is double-quoted in the command",
+        "Skill offers removal of low-confidence tracks after showing the report"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "welke nummers passen er niet in mijn Funny meme playlist?",
+      "expected_output": "Skill identifies 'Funny meme' as a theme playlist with special_rules. Applies the special_rule literally when scoring. Does NOT use genre match alone.",
+      "expectations": [
+        "Skill reads special_rules for 'Funny meme' from playlists.json",
+        "Skill applies the meme/theme criteria when classifying tracks, not just genre",
+        "Audit report notes the theme-based scoring approach"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "audit mijn Random sht playlist",
+      "expected_output": "Skill refuses to audit Random sht — it is the catch-all by design. Explains this in Dutch.",
+      "expectations": [
+        "Skill does NOT run list-tracks or audit-playlist for 'Random sht'",
+        "Skill explains in Dutch that Random sht is the catch-all (every track belongs there)",
+        "Skill suggests auditing a specific genre playlist instead"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "voeg dit nummer toe aan House: https://open.spotify.com/track/xxx",
+      "expected_output": "This is an ADD request, not an AUDIT request. Skill routes to /playlist-match.",
+      "expectations": [
+        "Skill does NOT start an audit flow",
+        "Skill mentions /playlist-match as the right skill for adding tracks",
+        "Skill does not run any CLI commands"
+      ]
+    }
+  ],
+  "trigger_tests": {
+    "should_trigger": [
+      "controleer mijn House playlist — welke nummers passen er niet in?",
+      "audit mijn Techno playlist",
+      "welke nummers in House passen er eigenlijk niet in?",
+      "check mijn House op mismatches",
+      "kloppen alle nummers in mijn Drum & Bass playlist?",
+      "zijn er nummers in House die er niet in passen?",
+      "audit House, gebruik de snelle mode",
+      "controleer of mijn Trance playlist nog klopt",
+      "welke House-nummers zijn eigenlijk geen house?",
+      "check my playlist for mismatches",
+      "zijn er nummers die niet thuishoren in mijn Synthwave playlist?",
+      "audit mijn playlists op genre-mismatches"
+    ],
+    "should_not_trigger": [
+      "voeg dit toe aan House: https://open.spotify.com/track/xxx",
+      "Tame Impala - The Less I Know The Better",
+      "sorteer mijn triage in al mijn playlists",
+      "welke tracks in mijn triage passen in House?",
+      "verwijder spotify:track:xxx uit House",
+      "log-import exportify-exports/House.csv naar House",
+      "list-playlists",
+      "welke playlists heb ik?",
+      "fix the IPv6 bug",
+      "wat doet smart-add?",
+      "voeg een nieuwe playlist toe aan mijn config",
+      "hoe werkt playlist_manager.py?"
+    ]
+  }
+}

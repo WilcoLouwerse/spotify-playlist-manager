@@ -32,6 +32,8 @@ User-facing prose is **Dutch** (the user authored the format spec in Dutch). Kee
    - **Other** — out of scope. Hand back to the surrounding agent; do not produce an analysis. But before handing off, check whether a sibling skill is the right fit and mention it in Dutch:
      - User wants to **sort / triage a whole playlist** into target playlists → `/playlist-triage`
      - User wants to **find tracks in a playlist that fit one specific target** → `/playlist-scan`
+     - User wants to **remove a track** from a playlist → `/playlist-remove`
+     - User wants to **audit a playlist** (check if existing tracks match its genre/theme) → `/playlist-audit`
      - User wants to **add or sync playlists in the config** (`playlists.json`) → `/playlist-config`
      - User wants to **seed the duplicate guard** from an Exportify export → `/playlist-log-import`
 

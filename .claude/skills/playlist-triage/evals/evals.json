@@ -86,7 +86,7 @@
       "geef me de syntax voor de Spotify Web API",
       "scan deze playlist op House-tracks",
       "log-import exportify-exports/House.csv naar House",
-      "hoe seed ik .adds_log.json?",
+      "hoe seed ik .tracks_log.json?",
       "wat doet de smart-add subcommand?",
       "hoe schrijf ik een test voor playlist_manager.py?",
       "wat is mijn Spotify-statistiek deze maand?",

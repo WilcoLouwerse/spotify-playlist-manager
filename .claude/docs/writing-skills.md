@@ -117,7 +117,7 @@ The skill contains domain-specific knowledge that makes it uniquely effective fo
 **In this repository**, L4 personalization includes:
 - The [playlists.json](../../playlists.json) taxonomy — categories, aliases, special rules, catch-all guard
 - The Spotify Web API contract (track URI/URL/ID parsing, playlist write scopes, dev-tier API restrictions)
-- The project's CLI surface — [`playlist_manager.py`](../../playlist_manager.py) subcommands (`add`, `smart-add`, `review-playlist`, `bulk-playlist`, `scan-for`, `analyze-only`, `list-playlists`, `log-import`), the dry-run-by-default safety pattern, and the `.adds_log.json` duplicate guard
+- The project's CLI surface — [`playlist_manager.py`](../../playlist_manager.py) subcommands (`add`, `smart-add`, `review-playlist`, `bulk-playlist`, `scan-for`, `analyze-only`, `list-playlists`, `log-import`), the dry-run-by-default safety pattern, and the `.tracks_log.json` duplicate guard
 - Dutch user-facing prose (the author's preferred output language), with English internals so triggers and steering stay model-readable
 - The OpenAI classifier's role in `smart-add` and the genre-source-verification rules documented in the skill's `references/`
 
@@ -186,7 +186,7 @@ Promotion criteria: observation confirmed across 3+ executions, or resolves a me
 - 2026-04-18: Never quote `Random sht` in user-facing output — it's the catch_all fallback
 
 ## Domain Knowledge
-- 2026-04-16: Dev-tier Spotify accounts get blank track lists from `/playlists/{id}/tracks`; rely on `.adds_log.json`
+- 2026-04-16: Dev-tier Spotify accounts get blank track lists from `/playlists/{id}/tracks`; rely on `.tracks_log.json`
 
 ## Open Questions
 - Should letter `E` (extended playlist analysis) always include alternatives even when confidence is 90%+?

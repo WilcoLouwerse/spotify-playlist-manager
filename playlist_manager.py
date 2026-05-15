@@ -220,29 +220,41 @@ def get_track(sp, track_input):
     }
 
 
-ADDS_LOG_PATH = ".adds_log.json"
+TRACKS_LOG_PATH = ".tracks_log.json"
 _WARNED_ABOUT_STRIPPED_DATA = False
 
 
-def _load_adds_log():
+def _load_tracks_log():
     try:
-        with open(ADDS_LOG_PATH) as f:
+        with open(TRACKS_LOG_PATH) as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return {}
 
 
-def _save_adds_log(log):
-    with open(ADDS_LOG_PATH, "w") as f:
+def _save_tracks_log(log):
+    with open(TRACKS_LOG_PATH, "w") as f:
         json.dump(log, f, indent=2)
 
 
 def log_successful_add(playlist_id, track_uri):
-    log = _load_adds_log()
+    log = _load_tracks_log()
     uris = log.setdefault(playlist_id, [])
     if track_uri not in uris:
         uris.append(track_uri)
-        _save_adds_log(log)
+        _save_tracks_log(log)
+
+
+def remove_from_log(playlist_id, track_uri):
+    log = _load_tracks_log()
+    uris = log.get(playlist_id, [])
+    if track_uri in uris:
+        uris = [u for u in uris if u != track_uri]
+        if uris:
+            log[playlist_id] = uris
+        else:
+            del log[playlist_id]
+        _save_tracks_log(log)
 
 
 def playlist_contains_uri(sp, playlist_id, track_uri):
@@ -250,7 +262,7 @@ def playlist_contains_uri(sp, playlist_id, track_uri):
     # and everything seeded via log-import. The Spotify API in this app's
     # tier returns playlist_items with empty track URIs, so it cannot be
     # the primary source of truth.
-    log = _load_adds_log()
+    log = _load_tracks_log()
     if track_uri in log.get(playlist_id, []):
         return True
 
@@ -277,7 +289,7 @@ def playlist_contains_uri(sp, playlist_id, track_uri):
         print(
             "WARN: Spotify returned no track URIs from playlist_items — the app is "
             "in Development Mode and the API does not expose playlist contents. "
-            "Duplicate detection relies on .adds_log.json; use `log-import` to "
+            "Duplicate detection relies on .tracks_log.json; use `log-import` to "
             "seed it from a CSV export (e.g. https://exportify.net)."
         )
         _WARNED_ABOUT_STRIPPED_DATA = True
@@ -314,6 +326,37 @@ def add_track(sp, track_input, playlist_name, execute):
         return
     log_successful_add(playlist_id, track_uri)
     print(f"\nDONE: track added (snapshot {snapshot[:10]}…)")
+
+
+def remove_track(sp, track_input, playlist_name, execute):
+    canonical_name = normalize_playlist_name(playlist_name)
+    playlist_id = load_config()["playlists"][canonical_name]
+    track = get_track(sp, track_input)
+    track_uri = track["uri"]
+
+    print(f"Track: {track['label']}")
+    print(f"Target playlist: {canonical_name}")
+    print(f"Playlist ID: {playlist_id}")
+
+    if not playlist_contains_uri(sp, playlist_id, track_uri):
+        print("\nSKIP: track not found in playlist. No changes made.")
+        return
+
+    if not execute:
+        print("\nDRY RUN: no changes made. Add --execute to actually remove the track.")
+        return
+
+    try:
+        resp = sp.playlist_remove_all_occurrences_of_items(playlist_id, [track_uri])
+    except spotipy.SpotifyException as exc:
+        print(f"\nFAILED: Spotify returned {exc.http_status} {exc.msg or exc.code}")
+        return
+    snapshot = (resp or {}).get("snapshot_id") if isinstance(resp, dict) else None
+    if not snapshot:
+        print(f"\nWARN: Spotify returned no snapshot_id (response={resp!r}); removal may not have persisted.")
+        return
+    remove_from_log(playlist_id, track_uri)
+    print(f"\nDONE: track removed (snapshot {snapshot[:10]}…)")
 
 
 def validate_classification(data):
@@ -854,7 +897,7 @@ def scan_for(sp, target_playlist_name, source_playlist_input, execute, min_confi
     total = len(items)
     print(f"Found {total} tracks. Classifying...\n")
 
-    log = _load_adds_log()
+    log = _load_tracks_log()
     already_in_target = set(log.get(target_pid, []))
 
     candidates = []
@@ -954,7 +997,7 @@ def bulk_playlist(sp, playlist_input, execute, max_playlists, min_playlists, min
     # Trust the local adds log for duplicate detection here — the dev-tier API
     # strips playlist contents anyway, and per-match API checks would multiply
     # request volume by tracks × suggestions × pages.
-    log = _load_adds_log()
+    log = _load_tracks_log()
     already_in = {pid: set(uris) for pid, uris in log.items()}
 
     plan = {}
@@ -1131,7 +1174,7 @@ def log_import(playlist_name, file_path):
         print(f"File not found: {file_path}")
         return
 
-    log = _load_adds_log()
+    log = _load_tracks_log()
     existing = list(log.get(playlist_id, []))
     pre_existing = set(existing)
     seen_in_file = set()
@@ -1157,7 +1200,7 @@ def log_import(playlist_name, file_path):
         added += 1
 
     log[playlist_id] = existing
-    _save_adds_log(log)
+    _save_tracks_log(log)
 
     print(f"Playlist: {canonical_name} ({playlist_id})")
     print(f"  Imported new URIs: {added}")
@@ -1218,6 +1261,119 @@ def list_all_spotify_playlists(sp):
 
     if not writable:
         print("\nNo writable playlists found on your Spotify account.")
+
+
+def list_tracks(sp, playlist_input):
+    """Print every track in a playlist as tab-separated `URI<TAB>Artist - Title`.
+
+    Accepts a playlist name from playlists.json, a Spotify playlist URL/URI/ID,
+    or a path to an exportify CSV. Used by the /playlist-audit and /playlist-triage
+    skills to get a raw track list without classifying.
+    """
+    try:
+        canonical_name = normalize_playlist_name(playlist_input)
+        playlist_id = load_config()["playlists"][canonical_name]
+        items = _iter_playlist_tracks(sp, playlist_id)
+        source_name = canonical_name
+    except ValueError:
+        source_name, _, items = _resolve_source(sp, playlist_input)
+        if items is None:
+            return
+
+    if not items:
+        print(
+            f"No readable tracks returned for '{playlist_input}'. "
+            "The app may be in Development Mode where Spotify strips playlist contents. "
+            "Export the playlist via https://exportify.net and pass the CSV path instead."
+        )
+        return
+
+    print(f"Playlist: {source_name} ({len(items)} tracks)")
+    for item in items:
+        print(f"{item['uri']}\t{item['label']}")
+
+
+def audit_playlist(sp, playlist_name, csv_path, min_confidence):
+    """Classify every track in a playlist against its own genre/theme using OpenAI.
+
+    Prints a confidence score per track and a summary. Tracks below `min_confidence`
+    are listed as removal candidates with their Spotify URIs.
+
+    For Claude AI + live web-search classification use the /playlist-audit skill instead —
+    this command is the faster OpenAI-based fallback for larger playlists.
+    """
+    canonical_name = normalize_playlist_name(playlist_name)
+    playlist_id = load_config()["playlists"][canonical_name]
+
+    if csv_path:
+        if not os.path.isfile(csv_path):
+            print(f"CSV file not found: {csv_path}")
+            return
+        items = _load_tracks_from_csv(csv_path)
+        source_desc = csv_path
+    else:
+        items = _iter_playlist_tracks(sp, playlist_id)
+        source_desc = playlist_id
+
+    if not items:
+        if not csv_path:
+            print(
+                f"No readable tracks returned for '{canonical_name}' ({playlist_id}). "
+                "The app may be in Development Mode where Spotify strips playlist contents. "
+                "Export the playlist via https://exportify.net and use --csv <path> to pass the file."
+            )
+        else:
+            print(f"No readable tracks in {csv_path}.")
+        return
+
+    total = len(items)
+    print(f"Auditing '{canonical_name}' — {total} tracks")
+    print(f"Source: {source_desc}")
+    print("=" * 60)
+
+    results = []
+    for idx, item in enumerate(items, start=1):
+        print(f"\n[{idx}/{total}] {item['label']}", flush=True)
+        track, classification = _classify_and_filter(
+            sp, item["uri"], max_playlists=10, min_playlists=5, min_confidence=0
+        )
+        if track is None or classification is None:
+            print("  — classification failed")
+            results.append({"item": item, "confidence": 0, "reason": "classification failed", "failed": True})
+            continue
+        target_match = next(
+            (m for m in classification["playlist_matches"] if m["playlist"] == canonical_name),
+            None,
+        )
+        confidence = target_match["confidence"] if target_match else 0
+        reason = target_match["reason"] if target_match else "not matched by classifier"
+        print(f"  {confidence}% — {reason}")
+        results.append({"item": item, "confidence": confidence, "reason": reason, "failed": False})
+
+    print("\n" + "=" * 60)
+    successful = [r for r in results if not r.get("failed")]
+    high = [r for r in successful if r["confidence"] >= 80]
+    medium = [r for r in successful if 60 <= r["confidence"] < 80]
+    low = [r for r in successful if r["confidence"] < 60]
+    failed_count = len([r for r in results if r.get("failed")])
+
+    print(f"\nAudit complete: {canonical_name}")
+    print(f"  Classified:              {len(successful)}/{total}")
+    print(f"  High match   (≥80%): {len(high):4d} tracks")
+    print(f"  Medium match (60-79%): {len(medium):4d} tracks")
+    print(f"  Low match    (<60%): {len(low):4d} tracks")
+    if failed_count:
+        print(f"  Classification failed: {failed_count:4d} tracks")
+
+    if min_confidence > 0:
+        below = [r for r in successful if r["confidence"] < min_confidence]
+        if below:
+            print(f"\nTracks below {min_confidence}% — candidates for removal:")
+            for r in below:
+                print(f"  {r['confidence']:3d}% — {r['item']['label']}")
+                print(f"         URI: {r['item']['uri']}")
+        else:
+            print(f"\nAll classified tracks match '{canonical_name}' at ≥{min_confidence}% confidence.")
 
 
 def _ranged_int(min_val, max_val):
@@ -1421,6 +1577,44 @@ def main():
              "ID is imported; other lines are ignored.",
     )
 
+    remove_parser = subparsers.add_parser("remove", help="Remove a track from a playlist")
+    remove_parser.add_argument("track", help="Spotify track URL, URI, or ID")
+    remove_parser.add_argument("playlist", help="Target playlist name")
+    remove_parser.add_argument("--execute", action="store_true", help="Actually perform the removal")
+
+    list_tracks_parser = subparsers.add_parser(
+        "list-tracks",
+        help="List every track in a playlist as tab-separated URI and label. "
+             "Accepts a playlist name from playlists.json, a Spotify playlist URL/URI/ID, "
+             "or an exportify CSV path. Used by skills to get raw track lists.",
+    )
+    list_tracks_parser.add_argument(
+        "playlist",
+        help="Playlist name (from playlists.json), Spotify URL/URI/ID, or exportify CSV path",
+    )
+
+    audit_parser = subparsers.add_parser(
+        "audit-playlist",
+        help="Classify every track in a playlist against its own expected genre/theme using OpenAI "
+             "and report a confidence score per track. Tracks below --min-confidence are listed as "
+             "removal candidates. For Claude AI + live web-search accuracy, use the /playlist-audit skill.",
+    )
+    audit_parser.add_argument(
+        "playlist",
+        help="Playlist name or alias to audit (must be in playlists.json)",
+    )
+    audit_parser.add_argument(
+        "--csv",
+        metavar="PATH",
+        help="Path to an exportify CSV export — workaround when Spotify dev-tier strips playlist contents",
+    )
+    audit_parser.add_argument(
+        "--min-confidence",
+        type=_ranged_int(0, 100),
+        default=60,
+        help="List tracks below this confidence as removal candidates (0-100, default 60)",
+    )
+
     args = parser.parse_args()
 
     if args.command == "list-playlists":
@@ -1512,6 +1706,12 @@ def main():
             args.min_playlists,
             args.min_confidence,
         )
+    elif args.command == "remove":
+        remove_track(sp, args.track, args.playlist, args.execute)
+    elif args.command == "list-tracks":
+        list_tracks(sp, args.playlist)
+    elif args.command == "audit-playlist":
+        audit_playlist(sp, args.playlist, args.csv, args.min_confidence)
 
     return 0
 

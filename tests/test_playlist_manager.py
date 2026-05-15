@@ -306,37 +306,37 @@ class TestValidateClassification:
 
 class TestAddsLog:
     def test_load_missing_file_returns_empty(self, monkeypatch, tmp_path):
-        monkeypatch.setattr(pm, "ADDS_LOG_PATH", str(tmp_path / "missing.json"))
-        assert pm._load_adds_log() == {}
+        monkeypatch.setattr(pm, "TRACKS_LOG_PATH", str(tmp_path / "missing.json"))
+        assert pm._load_tracks_log() == {}
 
     def test_load_corrupt_file_returns_empty(self, monkeypatch, tmp_path):
         path = tmp_path / "log.json"
         path.write_text("not valid json {")
-        monkeypatch.setattr(pm, "ADDS_LOG_PATH", str(path))
-        assert pm._load_adds_log() == {}
+        monkeypatch.setattr(pm, "TRACKS_LOG_PATH", str(path))
+        assert pm._load_tracks_log() == {}
 
     def test_save_then_load_roundtrip(self, monkeypatch, tmp_path):
-        monkeypatch.setattr(pm, "ADDS_LOG_PATH", str(tmp_path / "log.json"))
-        pm._save_adds_log({"pid1": ["spotify:track:a", "spotify:track:b"]})
-        assert pm._load_adds_log() == {"pid1": ["spotify:track:a", "spotify:track:b"]}
+        monkeypatch.setattr(pm, "TRACKS_LOG_PATH", str(tmp_path / "log.json"))
+        pm._save_tracks_log({"pid1": ["spotify:track:a", "spotify:track:b"]})
+        assert pm._load_tracks_log() == {"pid1": ["spotify:track:a", "spotify:track:b"]}
 
     def test_log_successful_add_appends(self, monkeypatch, tmp_path):
-        monkeypatch.setattr(pm, "ADDS_LOG_PATH", str(tmp_path / "log.json"))
+        monkeypatch.setattr(pm, "TRACKS_LOG_PATH", str(tmp_path / "log.json"))
         pm.log_successful_add("pid1", "spotify:track:a")
         pm.log_successful_add("pid1", "spotify:track:b")
-        assert pm._load_adds_log() == {"pid1": ["spotify:track:a", "spotify:track:b"]}
+        assert pm._load_tracks_log() == {"pid1": ["spotify:track:a", "spotify:track:b"]}
 
     def test_log_successful_add_dedups(self, monkeypatch, tmp_path):
-        monkeypatch.setattr(pm, "ADDS_LOG_PATH", str(tmp_path / "log.json"))
+        monkeypatch.setattr(pm, "TRACKS_LOG_PATH", str(tmp_path / "log.json"))
         pm.log_successful_add("pid1", "spotify:track:a")
         pm.log_successful_add("pid1", "spotify:track:a")
-        assert pm._load_adds_log() == {"pid1": ["spotify:track:a"]}
+        assert pm._load_tracks_log() == {"pid1": ["spotify:track:a"]}
 
     def test_log_successful_add_separate_playlists(self, monkeypatch, tmp_path):
-        monkeypatch.setattr(pm, "ADDS_LOG_PATH", str(tmp_path / "log.json"))
+        monkeypatch.setattr(pm, "TRACKS_LOG_PATH", str(tmp_path / "log.json"))
         pm.log_successful_add("pid1", "spotify:track:a")
         pm.log_successful_add("pid2", "spotify:track:b")
-        log = pm._load_adds_log()
+        log = pm._load_tracks_log()
         assert log == {"pid1": ["spotify:track:a"], "pid2": ["spotify:track:b"]}
 
 
@@ -344,7 +344,7 @@ class TestLogImport:
     @pytest.fixture
     def log_path(self, monkeypatch, tmp_path):
         path = tmp_path / "log.json"
-        monkeypatch.setattr(pm, "ADDS_LOG_PATH", str(path))
+        monkeypatch.setattr(pm, "TRACKS_LOG_PATH", str(path))
         return path
 
     def test_imports_new_uris(self, config, log_path, tmp_path, capsys):
@@ -356,7 +356,7 @@ class TestLogImport:
         pm.log_import("House", str(src))
 
         house_id = config["playlists"]["House"]
-        assert pm._load_adds_log() == {
+        assert pm._load_tracks_log() == {
             house_id: [f"spotify:track:{VALID_ID}", f"spotify:track:{'a' * 22}"]
         }
         out = capsys.readouterr().out
@@ -365,7 +365,7 @@ class TestLogImport:
 
     def test_counters_cover_all_branches(self, config, log_path, tmp_path, capsys):
         house_id = config["playlists"]["House"]
-        pm._save_adds_log({house_id: [f"spotify:track:{VALID_ID}"]})
+        pm._save_tracks_log({house_id: [f"spotify:track:{VALID_ID}"]})
 
         new_id = "b" * 22
         src = tmp_path / "tracks.txt"
@@ -378,7 +378,7 @@ class TestLogImport:
         )
         pm.log_import("House", str(src))
 
-        assert pm._load_adds_log() == {
+        assert pm._load_tracks_log() == {
             house_id: [f"spotify:track:{VALID_ID}", f"spotify:track:{new_id}"]
         }
         out = capsys.readouterr().out
@@ -394,11 +394,11 @@ class TestLogImport:
         pm.log_import("techno", str(src))
 
         techno_id = config["playlists"]["Techno"]
-        assert pm._load_adds_log() == {techno_id: [f"spotify:track:{VALID_ID}"]}
+        assert pm._load_tracks_log() == {techno_id: [f"spotify:track:{VALID_ID}"]}
 
     def test_missing_file_is_graceful(self, config, log_path, tmp_path, capsys):
         pm.log_import("House", str(tmp_path / "nope.txt"))
-        assert pm._load_adds_log() == {}
+        assert pm._load_tracks_log() == {}
         assert "File not found" in capsys.readouterr().out
 
     def test_unknown_playlist_raises(self, config, log_path, tmp_path):

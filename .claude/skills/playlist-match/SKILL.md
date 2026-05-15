@@ -29,13 +29,19 @@ User-facing prose is **Dutch** (the user authored the format spec in Dutch). Kee
    Classify the message:
    - **New analysis** — names a song, pastes a Spotify track URL, or asks which playlist fits.
    - **Natural-language follow-up** — references the prior analysis without going through AskUserQuestion, e.g. "voeg toe aan House" / "meer over de artiest" / "wat voor album is dit". Route directly to the matching follow-up step.
-   - **Other** — out of scope. Hand back to the surrounding agent; do not produce an analysis.
+   - **Other** — out of scope. Hand back to the surrounding agent; do not produce an analysis. But before handing off, check whether a sibling skill is the right fit and mention it in Dutch:
+     - User wants to **sort / triage a whole playlist** into target playlists → `/playlist-triage`
+     - User wants to **find tracks in a playlist that fit one specific target** → `/playlist-scan`
+     - User wants to **add or sync playlists in the config** (`playlists.json`) → `/playlist-config`
+     - User wants to **seed the duplicate guard** from an Exportify export → `/playlist-log-import`
 
    For follow-ups jump to step 9.
 
 2. **Read the taxonomy**
 
    Read [`playlists.json`](../../../playlists.json). The legal recommendations are the union of `categories.genre`, `categories.mood`, and `categories.theme`. Honor `special_rules` (Funny meme / Ket420 / Hooyah / Electronic Music) literally. See `references/playlists.md`.
+
+   If the user mentions a playlist that is not in the file, note it and suggest `/playlist-config` to add it before continuing with the analysis.
 
 3. **Identify the song**
 

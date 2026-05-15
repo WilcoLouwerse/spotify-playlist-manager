@@ -1,0 +1,66 @@
+{
+  "eval_id": 2,
+  "eval_name": "quick-mode",
+  "skill": "playlist-audit",
+  "date": "2026-05-15",
+  "prompt": "audit mijn House playlist, maar gebruik de snelle mode",
+  "mode": "with_skill",
+
+  "assertions": [
+    {
+      "id": "A1",
+      "description": "Skill uses quick mode (audit-playlist CLI) without asking for mode choice",
+      "result": "PASS",
+      "note": "User explicitly said 'snelle mode'; AskUserQuestion for mode-choice was correctly skipped."
+    },
+    {
+      "id": "A2",
+      "description": "Planned command uses '.venv/bin/python playlist_manager.py audit-playlist'",
+      "result": "PASS",
+      "note": "Exact command shown: .venv/bin/python playlist_manager.py audit-playlist \"House\""
+    },
+    {
+      "id": "A3",
+      "description": "Playlist name is double-quoted in the command",
+      "result": "PASS",
+      "note": "\"House\" is correctly double-quoted in the bash command."
+    },
+    {
+      "id": "A4",
+      "description": "Skill offers removal of low-confidence tracks after showing the report",
+      "result": "PASS",
+      "note": "Step 7 threshold AskUserQuestion documented and included in the user-facing response."
+    }
+  ],
+
+  "assertions_passed": 4,
+  "assertions_failed": 0,
+  "assertions_total": 4,
+  "pass_rate": 1.0,
+
+  "skill_steps_followed": [
+    "Step 1: Intent and playlist detected from user message",
+    "Step 2: 'House' resolved in playlists.json (genre category, ID 0BEX4bI5xtkEVA4BfYTKg2)",
+    "Step 3: list-tracks command planned (not executed — Spotify API unavailable)",
+    "Step 4: Mode-choice AskUserQuestion skipped — user explicitly requested quick mode",
+    "Step 5b: audit-playlist command planned with correct syntax",
+    "Step 6: Audit report format shown using audit-report.md template",
+    "Step 7: Removal threshold AskUserQuestion documented"
+  ],
+
+  "steps_skipped": [
+    "Step 4 AskUserQuestion (correct — user override)",
+    "Steps 8–11 (correct — command not executed, eval stops after report + removal offer)"
+  ],
+
+  "guardrails_respected": {
+    "no_execute_without_confirmation": true,
+    "random_sht_not_audited": true,
+    "venv_python_used": true,
+    "playlist_name_quoted": true,
+    "user_facing_prose_dutch": true
+  },
+
+  "overall_score": "PASS",
+  "notes": "All four assertions pass. The skill correctly interprets the user's explicit mode override and skips the mode-choice interaction. The planned command is syntactically correct. The removal offer is documented as required by step 7."
+}

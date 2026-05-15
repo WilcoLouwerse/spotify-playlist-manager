@@ -35,11 +35,14 @@ A single-file CLI built on `argparse`:
 
 - `list-playlists` — prints the playlists in `playlists.json`, or with `--all` lists every writable playlist on the Spotify account.
 - `add` — direct, single-target add with duplicate guard.
+- `remove` — direct, single-target removal; mirrors `add` — dry-run by default, `--execute` to write. Updates `.tracks_log.json` on success.
 - `smart-add` — OpenAI classifier + confirmation prompt + duplicate guard.
 - `analyze-only` — same classification pipeline as `smart-add`, no prompts, no writes.
+- `list-tracks` — prints every track in a playlist as tab-separated `URI<TAB>Artist - Title`. Read-only; used by skills (`/playlist-audit`, `/playlist-triage`, `/playlist-scan`) to get a track list without a full classification round-trip.
 - `review-playlist` — walk a source playlist track-by-track with per-track y/N/s/q.
-- `bulk-playlist` — classify every track in a source playlist, show a per-target tally, then apply everything after a single y/N. Uses the local adds log directly for duplicate detection to keep request volume bounded.
+- `bulk-playlist` — classify every track in a source playlist, show a per-target tally, then apply everything after a single y/N. Uses the local tracks log directly for duplicate detection to keep request volume bounded.
 - `scan-for` — pick one target playlist and scan a source playlist for tracks the classifier would route to that target. Same single-y/N UX as `bulk-playlist`, but the output is one candidate list instead of a per-target tally.
+- `audit-playlist` — OpenAI-backed batch audit: classifies every track in a playlist and reports a confidence score for each against the playlist's own genre/theme. See `/playlist-audit` skill for the Claude AI + web-search version.
 - `log-import` — seeds the local `.tracks_log.json` from a file of track URIs/URLs/IDs (e.g. an Exportify CSV), to cover playlist contents the dev-tier API refuses to expose.
 
 Key data sources:
@@ -201,20 +204,20 @@ No restart needed — `playlists.json` is read each run. See [setup.md → Confi
 
 ## Adding a new subcommand
 
-`main()` uses `argparse` subparsers. To add `remove`, for example:
+`main()` uses `argparse` subparsers. To add a new command, e.g. `my-command`:
 
-1. Define a `remove_track(sp, ...)` function next to `add_track`.
-2. In `main()` add:
+1. Define a `my_command(sp, ...)` function alongside the existing command functions.
+2. In `main()` register it:
    ```python
-   remove_parser = subparsers.add_parser("remove", help="Remove a track from a playlist")
-   remove_parser.add_argument("track", help="...")
-   remove_parser.add_argument("playlist", help="...")
-   remove_parser.add_argument("--execute", action="store_true")
+   my_parser = subparsers.add_parser("my-command", help="What it does")
+   my_parser.add_argument("track", help="...")
+   my_parser.add_argument("playlist", help="...")
+   my_parser.add_argument("--execute", action="store_true")
    ```
-3. Dispatch:
+3. Dispatch in the `if/elif` chain:
    ```python
-   elif args.command == "remove":
-       remove_track(sp, args.track, args.playlist, args.execute)
+   elif args.command == "my-command":
+       my_command(sp, args.track, args.playlist, args.execute)
    ```
 
-Keep the dry-run default and duplicate/safety guards consistent with existing commands.
+Keep the dry-run default and duplicate/safety guards consistent with existing commands (`add`, `remove`, `smart-add`, etc.).

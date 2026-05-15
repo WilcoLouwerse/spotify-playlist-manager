@@ -1,0 +1,1 @@
+{"eval_id": 3, "eval_name": "funny-meme-theme-playlist", "prompt": "welke nummers passen er niet in mijn Funny meme playlist?", "assertions": ["Skill reads special_rules for 'Funny meme' from playlists.json", "Skill applies the meme/theme criteria when classifying tracks, not just genre", "Audit report notes the theme-based scoring approach"]}

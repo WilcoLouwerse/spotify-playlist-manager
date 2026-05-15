@@ -1,0 +1,63 @@
+{
+  "expectations": [
+    {
+      "text": "Skill resolves 'House' from playlists.json (not invented)",
+      "passed": true,
+      "evidence": "Transcript step 2: 'Read playlists.json — found House playlist ID: 0BEX4bI5xtkEVA4BfYTKg2'"
+    },
+    {
+      "text": "Skill runs .venv/bin/python playlist_manager.py list-tracks 'House' via Bash",
+      "passed": false,
+      "evidence": "Transcript shows baseline ran 'python3 playlist_manager.py audit-playlist House --csv exportify-exports/House.csv' — used audit-playlist with CSV, not list-tracks. Wrong command."
+    },
+    {
+      "text": "Skill offers audit mode choice (web-first vs quick) via AskUserQuestion",
+      "passed": false,
+      "evidence": "Transcript: 'Did NOT offer web-first vs quick mode choice.' — baseline went straight to audit-playlist CLI without asking."
+    },
+    {
+      "text": "Skill produces an audit report showing score distribution (✅/⚠️/❌)",
+      "passed": false,
+      "evidence": "Baseline output shows raw CLI text ('High match (≥80%): 1 tracks') for only 1 track from a stale CSV — no ✅/⚠️/❌ format, and the report is not meaningful with only 1 track."
+    },
+    {
+      "text": "Skill asks for removal threshold via AskUserQuestion",
+      "passed": false,
+      "evidence": "Transcript: 'just explained the limitation.' — baseline did not offer a removal threshold AskUserQuestion. Stopped after surfacing the Exportify limitation."
+    }
+  ],
+  "summary": {
+    "passed": 1,
+    "failed": 4,
+    "total": 5,
+    "pass_rate": 0.2
+  },
+  "execution_metrics": {
+    "tool_calls": {
+      "Read": 3,
+      "Write": 1,
+      "Bash": 4
+    },
+    "total_tool_calls": 11,
+    "total_steps": 4,
+    "errors_encountered": 0,
+    "output_chars": 520,
+    "transcript_chars": 480
+  },
+  "timing": {
+    "executor_duration_seconds": 269.9,
+    "total_duration_seconds": 269.9
+  },
+  "claims": [
+    {
+      "claim": "Baseline used a stale CSV with only 1 track, producing a misleading audit",
+      "type": "quality",
+      "verified": true,
+      "evidence": "Transcript step 7: 'House.csv export is stale (only 1 track).' CLI output: 'Auditing House — 1 tracks'"
+    }
+  ],
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "Strong discrimination (1/5 baseline vs 5/5 skill). The baseline's skip of list-tracks, missing mode choice, and absent removal offer are all real gaps."
+  }
+}

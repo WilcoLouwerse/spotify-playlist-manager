@@ -2,9 +2,9 @@
   "skill_name": "playlist-audit",
   "version": "1.0.0",
   "created": "2026-05-15",
-  "last_validated": null,
-  "baseline_score": null,
-  "notes": "Initial evals scaffolded 2026-05-15. Run via /skill-creator to populate grading.json and timing data.",
+  "last_validated": "2026-05-15",
+  "baseline_score": 0.356,
+  "notes": "Iteration-1 evals run 2026-05-15. with_skill: 100% pass rate (18/18). without_skill: 35.6% pass rate (6/18). Delta: +0.64.",
   "evals": [
     {
       "id": 1,

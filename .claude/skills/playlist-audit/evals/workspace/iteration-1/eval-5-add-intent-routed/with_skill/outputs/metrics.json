@@ -1,0 +1,15 @@
+{
+  "eval_id": "eval-5-add-intent-routed",
+  "variant": "with_skill",
+  "user_message": "voeg dit nummer toe aan House: https://open.spotify.com/track/xxx",
+  "intent_detected": "add",
+  "in_scope_for_audit": false,
+  "audit_flow_started": false,
+  "cli_commands_run": [],
+  "sibling_skill_mentioned": "/playlist-match",
+  "routing_correct": true,
+  "steps_executed": ["step-1-detect-intent"],
+  "steps_skipped": ["step-2", "step-3", "step-4", "step-5a", "step-5b", "step-6", "step-7", "step-8", "step-9", "step-10", "step-11", "step-12"],
+  "pass": true,
+  "notes": "Correctly detected add intent, skipped audit flow, routed to /playlist-match per SKILL.md Step 1 out-of-scope branch."
+}

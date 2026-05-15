@@ -1,0 +1,1 @@
+{"eval_id": 5, "eval_name": "add-intent-routed", "prompt": "voeg dit nummer toe aan House: https://open.spotify.com/track/xxx", "assertions": ["Skill does NOT start an audit flow", "Skill mentions /playlist-match as the right skill for adding tracks", "Skill does not run any CLI commands"]}

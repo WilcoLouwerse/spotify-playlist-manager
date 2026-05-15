@@ -1,0 +1,86 @@
+{
+  "eval_id": 3,
+  "eval_name": "funny-meme-theme-playlist",
+  "run_date": "2026-05-15",
+  "skill_version": "playlist-audit/SKILL.md (current)",
+  "prompt": "welke nummers passen er niet in mijn Funny meme playlist?",
+  "skill_triggered": true,
+
+  "assertions": [
+    {
+      "id": "assert-1",
+      "description": "Skill reads special_rules for 'Funny meme' from playlists.json",
+      "result": "PASS",
+      "notes": "Step 2 explicitly reads playlists.json and extracts the special_rules: 'Only for meme songs, internet classics, absurd/funny lyrics.' Category correctly identified as 'theme'."
+    },
+    {
+      "id": "assert-2",
+      "description": "Skill applies the meme/theme criteria when classifying tracks, not just genre",
+      "result": "PASS",
+      "notes": "All 12 simulated tracks are scored against meme-status and absurd/funny lyric content, not genre. Ed Sheeran (mainstream pop) scores 8%; OK Go (viral video, but serious indie rock) scores 52% — both correctly differentiated on theme grounds."
+    },
+    {
+      "id": "assert-3",
+      "description": "Audit report notes the theme-based scoring approach",
+      "result": "PASS",
+      "notes": "Report includes explicit line: 'Score-methode: thema-gebaseerd — criteria zijn meme-status, internetklassieker-status en absurde/grappige teksten, NIET genre.'"
+    }
+  ],
+
+  "steps_executed": {
+    "step_1_intent_detection": "PASS",
+    "step_2_resolve_playlist": "PASS",
+    "step_2_special_rules_read": "PASS",
+    "step_2_category_identified": "theme",
+    "step_3_list_tracks": "EMPTY (Spotify dev-tier)",
+    "step_3_empty_track_handling": "PASS — skill prompts for CSV export",
+    "step_4_mode_selection": "web-first (12 tracks, ≤20)",
+    "step_5a_per_track_audit": "SIMULATED (no real Spotify/web connection)",
+    "step_6_audit_report": "PASS — theme-based scoring noted, Dutch prose, correct template",
+    "step_7_threshold_question": "PASS — options calibrated to actual distribution"
+  },
+
+  "track_results_simulated": [
+    {"track": "Rick Astley - Never Gonna Give You Up", "confidence": 97, "band": "high"},
+    {"track": "Smash Mouth - All Star", "confidence": 95, "band": "high"},
+    {"track": "Rebecca Black - Friday", "confidence": 92, "band": "high"},
+    {"track": "PSY - Gangnam Style", "confidence": 93, "band": "high"},
+    {"track": "Ylvis - What Does the Fox Say?", "confidence": 94, "band": "high"},
+    {"track": "William Hung - She Bangs", "confidence": 85, "band": "high"},
+    {"track": "OK Go - Here It Goes Again", "confidence": 52, "band": "low"},
+    {"track": "Ed Sheeran - Shape of You", "confidence": 8, "band": "low"},
+    {"track": "Doja Cat - Say So", "confidence": 22, "band": "low"},
+    {"track": "Crazy Frog - Axel F", "confidence": 91, "band": "high"},
+    {"track": "MGMT - Electric Feel", "confidence": 18, "band": "low"},
+    {"track": "Mr. Oizo - Flat Beat", "confidence": 68, "band": "medium"}
+  ],
+
+  "score_distribution": {
+    "high_80_plus": 7,
+    "medium_60_79": 1,
+    "low_below_60": 4,
+    "no_data": 0
+  },
+
+  "key_differentiators_vs_genre_audit": [
+    "Scoring criteria are: meme-status, internet-classic-status, and absurd/funny lyrical content — NOT musical genre",
+    "A viral video does not make a track a meme-song (OK Go case)",
+    "A TikTok-popular track is not necessarily a meme-song (Doja Cat case)",
+    "Early web memes (pre-2005) score slightly lower due to generational recognition variance (Flat Eric)",
+    "Mainstream chart hits with no comedic/absurd identity score near 0% regardless of popularity"
+  ],
+
+  "guardrails_respected": {
+    "no_genre_only_scoring": true,
+    "special_rules_applied_literally": true,
+    "no_random_sht_audit": true,
+    "no_fabricated_scores_without_sources": "N/A (simulation) — noted clearly in transcript",
+    "dutch_prose": true,
+    "remove_without_confirmation_skipped": true
+  },
+
+  "overall_score": "PASS",
+  "assertions_passed": 3,
+  "assertions_failed": 0,
+  "notes": "All three eval assertions pass. The key skill behavior — reading and applying special_rules for a theme playlist — is correctly demonstrated. The simulation is clearly labeled as such due to Spotify dev-tier limitations."
+}

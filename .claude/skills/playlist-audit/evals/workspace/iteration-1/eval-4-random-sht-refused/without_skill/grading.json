@@ -1,0 +1,50 @@
+{
+  "expectations": [
+    {
+      "text": "Skill does NOT run list-tracks or audit-playlist for 'Random sht'",
+      "passed": true,
+      "evidence": "Transcript: 'No CLI commands run.' — baseline read playlists.json, found catch_all key, and refused without running any CLI commands."
+    },
+    {
+      "text": "Skill explains in Dutch that Random sht is the catch-all (every track belongs there)",
+      "passed": true,
+      "evidence": "Transcript: 'Correctly refused to audit it. Explained in Dutch that it's the catch-all.' Response.md: 'Random sht heeft geen eigen genre of thema om tracks tegen te toetsen. Elke track die erin zit, \"past\" er per definitie in.'"
+    },
+    {
+      "text": "Skill suggests auditing a specific genre playlist instead",
+      "passed": true,
+      "evidence": "Transcript: 'Redirected to triage/scan/audit-other-playlist.' Response.md: 'Auditing a real genre playlist instead' listed as one of the redirects."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 0,
+    "total": 3,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "tool_calls": {
+      "Read": 2,
+      "Write": 0,
+      "Bash": 0
+    },
+    "total_tool_calls": 10,
+    "total_steps": 2,
+    "errors_encountered": 0,
+    "output_chars": 480,
+    "transcript_chars": 340
+  },
+  "timing": {
+    "executor_duration_seconds": 192.1,
+    "total_duration_seconds": 192.1
+  },
+  "claims": [],
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "reason": "This eval does not discriminate between with_skill and without_skill — both pass 3/3. The catch_all key in playlists.json makes correct behavior derivable without the skill. Consider replacing with an assertion that only the skill would pass, such as checking for a specific phrase from the SKILL.md guardrail text."
+      }
+    ],
+    "overall": "3/3 but this eval has no discrimination value. The without_skill run also passes all assertions because the catch_all key is self-documenting."
+  }
+}

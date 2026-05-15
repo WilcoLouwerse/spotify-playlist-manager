@@ -1,0 +1,114 @@
+{
+  "eval_id": "eval-3-no-track-no-playlist",
+  "variant": "with_skill",
+  "date": "2026-05-15",
+  "user_message": "verwijder dit nummer uit al mijn playlists",
+
+  "skill_triggered": true,
+  "skill_name": "playlist-remove",
+
+  "input_resolution": {
+    "track_provided": false,
+    "track_type": null,
+    "playlist_provided": false,
+    "playlist_scope": "all",
+    "ambiguity_detected": true,
+    "ambiguity_type": "track_missing"
+  },
+
+  "steps_executed": {
+    "step_1_detect_scope": true,
+    "step_2_resolve_track": "deferred_to_askuserquestion",
+    "step_3_resolve_playlists": "deferred_to_askuserquestion_multiselect",
+    "step_4_genre_check": "skipped_not_triggered",
+    "step_5_show_commands": "shown_conditionally",
+    "step_6_confirmation": "shown_conditionally",
+    "step_7_run_commands": "not_executed_eval",
+    "step_8_summarise": "shown_conditionally",
+    "step_9_capture_learnings": "skipped_nothing_new"
+  },
+
+  "guardrails": {
+    "no_execute_without_confirmation": true,
+    "no_invented_track_id": true,
+    "random_sht_excluded_by_default": true,
+    "all_playlists_validated_against_config": true,
+    "venv_python_used": true,
+    "double_quoting_applied": true
+  },
+
+  "askuserquestion_calls": [
+    {
+      "step": "1a",
+      "purpose": "Obtain track identifier from user",
+      "multiSelect": false,
+      "options": ["Other (free text)", "Annuleren"],
+      "branches": {
+        "spotify_url_or_uri": "proceed to step 2",
+        "artist_title": "ask for Spotify URL via step 2 flow",
+        "cancel": "end gracefully"
+      }
+    },
+    {
+      "step": "3",
+      "purpose": "Confirm which playlists to remove from (all = 23, excl. Random sht)",
+      "multiSelect": true,
+      "options_count": 23,
+      "random_sht_excluded": true,
+      "options_include_other_for_random_sht": true,
+      "branches": {
+        "confirm_selection": "proceed to step 4",
+        "cancel": "end gracefully"
+      }
+    },
+    {
+      "step": "6",
+      "purpose": "Mandatory removal confirmation",
+      "multiSelect": false,
+      "options": ["Ja, verwijder", "Nee, annuleren"],
+      "branches": {
+        "ja": "execute all commands",
+        "nee": "end gracefully"
+      }
+    },
+    {
+      "step": "8",
+      "purpose": "Post-removal next action",
+      "multiSelect": false,
+      "options": ["Voeg toe aan andere playlist", "Klaar"],
+      "branches": {
+        "voeg_toe": "hand off to /playlist-match with track pre-loaded",
+        "klaar": "end"
+      }
+    }
+  ],
+
+  "playlist_count": 23,
+  "commands_planned": 23,
+  "commands_executed": 0,
+
+  "quality_scores": {
+    "correct_skill_triggered": 1.0,
+    "track_missing_detected": 1.0,
+    "correct_first_ask_for_track": 1.0,
+    "playlist_scope_all_resolved": 1.0,
+    "random_sht_excluded_correctly": 1.0,
+    "guardrails_respected": 1.0,
+    "no_invented_track_id": 1.0,
+    "correct_command_format": 1.0,
+    "double_quotes_used": 1.0,
+    "dutch_prose": 1.0,
+    "confirmation_before_execute": 1.0,
+    "graceful_cancel_branches_documented": 1.0
+  },
+
+  "overall_score": 1.0,
+
+  "notes": [
+    "Track was entirely absent (not even Artist - Title), so first AskUserQuestion asked for the track identifier generally before applying step 2's Spotify-URL-specific sub-question.",
+    "Playlist scope 'al mijn playlists' was unambiguous — no additional clarification needed for the scope itself, only confirmation via multiSelect.",
+    "Random sht correctly excluded from default multiSelect list per guardrail; surfaced via 'Other' option.",
+    "Genre check (step 4) correctly skipped — user expressed direct, confident remove intent.",
+    "No Bash commands executed in this eval per eval instructions."
+  ]
+}

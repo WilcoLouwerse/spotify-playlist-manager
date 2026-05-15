@@ -1,0 +1,58 @@
+{
+  "expectations": [
+    {
+      "text": "Skill uses quick mode (audit-playlist CLI) without asking for mode choice",
+      "passed": true,
+      "evidence": "Transcript: 'Agent discovered audit-playlist CLI, ran it with --csv fallback.' — used the CLI directly without prompting for mode choice. Matches the user's request for 'snelle mode'."
+    },
+    {
+      "text": "Planned command uses '.venv/bin/python playlist_manager.py audit-playlist'",
+      "passed": false,
+      "evidence": "Transcript does not show the exact command invocation. 'Discovered audit-playlist CLI, ran it' — unclear if .venv/bin/python was used. No evidence of virtual environment prefix."
+    },
+    {
+      "text": "Playlist name is double-quoted in the command",
+      "passed": false,
+      "evidence": "Transcript does not show the exact command string. Cannot verify quoting from available output."
+    },
+    {
+      "text": "Skill offers removal of low-confidence tracks after showing the report",
+      "passed": false,
+      "evidence": "Transcript: 'Did NOT offer removal of low-confidence tracks in structured way. Just showed raw CLI output.' — no threshold AskUserQuestion presented."
+    }
+  ],
+  "summary": {
+    "passed": 1,
+    "failed": 3,
+    "total": 4,
+    "pass_rate": 0.25
+  },
+  "execution_metrics": {
+    "tool_calls": {
+      "Read": 3,
+      "Write": 0,
+      "Bash": 4
+    },
+    "total_tool_calls": 10,
+    "total_steps": 3,
+    "errors_encountered": 0,
+    "output_chars": 450,
+    "transcript_chars": 340
+  },
+  "timing": {
+    "executor_duration_seconds": 160.9,
+    "total_duration_seconds": 160.9
+  },
+  "claims": [
+    {
+      "claim": "Baseline showed raw CLI output from audit-playlist without any structured removal offer",
+      "type": "process",
+      "verified": true,
+      "evidence": "Transcript: 'Got real output: 1 track (Bakermat - Walk That Walk, 85%). Just showed raw CLI output.'"
+    }
+  ],
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "Good discrimination on the removal offer assertion (1/4 baseline vs 4/4 skill). The baseline's lack of threshold question leaves the user with no clear next step."
+  }
+}

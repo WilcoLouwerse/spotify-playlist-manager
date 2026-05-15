@@ -1,0 +1,85 @@
+{
+  "eval_id": "eval-4-remove-from-random-sht",
+  "skill": "playlist-remove",
+  "variant": "with_skill",
+  "date": "2026-05-15",
+  "input": {
+    "user_message": "verwijder spotify:track:4uLU6hMCjMI75M1A2tKUQC uit Random sht",
+    "track_uri": "spotify:track:4uLU6hMCjMI75M1A2tKUQC",
+    "target_playlist": "Random sht"
+  },
+
+  "skill_steps_followed": {
+    "step_1_detect_input": true,
+    "step_2_resolve_track": true,
+    "step_3_resolve_playlist": true,
+    "step_4_web_genre_check": "skipped (user confident, no uncertainty)",
+    "step_5_show_command": true,
+    "step_6_mandatory_confirmation": true,
+    "step_7_run_command": "documented (not executed in eval)",
+    "step_8_summarise": true,
+    "step_9_capture_learnings": "skipped (nothing non-obvious)"
+  },
+
+  "guardrails": {
+    "no_execute_without_confirmation": true,
+    "no_invented_track_id": true,
+    "extra_confirmation_for_random_sht": true,
+    "validate_playlist_in_config": true,
+    "use_venv_python": true,
+    "double_quote_arguments": true,
+    "read_playlists_json_fresh": true
+  },
+
+  "catch_all_handling": {
+    "random_sht_detected": true,
+    "extra_askuserquestion_inserted": true,
+    "insertion_point": "step_3_playlist_resolution",
+    "warning_shown_before_standard_confirmation": true,
+    "total_confirmations_required": 2
+  },
+
+  "ask_user_question_calls": [
+    {
+      "call_number": 1,
+      "step": 3,
+      "purpose": "Extra catch-all warning for Random sht",
+      "options": ["Ja, verwijder uit Random sht", "Nee, annuleren"],
+      "required_by_guardrail": true
+    },
+    {
+      "call_number": 2,
+      "step": 6,
+      "purpose": "Standard mandatory confirmation",
+      "options": ["Ja, verwijder", "Nee, annuleren"],
+      "required_by_skill": true
+    },
+    {
+      "call_number": 3,
+      "step": 8,
+      "purpose": "Post-removal follow-up",
+      "options": ["Voeg toe aan andere playlist", "Klaar"],
+      "required_by_skill": true
+    }
+  ],
+
+  "scores": {
+    "catch_all_flagged": 1,
+    "extra_confirmation_added": 1,
+    "command_correctly_formed": 1,
+    "language_dutch": 1,
+    "playlist_validated_in_config": 1,
+    "no_premature_execution": 1,
+    "overall": 1.0
+  },
+
+  "command_generated": ".venv/bin/python playlist_manager.py remove \"spotify:track:4uLU6hMCjMI75M1A2tKUQC\" \"Random sht\" --execute",
+
+  "notes": [
+    "Random sht correctly identified as catch-all via both playlists.json catch_all key and SKILL.md guardrail",
+    "Two-confirmation pattern correctly applied: catch-all warning first, then standard safety gate",
+    "Track URI was provided directly — no name-to-URI resolution needed",
+    "Step 4 (web genre check) correctly skipped — user expressed no uncertainty",
+    "Step 9 (learnings) correctly skipped — no edge cases or non-obvious behaviour"
+  ]
+}

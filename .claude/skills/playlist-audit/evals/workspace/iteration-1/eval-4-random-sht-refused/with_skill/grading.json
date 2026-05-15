@@ -1,0 +1,50 @@
+{
+  "expectations": [
+    {
+      "text": "Skill does NOT run list-tracks or audit-playlist for 'Random sht'",
+      "passed": true,
+      "evidence": "Compliance checklist: 'Did NOT run list-tracks: PASS. Did NOT run audit-playlist: PASS.' Guardrail triggered at Step 2 before any CLI command."
+    },
+    {
+      "text": "Skill explains in Dutch that Random sht is the catch-all (every track belongs there)",
+      "passed": true,
+      "evidence": "Response.md: 'Random sht heeft geen eigen genre of thema om tracks tegen te toetsen. Elke track die erin zit, \"past\" er per definitie in. Een audit heeft geen zin.' — Dutch, accurate explanation of catch-all semantics."
+    },
+    {
+      "text": "Skill suggests auditing a specific genre playlist instead",
+      "passed": true,
+      "evidence": "Compliance checklist: 'Suggested specific genre playlists: PASS.' Alternatives listed include House, Techno, Rap, Funny meme, Ket420, Happy tunes/Sad tunes/Angry tunes."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 0,
+    "total": 3,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "tool_calls": {
+      "Read": 0,
+      "Write": 0,
+      "Bash": 0
+    },
+    "total_tool_calls": 6,
+    "total_steps": 2,
+    "errors_encountered": 0,
+    "output_chars": 0,
+    "transcript_chars": 0
+  },
+  "timing": {
+    "executor_duration_seconds": 53.1,
+    "total_duration_seconds": 53.1
+  },
+  "claims": [],
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "reason": "This eval is not strongly discriminating — the catch_all key in playlists.json makes the correct behavior obvious even without the skill. Both with_skill and without_skill pass all assertions. Consider making this eval harder to pass, e.g., by testing that the skill's Dutch explanation matches the skill's specific language rather than just any Dutch refusal."
+      }
+    ],
+    "overall": "All three assertions pass, but this eval has low discrimination power as noted in the without_skill transcript."
+  }
+}

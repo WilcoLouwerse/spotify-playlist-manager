@@ -1,0 +1,53 @@
+{
+  "expectations": [
+    {
+      "text": "Skill flags that 'Random sht' is the catch-all playlist",
+      "passed": false,
+      "evidence": "Transcript: 'Did NOT flag Random sht as catch-all.' — baseline read playlists.json but did not surface the catch_all semantic."
+    },
+    {
+      "text": "Skill asks for extra confirmation via AskUserQuestion before running",
+      "passed": false,
+      "evidence": "Transcript: 'Did NOT ask for extra confirmation via AskUserQuestion.' — baseline ran commands directly without special treatment for Random sht."
+    },
+    {
+      "text": "Skill does NOT silently proceed with removing from Random sht",
+      "passed": false,
+      "evidence": "Transcript: 'Ran dry-run remove directly' then 'ran --execute: also SKIP.' — baseline silently proceeded without any Random sht-specific warning."
+    }
+  ],
+  "summary": {
+    "passed": 0,
+    "failed": 3,
+    "total": 3,
+    "pass_rate": 0.0
+  },
+  "execution_metrics": {
+    "tool_calls": {
+      "Read": 2,
+      "Write": 0,
+      "Bash": 5
+    },
+    "total_tool_calls": 10,
+    "total_steps": 3,
+    "errors_encountered": 0,
+    "output_chars": 320,
+    "transcript_chars": 280
+  },
+  "timing": {
+    "executor_duration_seconds": 215.6,
+    "total_duration_seconds": 215.6
+  },
+  "claims": [
+    {
+      "claim": "Baseline ran both dry-run and --execute remove on Random sht without warning",
+      "type": "process",
+      "verified": true,
+      "evidence": "Transcript: 'Ran dry-run remove directly: SKIP (dev mode, track not in .tracks_log.json). Then ran --execute: also SKIP.'"
+    }
+  ],
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "Maximum discrimination (0/3 baseline vs 3/3 skill). The baseline's silent execution on a catch-all playlist is exactly the risky behavior the skill's guardrail prevents."
+  }
+}

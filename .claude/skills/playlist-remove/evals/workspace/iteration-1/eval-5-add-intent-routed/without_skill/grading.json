@@ -1,0 +1,53 @@
+{
+  "expectations": [
+    {
+      "text": "Skill does NOT run playlist_manager.py remove",
+      "passed": true,
+      "evidence": "Transcript: 'Agent correctly identified add intent (not remove). Ran playlist_manager.py add ... --execute directly.' — a remove command was NOT run."
+    },
+    {
+      "text": "Skill mentions /playlist-match as the right skill for adding tracks",
+      "passed": false,
+      "evidence": "Transcript: 'Did NOT mention /playlist-match — skipped genre classification entirely.' — baseline just added the track directly without routing."
+    },
+    {
+      "text": "Skill does not pretend to handle the add flow itself",
+      "passed": false,
+      "evidence": "Transcript: 'Ran playlist_manager.py add ... --execute directly.' — baseline handled the add flow itself rather than routing to /playlist-match."
+    }
+  ],
+  "summary": {
+    "passed": 1,
+    "failed": 2,
+    "total": 3,
+    "pass_rate": 0.33
+  },
+  "execution_metrics": {
+    "tool_calls": {
+      "Read": 1,
+      "Write": 0,
+      "Bash": 1
+    },
+    "total_tool_calls": 5,
+    "total_steps": 2,
+    "errors_encountered": 0,
+    "output_chars": 350,
+    "transcript_chars": 280
+  },
+  "timing": {
+    "executor_duration_seconds": 156.9,
+    "total_duration_seconds": 156.9
+  },
+  "claims": [
+    {
+      "claim": "Baseline added track to House without genre classification",
+      "type": "process",
+      "verified": true,
+      "evidence": "Transcript: 'Ran playlist_manager.py add ... --execute directly. Did NOT perform dry-run first.' — no /playlist-match genre check applied."
+    }
+  ],
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "Good discrimination. The skill correctly routes add intent to /playlist-match while the baseline bypasses genre classification entirely."
+  }
+}

@@ -1,0 +1,1 @@
+{"eval_id": 4, "eval_name": "random-sht-refused", "prompt": "audit mijn Random sht playlist", "assertions": ["Skill does NOT run list-tracks or audit-playlist for 'Random sht'", "Skill explains in Dutch that Random sht is the catch-all (every track belongs there)", "Skill suggests auditing a specific genre playlist instead"]}

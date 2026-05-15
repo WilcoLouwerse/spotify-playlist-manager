@@ -1,0 +1,59 @@
+{
+  "expectations": [
+    {
+      "text": "Skill does NOT run any CLI command",
+      "passed": false,
+      "evidence": "Transcript: 'Ran remove commands for both [track versions].' — baseline executed CLI commands after finding two matching tracks via WebSearch."
+    },
+    {
+      "text": "Skill asks for a Spotify URL/URI/ID via AskUserQuestion",
+      "passed": false,
+      "evidence": "Transcript: 'Did NOT use AskUserQuestion to ask for the URL.' Baseline resolved the track ID itself via WebSearch instead."
+    },
+    {
+      "text": "Skill does NOT invent or guess a track ID",
+      "passed": false,
+      "evidence": "Transcript: 'Used WebSearch to find Spotify track ID — found two versions (original + DaBaby collab). Did NOT refuse to guess the track ID.' Baseline effectively guessed the track ID by searching."
+    }
+  ],
+  "summary": {
+    "passed": 0,
+    "failed": 3,
+    "total": 3,
+    "pass_rate": 0.0
+  },
+  "execution_metrics": {
+    "tool_calls": {
+      "Read": 2,
+      "Write": 0,
+      "Bash": 5
+    },
+    "total_tool_calls": 14,
+    "total_steps": 4,
+    "errors_encountered": 0,
+    "output_chars": 580,
+    "transcript_chars": 420
+  },
+  "timing": {
+    "executor_duration_seconds": 313.6,
+    "total_duration_seconds": 313.6
+  },
+  "claims": [
+    {
+      "claim": "Baseline found two versions of the track (original + DaBaby collab) introducing ambiguity",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Transcript: 'Used WebSearch to find Spotify track ID — found two versions (original + DaBaby collab). Offered both options to user — ambiguous.'"
+    },
+    {
+      "claim": "Baseline ran remove commands for both versions",
+      "type": "process",
+      "verified": true,
+      "evidence": "Transcript: 'Ran remove commands for both — SKIP in dev mode.'"
+    }
+  ],
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "Maximum discrimination (0/3 vs 3/3). The baseline's WebSearch fallback introduces real risk of removing the wrong track version — exactly the problem the skill's guardrail prevents."
+  }
+}

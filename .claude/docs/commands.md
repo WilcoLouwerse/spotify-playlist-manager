@@ -10,13 +10,15 @@ For the end-user CLI reference (`python playlist_manager.py …`), see [docs/com
 
 | Command | Category | Description |
 |---------|----------|-------------|
-| [`/playlist-match`](#playlist-match) | Workflow | Classifies a shared song's genres with confidence scores, recommends matching playlists from `playlists.json`, and can invoke `add` / `smart-add` to write the result |
+| [`/playlist-match`](#playlist-match) | Workflow | Classifies a shared song's genres with confidence scores, recommends matching playlists from `playlists.json`, and can invoke `add` to write the result |
 | [`/playlist-triage`](#playlist-triage) | Workflow | Triages a source playlist into target playlists via `review-playlist` (per-track y/N) or `bulk-playlist` (single y/N) |
 | [`/playlist-scan`](#playlist-scan) | Workflow | Scans a source playlist for tracks that fit a chosen target playlist via `scan-for` |
+| [`/playlist-remove`](#playlist-remove) | Workflow | Removes a track from one or more playlists via `remove` |
+| [`/playlist-audit`](#playlist-audit) | Workflow | Audits a playlist's genre/theme fit with confidence scores per track and offers to remove low-confidence tracks |
 | [`/playlist-log-import`](#playlist-log-import) | Workflow | Seeds the local duplicate-guard log (`.tracks_log.json`) from an Exportify CSV via `log-import` |
 | [`/playlist-config`](#playlist-config) | Workflow | Bootstraps or extends `playlists.json` from your Spotify account via `list-playlists --all` |
 
-All five skills produce **Dutch** user-facing prose (the user's preference); their `SKILL.md`, `references/`, `templates/`, and `examples/` stay in English so triggers and steering remain model-readable. See [writing-docs.md → Language](writing-docs.md) for the convention.
+All seven skills produce **Dutch** user-facing prose (the user's preference); their `SKILL.md`, `references/`, `templates/`, and `examples/` stay in English so triggers and steering remain model-readable. See [writing-docs.md → Language](writing-docs.md) for the convention.
 
 ---
 
@@ -37,20 +39,21 @@ Artist - Title
 
 **What it does:**
 
-1. Detects input type — new analysis, single-letter follow-up (`A`–`F`, `Z`/`Y`/`X`/`W`, `?`), or a natural-language add request
-2. Reads `playlists.json` each run so user edits to the taxonomy are honored
-3. Identifies the song and resolves it to `Artist - Title` (preserving the URL/URI/ID when given, for later `add` invocations)
-4. Determines genres from multiple independent sources (Last.fm, AllMusic, Wikipedia, RYM, Discogs, label sites) — never genre-by-artist-reputation alone
-5. Matches 1–5 playlists from `playlists.json` categories, each scored with a confidence percentage and a short reason
-6. Renders a Dutch analysis (artist info, song description, genres, playlist matches, and the fixed `A`–`F` choice menu)
-7. On follow-up `F` (or a natural-language add request), uses `AskUserQuestion` to pick playlists from the recommended set, defaults to **dry-run**, shows the exact `playlist_manager.py add` commands, asks for one final confirmation, then runs them via Bash
+1. Detects input type — new analysis, natural-language follow-up, or out-of-scope (routed to a sibling skill).
+2. Reads `playlists.json` each run so user edits to the taxonomy are honored.
+3. Identifies the song and resolves it to `Artist - Title` (preserving the URL/URI/ID when given, for later `add` invocations).
+4. Determines genres via live web lookup (AllMusic, Wikipedia, RYM, Discogs, Last.fm) as the primary source; training-data recall is the last resort only.
+5. Matches 1–5 playlists from `playlists.json` categories, each scored with a confidence percentage and a short reason.
+6. Renders a Dutch analysis (artist info, song description, genres, playlist matches), then calls `AskUserQuestion` with a standard follow-up menu.
+7. On "Voeg toe aan playlists", uses `AskUserQuestion` to pick playlists from the recommended set, shows the exact `playlist_manager.py add` commands, asks for one final confirmation, then runs them via Bash.
 
 **Guardrails:**
 
 - **Never** recommends `Random sht` — it is the script-side catch-all under `playlists.json -> catch_all` and must not appear in user-facing output.
 - **Never** recommends a playlist that is not currently present in `playlists.json -> categories` (the file is read each run).
-- **Never** invokes `add` (or `smart-add`) with `--execute` without explicit confirmation in the same turn. Dry-run first whenever in doubt.
+- **Never** invokes `add` with `--execute` without explicit confirmation in the same turn.
 - **Never** invents or guesses a Spotify track ID. If only `Artist - Title` was given, asks the user to paste a URL before invoking `add`.
+- **Never** uses old letter-shortcut menus (`A`–`F` etc.) — all follow-ups go through `AskUserQuestion`.
 - User-facing prose is **Dutch**; playlist names stay verbatim from `playlists.json` (no translation).
 
 **Source:** [.claude/skills/playlist-match/SKILL.md](../skills/playlist-match/SKILL.md). Maturity in the [Skill Level Overview](../skills/skill-level-overview.html) dashboard.
@@ -76,10 +79,10 @@ https://open.spotify.com/playlist/<id>
 **What it does:**
 
 1. Resolves the source — Spotify URL/URI/ID, a CSV path under `exportify-exports/`, or a bare playlist name matched against that folder.
-2. Asks via `AskUserQuestion` whether to **Review** (per-track veto) or **Bulk** (single y/N). Recommends Review for ≤30 tracks or curate-style asks; Bulk for "sort/drain/empty" asks or larger playlists.
-3. Surfaces the classifier defaults (`--max-playlists 3 --min-playlists 1 --min-confidence 80`) and only deviates when the user explicitly asks for stricter / more lenient classification.
-4. Defaults to **dry-run**; only adds `--execute` after a separate `AskUserQuestion` confirmation.
-5. Renders the exact `playlist_manager.py review-playlist` / `bulk-playlist` command, asks for one final confirmation, then runs it via Bash.
+2. Asks via `AskUserQuestion` which workflow to use: **Claude + web** (per-track, ≤20 tracks default), **Review CLI** (per-track y/N, 20–50 tracks), or **Bulk CLI** (single y/N, >50 tracks).
+3. **Web-first path**: uses `list-tracks` + Claude AI + live WebSearch per track (same methodology as `/playlist-match`); confirms each track via `AskUserQuestion` before running `add --execute`.
+4. **CLI paths**: surfaces the classifier defaults (`--max-playlists 3 --min-playlists 1 --min-confidence 80`), defaults to dry-run, renders the exact `playlist_manager.py review-playlist` / `bulk-playlist` command, and runs it via Bash after confirmation.
+5. For `bulk-playlist --execute`, offers a `yes |` pipe option; for `review-playlist --execute`, always recommends the user's own terminal (per-track stdin cannot be driven from chat).
 
 **Guardrails:**
 
@@ -111,9 +114,9 @@ find house-fitting tracks in my triage
 
 1. Resolves the target name against `playlists.json` (aliases honored). Refuses the catch-all (`Random sht`) without an explicit second confirmation.
 2. Resolves the source — Spotify URL/URI/ID, CSV path, or bare name in `exportify-exports/`.
-3. Surfaces the classifier defaults (`--min-confidence 80`; the classifier is always asked for its top-5 per track so the target has the best chance of appearing — there is no `--max-playlists` for this subcommand).
-4. Defaults to **dry-run**; lists every candidate before any writes happen. `--execute` requires an explicit second confirmation.
-5. Renders the exact `playlist_manager.py scan-for` command and runs it via Bash.
+3. Asks via `AskUserQuestion` which mode to use: **Claude + web** (per-track, ≤20 source tracks default) or **scan-for CLI** (OpenAI-backed, faster for larger sources).
+4. **Web-first path**: uses `list-tracks` + Claude AI + live WebSearch per track; presents candidates via `AskUserQuestion` multiSelect; runs `add --execute` per confirmed candidate.
+5. **CLI path**: defaults to dry-run; renders the exact `playlist_manager.py scan-for` command and runs it via Bash after confirmation.
 
 **Guardrails:**
 
@@ -122,6 +125,76 @@ find house-fitting tracks in my triage
 - User-facing prose is **Dutch**.
 
 **Source:** [.claude/skills/playlist-scan/SKILL.md](../skills/playlist-scan/SKILL.md).
+
+---
+
+### `/playlist-remove`
+
+**Category:** Workflow
+
+Removes a track from one or more playlists. Wraps the project's [`remove`](../../docs/commands.md#remove) CLI subcommand.
+
+**Usage:**
+
+```
+# Trigger phrases
+Verwijder https://open.spotify.com/track/<id> uit House
+remove spotify:track:<id> from Techno
+haal dit nummer weg uit mijn playlists
+verwijder Dua Lipa - Levitating uit Drum & Bass
+```
+
+**What it does:**
+
+1. Parses the track input — accepts Spotify URL, URI, or ID directly. If only `Artist - Title` is given, asks for a URL/URI/ID via `AskUserQuestion` (never guesses or invents a track ID).
+2. Resolves the target playlist(s) against `playlists.json`. Accepts a single playlist name or asks via `AskUserQuestion` with `multiSelect: true` for multiple targets.
+3. Flags `Random sht` with an extra confirmation — removing from the catch-all is almost never the intent.
+4. Shows the exact `playlist_manager.py remove "<url>" "<Playlist>" --execute` command(s) and confirms via `AskUserQuestion` before running anything.
+5. Reports the script's output verbatim (`DONE`, `SKIP: track not found in playlist`, etc.) and explains SKIP in Dutch when the track was likely added through the Spotify UI.
+
+**Guardrails:**
+
+- Never runs `remove --execute` without explicit confirmation in the same turn.
+- Never invents or guesses a Spotify track ID.
+- Warns explicitly when `Random sht` is the target and requires a second confirmation.
+- User-facing prose is **Dutch**.
+
+**Source:** [.claude/skills/playlist-remove/SKILL.md](../skills/playlist-remove/SKILL.md).
+
+---
+
+### `/playlist-audit`
+
+**Category:** Workflow
+
+Audits every track in a playlist against its genre/theme, shows a confidence score per track, and offers to remove low-confidence tracks. Uses Claude AI + live web search as the primary classifier (same methodology as `/playlist-match`), with the OpenAI-backed `audit-playlist` CLI as the faster fallback for large playlists.
+
+**Usage:**
+
+```
+# Trigger phrases
+controleer mijn House playlist — welke nummers passen er niet in?
+audit mijn Techno playlist
+welke nummers in House passen er eigenlijk niet in?
+audit House, gebruik de snelle mode
+```
+
+**What it does:**
+
+1. Resolves the playlist from `playlists.json`. Refuses to audit `Random sht` (it's the catch-all by design).
+2. Runs `list-tracks "<playlist>"` to get the track list. Falls back to an exportify CSV when the API returns empty (Spotify Dev Mode).
+3. Offers two audit modes via `AskUserQuestion`: **web-first** (Claude + WebSearch per track, default for ≤20 tracks) or **quick** (OpenAI `audit-playlist` CLI, faster for larger playlists).
+4. Produces a Dutch audit report with ✅/⚠️/❌ per track and a score distribution summary.
+5. Asks for a removal threshold via `AskUserQuestion`, presents low-confidence candidates via `multiSelect`, confirms, then runs `remove --execute` for each accepted track.
+
+**Guardrails:**
+
+- Never audits `Random sht`.
+- Never removes a track without explicit confirmation.
+- Never fabricates confidence scores — if a source is unavailable, says so.
+- User-facing prose is **Dutch**.
+
+**Source:** [.claude/skills/playlist-audit/SKILL.md](../skills/playlist-audit/SKILL.md).
 
 ---
 

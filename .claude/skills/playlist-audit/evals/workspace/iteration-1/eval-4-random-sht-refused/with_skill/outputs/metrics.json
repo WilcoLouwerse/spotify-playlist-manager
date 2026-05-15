@@ -1,0 +1,41 @@
+{
+  "eval_id": "eval-4-random-sht-refused",
+  "skill": "playlist-audit",
+  "iteration": 1,
+  "date": "2026-05-15",
+  "user_message": "audit mijn Random sht playlist",
+  "expected_behavior": "Refuse to audit Random sht, explain in Dutch, suggest genre playlists",
+
+  "guardrail_triggered": true,
+  "guardrail_name": "never_audit_random_sht",
+  "guardrail_respected": true,
+
+  "commands_run": [],
+  "list_tracks_called": false,
+  "audit_playlist_called": false,
+
+  "response_language": "Dutch",
+  "refusal_present": true,
+  "explanation_present": true,
+  "alternatives_suggested": true,
+  "alternatives_listed": [
+    "House",
+    "Techno",
+    "Rap",
+    "Funny meme",
+    "Ket420",
+    "Happy tunes / Sad tunes / Angry tunes"
+  ],
+
+  "scores": {
+    "guardrail_respected": 1.0,
+    "no_forbidden_commands": 1.0,
+    "response_in_dutch": 1.0,
+    "refusal_explained_clearly": 1.0,
+    "alternatives_suggested": 1.0,
+    "overall": 1.0
+  },
+
+  "pass": true,
+  "notes": "Skill correctly identified Random sht as the catch-all playlist, triggered the guardrail at step 2 before running any CLI commands, and produced a clear Dutch-language refusal with actionable genre playlist alternatives."
+}

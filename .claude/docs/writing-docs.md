@@ -43,7 +43,7 @@ How to write and maintain documentation in this project. These rules apply whene
 "See [docs/commands.md → add](../../docs/commands.md#add) for the duplicate-guard behavior."
 
 ✗ Bad — copies behavior into another guide
-"The `add` command always reads .adds_log.json before writing, skipping URIs that are already logged."
+"The `add` command always reads .tracks_log.json before writing, skipping URIs that are already logged."
   → this behavior is documented in docs/commands.md; now you have two places to keep in sync
 ```
 
@@ -59,7 +59,7 @@ When content is duplicated, it will eventually diverge. One copy gets updated; t
 | CLI subcommands, flags, behavior | [playlist_manager.py](../../playlist_manager.py) | `argparse` definitions are authoritative; docs follow the code |
 | Playlist taxonomy (categories, aliases, special rules, catch-all) | [playlists.json](../../playlists.json) | Gitignored. Schema lives in [playlists.example.json](../../playlists.example.json) |
 | Pinned Python dependencies | [requirements.txt](../../requirements.txt) | Versions never duplicated into prose |
-| Local duplicate-guard log | `.adds_log.json` | Gitignored, auto-managed by the CLI |
+| Local duplicate-guard log | `.tracks_log.json` | Gitignored, auto-managed by the CLI |
 | Spotify OAuth token cache | `.spotify_token_cache` | Gitignored, auto-managed by Spotipy |
 | **User-facing docs** |  |  |
 | Project overview, primary entry point | [README.md](../../README.md) | Short — points to the three guides below |
@@ -239,7 +239,7 @@ sequenceDiagram
   CLI->>User: confirm? (y/N)
   User-->>CLI: y
   CLI->>Spotify: POST /playlists/{id}/tracks
-  CLI->>CLI: append to .adds_log.json
+  CLI->>CLI: append to .tracks_log.json
 ```
 
 **Mermaid diagram types and when to use them:**
@@ -328,7 +328,7 @@ When reading or reviewing documentation, certain patterns are signals to stop an
 | Subcommand names (`add`, `smart-add`, `review-playlist`, …) | `python playlist_manager.py --help` to confirm they still exist and accept those flags |
 | Flag names (`--execute`, `--accept-all`, `--all`) | The argparse definitions in [playlist_manager.py](../../playlist_manager.py) |
 | Playlist category names | [playlists.json](../../playlists.json) `categories.*` and `special_rules` |
-| References to `.adds_log.json` semantics | The duplicate-guard implementation in [playlist_manager.py](../../playlist_manager.py) and [docs/architecture.md → Duplicate detection](../../docs/architecture.md#duplicate-detection) |
+| References to `.tracks_log.json` semantics | The duplicate-guard implementation in [playlist_manager.py](../../playlist_manager.py) and [docs/architecture.md → Duplicate detection](../../docs/architecture.md#duplicate-detection) |
 | Slash-command names (`/playlist-match`, …) | `.claude/skills/<name>/` to confirm the folder still exists |
 | Links to other docs | Whether the linked file and section still exist |
 | Mermaid diagrams (states, sequences) | Whether the underlying process or parties still match reality |
@@ -368,7 +368,7 @@ Use a `[Legacy]` marker when content describes something that still works but sh
 ```markdown
 ## Manual playlist seeding [Legacy]
 
-> This approach predates the `log-import` subcommand. Use `python playlist_manager.py log-import …` instead — it parses Exportify CSVs and seeds `.adds_log.json` automatically.
+> This approach predates the `log-import` subcommand. Use `python playlist_manager.py log-import …` instead — it parses Exportify CSVs and seeds `.tracks_log.json` automatically.
 ```
 
 ### When to remove a section

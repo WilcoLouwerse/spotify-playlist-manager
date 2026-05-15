@@ -16,7 +16,7 @@
         "Skill renders the planned command using '.venv/bin/python playlist_manager.py log-import'",
         "Both target and file are double-quoted in the rendered command",
         "Skill does NOT include any flags (no --execute, no --dry-run) — log-import takes only two positionals",
-        "Skill explicitly confirms via AskUserQuestion BEFORE running, calling out that this is local-only and mutates .adds_log.json"
+        "Skill explicitly confirms via AskUserQuestion BEFORE running, calling out that this is local-only and mutates .tracks_log.json"
       ]
     },
     {
@@ -34,7 +34,7 @@
     {
       "id": 3,
       "prompt": "doe een dry-run van log-import House",
-      "expected_output": "Skill explains that log-import has no dry-run mode — it's local-only and only mutates .adds_log.json. Offers to either proceed with the real (only) run or abort.",
+      "expected_output": "Skill explains that log-import has no dry-run mode — it's local-only and only mutates .tracks_log.json. Offers to either proceed with the real (only) run or abort.",
       "expectations": [
         "Skill does NOT add --dry-run to the command (the flag does not exist)",
         "Skill explains log-import is local-only (no Spotify side-effect, no dry-run)",
@@ -75,7 +75,7 @@
       "seed the dedup log for Trance",
       "import this csv into the log for dnb",
       "log-import dnb Drum_&_Bass.csv",
-      "kan je mijn Techno-export in .adds_log.json zetten?",
+      "kan je mijn Techno-export in .tracks_log.json zetten?",
       "ik heb een nieuwe exportify file voor House, kun je 'm seeden?"
     ],
     "should_not_trigger": [

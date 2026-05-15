@@ -3,7 +3,7 @@
 .env.*
 !.env.example
 .spotify_token_cache
-.adds_log.json
+.tracks_log.json
 *.cache
 
 # Local playlist config — sample lives in playlists.example.json

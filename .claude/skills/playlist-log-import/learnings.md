@@ -19,7 +19,7 @@ Dated, atomic observations promoted from `learning-candidates.md` after they've 
 - 2026-05-13: `log-import` is the **only** mutating subcommand without a `--execute` flag — because it never calls Spotify, the dry-run/execute split doesn't apply. The skill's safety gate is the AskUserQuestion confirmation *before* running, not after. Promoted to SKILL.md guardrail.
 - 2026-05-13: A non-zero `Unparseable lines` count is **normal** for Exportify CSVs — the header row ("Track URI,Track Name,Album Name,...") always parses as unparseable. Only flag this number if it's a large fraction of total lines (>5% suggests the file isn't a proper export).
 - 2026-05-13: The CLI does **not** resolve bare playlist names to filenames the way `scan-for` / `review-playlist` / `bulk-playlist` do for their source argument. The skill must do that lookup itself against `exportify-exports/`.
-- 2026-05-13: `log-import` only mutates `.adds_log.json`. Recovery from a wrong-playlist seeding requires hand-editing that JSON file (the script has no "un-import" command). That's why the AskUserQuestion confirmation is non-negotiable.
+- 2026-05-13: `log-import` only mutates `.tracks_log.json`. Recovery from a wrong-playlist seeding requires hand-editing that JSON file (the script has no "un-import" command). That's why the AskUserQuestion confirmation is non-negotiable.
 
 ## Open Questions
 

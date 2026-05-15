@@ -6,7 +6,7 @@ python playlist_manager.py log-import "House" exportify-exports/house.csv
 
 A few quick notes:
 
-- This is local-only (no Spotify API call). It seeds `.adds_log.json` so the duplicate guard knows about everything currently in House.
+- This is local-only (no Spotify API call). It seeds `.tracks_log.json` so the duplicate guard knows about everything currently in House.
 - I'm assuming the export file is at `exportify-exports/house.csv`. If yours is named differently (e.g. `House.csv` or `House_export.csv`), swap the path — the convention is that exportify CSVs live in `exportify-exports/` at the repo root.
 - Make sure you run it from the repo root with the venv active.
 

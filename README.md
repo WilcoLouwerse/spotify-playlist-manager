@@ -25,7 +25,7 @@ If you're working in this repo with [Claude Code](https://claude.com/claude-code
 - `/playlist-match` — paste a Spotify URL or *"Artist - Title"* and Claude classifies the genres, recommends matching playlists from your `playlists.json`, and can invoke `add` / `smart-add` for you.
 - `/playlist-triage` — sort a whole source playlist into many target playlists in one go, via `review-playlist` (per-track y/N) or `bulk-playlist` (single y/N).
 - `/playlist-scan` — mine a source playlist for tracks that fit *one* chosen target, via `scan-for`.
-- `/playlist-log-import` — seed the local duplicate-guard log (`.adds_log.json`) for a playlist from an Exportify CSV, via `log-import`.
+- `/playlist-log-import` — seed the local duplicate-guard log (`.tracks_log.json`) for a playlist from an Exportify CSV, via `log-import`.
 - `/playlist-config` — bootstrap or extend `playlists.json` from your Spotify account, via `list-playlists --all`.
 
 Full skill reference: [.claude/docs/commands.md](.claude/docs/commands.md). New to Claude Code in VS Code? See [docs/vscode-claude-setup.md](docs/vscode-claude-setup.md) for the WSL + extension + auth walkthrough. Contributor docs (skill authoring, doc conventions, the command index) live in [.claude/docs/README.md](.claude/docs/README.md).
@@ -36,7 +36,7 @@ Three layers protect against unintended writes:
 
 1. **Dry-run is the default.** Add `--execute` to actually write.
 2. **`smart-add` requires interactive confirmation** (per-playlist y/N by default, or `--accept-all` for a single bulk y/N).
-3. **Duplicate guard is always on.** Reads from a local `.adds_log.json` — every URI the script has successfully added or has been seeded with via `log-import`. Run `log-import` once per playlist after setup (see [docs/commands.md → log-import](docs/commands.md#log-import)) to cover tracks the script didn't add. Background: [docs/architecture.md → Duplicate detection](docs/architecture.md#duplicate-detection).
+3. **Duplicate guard is always on.** Reads from a local `.tracks_log.json` — every URI the script has successfully added or has been seeded with via `log-import`. Run `log-import` once per playlist after setup (see [docs/commands.md → log-import](docs/commands.md#log-import)) to cover tracks the script didn't add. Background: [docs/architecture.md → Duplicate detection](docs/architecture.md#duplicate-detection).
 
 ## Security notes
 

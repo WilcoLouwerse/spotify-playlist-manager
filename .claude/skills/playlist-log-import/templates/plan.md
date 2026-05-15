@@ -5,7 +5,7 @@ Render after the user has resolved a target + file (steps 2-3 of SKILL.md). Show
 ```
 Je wilt de log voor {TARGET} seeden met {FILE_LABEL} ({LINE_COUNT} regels).
 
-Dit is een lokale operatie — er wordt niets naar Spotify geschreven. Alleen `.adds_log.json` wordt bijgewerkt.
+Dit is een lokale operatie — er wordt niets naar Spotify geschreven. Alleen `.tracks_log.json` wordt bijgewerkt.
 
 Ik ga dit commando draaien vanuit de repo-root:
 
@@ -15,7 +15,7 @@ Ik ga dit commando draaien vanuit de repo-root:
 ## Placeholder reference
 
 - `{TARGET}` — canonical playlist name from `playlists.json` (not an alias).
-- `{FILE_LABEL}` — full resolved path of the file (e.g. `exportify-exports/House.csv`). Show the path the CLI will actually receive — that's what will appear in `.adds_log.json`'s audit trail if something looks off later.
+- `{FILE_LABEL}` — full resolved path of the file (e.g. `exportify-exports/House.csv`). Show the path the CLI will actually receive — that's what will appear in `.tracks_log.json`'s audit trail if something looks off later.
 - `{LINE_COUNT}` — line count of the file, if cheaply available (`wc -l` is fine). If reading the file is awkward, omit this parenthetical.
 - `{CODE_BLOCK_WITH_COMMAND}` — fenced bash block with **one** command. Both `<TARGET>` and `<FILE>` quoted with double quotes.
 
@@ -48,7 +48,7 @@ Then add a Dutch summary line (per SKILL.md step 7).
 ## If the user cancels
 
 ```
-Oké, niets gedaan. `.adds_log.json` is niet aangepast.
+Oké, niets gedaan. `.tracks_log.json` is niet aangepast.
 ```
 
 Then call **AskUserQuestion** again so the user can change the target, file, or stop entirely.

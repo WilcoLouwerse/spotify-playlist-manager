@@ -1,6 +1,6 @@
 ---
 name: playlist-log-import
-description: Seeds the local duplicate-guard log (.adds_log.json) with a playlist's exportify CSV via the project's log-import CLI command — fires on 'seed mijn log voor House', 'import House export', 'log-import', or 'House CSV importeren'.
+description: Seeds the local duplicate-guard log (.tracks_log.json) with a playlist's exportify CSV via the project's log-import CLI command — fires on 'seed mijn log voor House', 'import House export', 'log-import', or 'House CSV importeren'.
 metadata:
   category: Workflow
   tags: [spotify, log-import, duplicate-guard, exportify, dutch]
@@ -8,7 +8,7 @@ metadata:
 
 # Playlist Log-Import
 
-Wraps the project's local-log seeding workflow: parse a Spotify export file (Exportify CSV, text, or JSON), pull every track URI/URL/ID out of it, and record those URIs against one target playlist in `.adds_log.json`. The duplicate guard (used by `add`, `smart-add`, `review-playlist`, `bulk-playlist`, `scan-for`) then knows those tracks are "already in" that playlist and won't try to re-add them.
+Wraps the project's local-log seeding workflow: parse a Spotify export file (Exportify CSV, text, or JSON), pull every track URI/URL/ID out of it, and record those URIs against one target playlist in `.tracks_log.json`. The duplicate guard (used by `add`, `smart-add`, `review-playlist`, `bulk-playlist`, `scan-for`) then knows those tracks are "already in" that playlist and won't try to re-add them.
 
 This is a **local-only** operation — no Spotify API call is made, no `--execute` flag exists, and the command always runs to completion the moment it's invoked. The skill's safety gate is the AskUserQuestion confirmation **before** running, not after.
 
@@ -16,7 +16,7 @@ Different shape from [playlist-scan](../playlist-scan/SKILL.md) and [playlist-tr
 
 | | playlist-triage / playlist-scan | **playlist-log-import** |
 |--|--|--|
-| Effect | Writes to Spotify | Writes only to local `.adds_log.json` |
+| Effect | Writes to Spotify | Writes only to local `.tracks_log.json` |
 | Dry-run | Yes (default) | N/A — no Spotify side-effect |
 | y/N prompt | Yes (per-track or single) | None — runs to completion |
 | Source | Spotify URL/URI/ID or CSV | File path only (CSV/text/JSON) |
@@ -100,10 +100,10 @@ User-facing prose is **Dutch**. Keep SKILL.md, references, templates, and exampl
 
 ## Guardrails
 
-- **Never** invoke `log-import` without first confirming the resolved target + file via **AskUserQuestion**. Picking the wrong target seeds the wrong playlist's log, and recovery requires hand-editing `.adds_log.json`.
+- **Never** invoke `log-import` without first confirming the resolved target + file via **AskUserQuestion**. Picking the wrong target seeds the wrong playlist's log, and recovery requires hand-editing `.tracks_log.json`.
 - **Never** invent a file path. If the user says "import the House export" and `exportify-exports/House.csv` doesn't exist (try common manglings — `house.csv`, `House_.csv`, `Drum_&_Bass.csv` style), ask via **AskUserQuestion** for the actual filename.
 - **Never** pass flags to `log-import` — it accepts only `<playlist>` and `<file>`. There is no `--execute`, `--dry-run`, or tuning flag. If the user asks for a dry-run, explain that `log-import` is local-only and there is nothing to dry-run; offer to abort instead.
-- **Never** run `log-import` against `Random sht` (the catch-all) unless the user explicitly confirms — the catch-all is a script-side fallback, not a real bucket whose contents are tracked in `.adds_log.json`.
+- **Never** run `log-import` against `Random sht` (the catch-all) unless the user explicitly confirms — the catch-all is a script-side fallback, not a real bucket whose contents are tracked in `.tracks_log.json`.
 - **Never** chain multiple `log-import` invocations in one command. One playlist per run; if the user wants to seed several, ask via **AskUserQuestion** which to do first and loop the skill.
 - Always invoke the venv python (`.venv/bin/python`) from the repo root — venv state and IPv4 routing both depend on it (the IPv4 routing isn't strictly required here since no Spotify call is made, but the venv is).
 - Always quote both the target and the file arguments (playlist names contain spaces, `/`, `'`; file paths may contain spaces).

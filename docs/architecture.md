@@ -6,7 +6,7 @@ How the code is organised and why certain decisions exist.
 
 ```
 spotify-playlist-manager/
-├── .adds_log.json          # local duplicate-guard log (gitignored, auto-managed)
+├── .tracks_log.json          # local duplicate-guard log (gitignored, auto-managed)
 ├── .env                    # secrets (gitignored)
 ├── .env.example            # template
 ├── .gitignore              # excludes .env, .venv, token cache, adds log, playlists.json
@@ -40,7 +40,7 @@ A single-file CLI built on `argparse`:
 - `review-playlist` — walk a source playlist track-by-track with per-track y/N/s/q.
 - `bulk-playlist` — classify every track in a source playlist, show a per-target tally, then apply everything after a single y/N. Uses the local adds log directly for duplicate detection to keep request volume bounded.
 - `scan-for` — pick one target playlist and scan a source playlist for tracks the classifier would route to that target. Same single-y/N UX as `bulk-playlist`, but the output is one candidate list instead of a per-target tally.
-- `log-import` — seeds the local `.adds_log.json` from a file of track URIs/URLs/IDs (e.g. an Exportify CSV), to cover playlist contents the dev-tier API refuses to expose.
+- `log-import` — seeds the local `.tracks_log.json` from a file of track URIs/URLs/IDs (e.g. an Exportify CSV), to cover playlist contents the dev-tier API refuses to expose.
 
 Key data sources:
 
@@ -157,11 +157,11 @@ Three defences against unintended writes:
 
 1. **Dry-run default.** No write ever happens without `--execute`.
 2. **Interactive confirmation in `smart-add`.** Even with `--execute`, you must answer `y` for each suggested playlist. With `--accept-all`, a single bulk `y/N` covers the whole set.
-3. **Duplicate guard.** Before every add, the script checks the local adds log (`.adds_log.json`, gitignored) — every URI the script has successfully added or has been seeded with via `log-import`, keyed by playlist ID. If present → `SKIP`, no write. No override flag. See [Duplicate detection](#duplicate-detection) below for why this log is authoritative.
+3. **Duplicate guard.** Before every add, the script checks the local adds log (`.tracks_log.json`, gitignored) — every URI the script has successfully added or has been seeded with via `log-import`, keyed by playlist ID. If present → `SKIP`, no write. No override flag. See [Duplicate detection](#duplicate-detection) below for why this log is authoritative.
 
 ## Duplicate detection
 
-`.adds_log.json` is the primary (and authoritative) source for the duplicate guard. The flow:
+`.tracks_log.json` is the primary (and authoritative) source for the duplicate guard. The flow:
 
 - Every successful `add` / `smart-add` write that returns a `snapshot_id` from Spotify is appended to the log.
 - The `log-import` subcommand seeds the log from a CSV/text file containing track URIs/URLs/IDs — typically an [Exportify](https://exportify.net) export of an existing playlist, dropped into [`exportify-exports/`](../exportify-exports/) at the repo root. See [commands.md → log-import](commands.md#log-import) for the full workflow.
@@ -171,7 +171,7 @@ Why the log is needed:
 
 The Spotify Web API in this app's tier returns playlist items with the embedded `track` object empty (`uri`, `id`, and `name` are all `null`; only `added_at` survives). That means server-side duplicate detection over the API alone cannot work — every track looks "not present". The log fills that gap. See [Spotify Web API documentation](https://developer.spotify.com/documentation/web-api) for the underlying endpoint behaviour.
 
-Tracks that you added through the Spotify UI (not via this script) and were never seeded via `log-import` are invisible to the guard. Either re-run `log-import` after large UI edits, or edit `.adds_log.json` by hand.
+Tracks that you added through the Spotify UI (not via this script) and were never seeded via `log-import` are invisible to the guard. Either re-run `log-import` after large UI edits, or edit `.tracks_log.json` by hand.
 
 ## February 2026 Spotify API migration
 

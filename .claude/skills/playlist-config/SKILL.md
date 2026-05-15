@@ -14,7 +14,7 @@ Different shape from the other `playlist-*` skills:
 
 | | playlist-triage / playlist-scan / playlist-match | playlist-log-import | **playlist-config** |
 |--|--|--|--|
-| Effect | Writes to Spotify | Writes to local `.adds_log.json` | Writes to `playlists.json` |
+| Effect | Writes to Spotify | Writes to local `.tracks_log.json` | Writes to `playlists.json` |
 | Spotify API | Yes (reads + writes) | No | Yes (reads only, via `list-playlists --all`) |
 | Dry-run | `--execute` flag | N/A (local only) | The CLI is read-only — the edit step is what to confirm |
 | y/N prompt | Yes | None | **AskUserQuestion** before editing `playlists.json` |

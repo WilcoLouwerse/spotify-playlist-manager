@@ -18,7 +18,7 @@ Plan rendered (per `templates/plan.md`):
 ```
 Je wilt de log voor House seeden met exportify-exports/House.csv (143 regels).
 
-Dit is een lokale operatie — er wordt niets naar Spotify geschreven. Alleen `.adds_log.json` wordt bijgewerkt.
+Dit is een lokale operatie — er wordt niets naar Spotify geschreven. Alleen `.tracks_log.json` wordt bijgewerkt.
 
 Ik ga dit commando draaien vanuit de repo-root:
 
@@ -147,7 +147,7 @@ User says "doe een dry-run van log-import House".
 
 Skill explains (without invoking):
 
-> "`log-import` heeft geen dry-run modus — het is een lokale operatie en raakt Spotify niet aan. Het schrijft alleen naar `.adds_log.json`. Wil je `m gewoon draaien? Je kunt achteraf de wijziging zien in `.adds_log.json`."
+> "`log-import` heeft geen dry-run modus — het is een lokale operatie en raakt Spotify niet aan. Het schrijft alleen naar `.tracks_log.json`. Wil je `m gewoon draaien? Je kunt achteraf de wijziging zien in `.tracks_log.json`."
 
 Then **AskUserQuestion** to proceed or cancel.
 

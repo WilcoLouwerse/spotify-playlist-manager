@@ -36,9 +36,9 @@
           "evidence": "Command has zero flags. The response explicitly states: 'Geen vlaggen — log-import accepteert alleen <playlist> en <file>, en is altijd lokaal (geen --execute/--dry-run).'"
         },
         {
-          "text": "Skill explicitly confirms via AskUserQuestion BEFORE running, calling out that this is local-only and mutates .adds_log.json",
+          "text": "Skill explicitly confirms via AskUserQuestion BEFORE running, calling out that this is local-only and mutates .tracks_log.json",
           "passed": true,
-          "evidence": "Response includes a Ja/Nee/Annuleren confirmation block AND explicitly states 'Dit is een lokale operatie — er wordt niets naar Spotify geschreven. Alleen .adds_log.json wordt bijgewerkt.'"
+          "evidence": "Response includes a Ja/Nee/Annuleren confirmation block AND explicitly states 'Dit is een lokale operatie — er wordt niets naar Spotify geschreven. Alleen .tracks_log.json wordt bijgewerkt.'"
         }
       ]
     },
@@ -75,9 +75,9 @@
           "evidence": "Command has zero flags — baseline read the docs correctly."
         },
         {
-          "text": "Skill explicitly confirms via AskUserQuestion BEFORE running, calling out that this is local-only and mutates .adds_log.json",
+          "text": "Skill explicitly confirms via AskUserQuestion BEFORE running, calling out that this is local-only and mutates .tracks_log.json",
           "passed": true,
-          "evidence": "Baseline mentions 'This is local-only (no Spotify API call). It seeds .adds_log.json ...' AND asks 'Wil je dat ik 'm meteen draai?' — a free-form confirmation rather than a structured AskUserQuestion, but the safety gate is present."
+          "evidence": "Baseline mentions 'This is local-only (no Spotify API call). It seeds .tracks_log.json ...' AND asks 'Wil je dat ik 'm meteen draai?' — a free-form confirmation rather than a structured AskUserQuestion, but the safety gate is present."
         }
       ]
     }

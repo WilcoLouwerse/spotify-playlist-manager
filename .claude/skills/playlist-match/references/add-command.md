@@ -14,7 +14,7 @@ The project's `smart-add` and `analyze-only` commands call OpenAI to pick playli
 |---------|------------------|------------|-----|
 | `add` | No — you pass the playlist name | **Yes — only command used.** Loop once per playlist the user chose. | Claude AI already classified; `add` just executes the write. |
 | `smart-add` | Yes — OpenAI picks | **Never.** | Claude AI replaces the OpenAI classifier; re-do the analysis instead. |
-| `analyze-only` | Yes — OpenAI classifies, no write | **Never.** | Same reason — Claude AI is the classifier. |
+| `analyze-only` | Yes — OpenAI classifies, no write | **Only** in the "Inschatten zonder internet (Claude + OpenAI)" fallback path. Read-only, no Spotify changes. Never in the default web-lookup flow. | Provides a second training-data opinion to cross-check Claude's offline estimate. Falls back to Claude-only on any OpenAI error. |
 
 ---
 
@@ -101,7 +101,7 @@ The skill **does not** call `smart-add` (OpenAI). Instead, Claude AI is the clas
    - **Standaard opnieuw** — zelfde sweep, andere bron-weging.
 3. Re-run steps 5–6 with that framing, render the playlist match block, and loop step 10's `add` calls over the picks the user selects.
 
-Do **not** invoke `smart-add`, `analyze-only`, or any other OpenAI-driven command. The `add` command is the only Python entry point this skill uses.
+Do **not** invoke `smart-add`. `analyze-only` is used **only** in the "Inschatten zonder internet (Claude + OpenAI)" fallback path of the uncertainty fork — never here in the add flow. The `add` command is the only Python entry point used when adding tracks to playlists.
 
 ---
 

@@ -48,9 +48,10 @@ User-facing prose is **Dutch** (the user authored the format spec in Dutch). Kee
 5. **Determine genres**
 
    Follow `references/genre-sources.md`. In short:
-   - Use **multiple independent sources** (Last.fm, AllMusic, Wikipedia, RYM, Discogs, label sites). Never base genres on the artist name alone.
-   - Score each genre with a confidence percentage and a short reason.
-   - If sources strongly conflict, treat as **uncertain** and jump to step 7.
+   - **Default = Claude + live web lookup.** Use **WebSearch** and **WebFetch** to pull current data from **multiple independent sources** (AllMusic, Wikipedia, RateYourMusic, Discogs, Last.fm, label / artist sites). This is the most accurate and up-to-date path and is always tried first — never skip straight to training recall when web tools are available.
+   - Score each genre with a confidence percentage and a short reason; always note which web source(s) corroborated it.
+   - Training-data recall is the **last resort**, only after web lookups fail or contradict sharply — and only via the explicit "Inschatten zonder internet (Claude + OpenAI)" path in the uncertainty fork. That path runs the project's read-only `analyze-only` command to get an OpenAI training-data second opinion and combines it with Claude's own training recall (capped at 75% on agreement, 60% on disagreement). If OpenAI is unavailable (no API key / quota / auth / network) the skill falls back to Claude-only and tells the user explicitly which OpenAI failure mode triggered the fallback.
+   - If sources strongly conflict and no clear winner emerges, treat as **uncertain** and jump to step 7.
 
 6. **Match playlists**
 
@@ -122,12 +123,14 @@ User-facing prose is **Dutch** (the user authored the format spec in Dutch). Kee
 
 ## Guardrails
 
+- **Always** start genre identification with live web lookup via **WebSearch** + **WebFetch** against the sources in `references/genre-sources.md`. This is the most accurate and most up-to-date path and is the first thing tried — never skip to training-data recall when web tools are available.
 - **Never** base a genre claim solely on the artist's overall reputation. Cross-check with multiple sources, scoped to the specific track when possible.
 - **Never** recommend `Random sht`. It is the script-side fallback under `playlists.json -> catch_all` and must not appear in user-facing output.
 - **Never** recommend a playlist that is not currently present in `playlists.json -> categories`. Read the file each run; user edits are authoritative.
 - **Never** print the internal step numbers (1./2./3./...) from the templates in user-facing output. They are an authoring scaffold only.
 - **Never** invoke `playlist_manager.py add` without explicit user confirmation in the same turn — call **AskUserQuestion** to confirm before running any python script.
-- **Never** invoke `smart-add` (or any other OpenAI-driven Python command) from this skill. Claude AI is the classifier; only the `add` command is run here. If the user asks for "the classifier" or "AI-picked playlists", do the classification yourself and loop `add` over the picks.
+- **Never** invoke `smart-add` from this skill. `smart-add` writes to Spotify after classifying with OpenAI; Claude AI is the writer's classifier here, so use `add` directly.
+- **May** invoke the read-only `analyze-only` command **only** in the "Inschatten zonder internet (Claude + OpenAI)" path of the uncertainty fork. It calls OpenAI for a training-data second opinion without touching Spotify. Always combine the result with Claude's own training recall; fall back to Claude-only with an explicit reason message when OpenAI fails (no API key, quota, auth, connection, invalid JSON, validation rejection). Never use it as the default classifier — web lookup is still primary.
 - **Never** invent or guess a Spotify track ID. If the user only gave you `Artist - Title`, ask for a URL via **AskUserQuestion** before invoking `add`.
 - **Never** invoke `add` for a playlist that was not in the list you recommended in step 6 — unless the user explicitly typed a different one.
 - **Never** print the old letter-shortcut menu (A-F / Z/Y/X/W / ?). All follow-ups go through **AskUserQuestion**.

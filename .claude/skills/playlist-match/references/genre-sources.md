@@ -2,28 +2,32 @@
 
 How to decide what genres a song is. The output goes into the **Genres** block of the analysis with a percentage and a one-line reason per genre.
 
+**The default flow is Claude + live web lookup.** Use **WebSearch** and **WebFetch** to pull current data from the sources below. This is the most accurate and most up-to-date path — and the one always tried first. Training-data recall is **last resort only**.
+
 ---
 
-## Sources, ranked
+## Sources, ranked (web-driven)
 
-Use multiple independent sources per song. Cross-check before publishing a confidence percentage.
+Cross-check across multiple independent sources before publishing a confidence percentage. For each, the mechanism is `WebSearch` (to find the right URL) followed by `WebFetch` (to read it).
 
-| Source | Strength | Track-scoped? |
-|--------|----------|---------------|
-| AllMusic | Editorial genre tagging, often track-level via the album page. | Album / track |
-| RateYourMusic (RYM) | Crowdsourced but heavily moderated; granular subgenres. | Album / song |
-| Wikipedia | Track or album infobox usually lists genres explicitly. | Track / album |
-| Discogs | Release-level genre + style tags. | Release |
-| Last.fm | User tags — high recall, low precision (treat as signal, not truth). | Track |
-| Label or artist site | Sometimes the label's own categorisation, especially for niche electronic. | Track / release |
-| Spotify's own genres | Artist-level only; weak signal. | Artist |
-| **Claude AI (internal knowledge)** | **Source of last resort.** Use only when no external source is reachable or all sources contradict, **and** the user has picked "Laat Claude inschatten" in the uncertainty fork. Cap confidence at 70%. Never OpenAI / `smart-add`. | Track if Claude knows it, else artist |
+| Source | Strength | Track-scoped? | How to look up |
+|--------|----------|---------------|----------------|
+| AllMusic | Editorial genre tagging, often track-level via the album page. | Album / track | WebSearch `"<artist> <track> site:allmusic.com"`, WebFetch the result. |
+| RateYourMusic (RYM) | Crowdsourced but heavily moderated; granular subgenres. | Album / song | WebSearch `"<artist> <track> rateyourmusic"`, WebFetch the result. |
+| Wikipedia | Track or album infobox usually lists genres explicitly. | Track / album | WebSearch `"<artist> <track> wikipedia"` (fall back to the album page if no track page exists), WebFetch the result. |
+| Discogs | Release-level genre + style tags. | Release | WebSearch `"<artist> <track> discogs"`, WebFetch the release page. |
+| Last.fm | User tags — high recall, low precision (treat as signal, not truth). | Track | WebFetch `https://www.last.fm/music/<artist>/_/<track>` (URL-encode names) or use WebSearch to find the right URL. |
+| Label or artist site | Sometimes the label's own categorisation, especially for niche electronic. | Track / release | WebSearch the artist + release on the label domain, WebFetch the page. |
+| Spotify's own genres | Artist-level only; weak signal. | Artist | WebFetch `https://open.spotify.com/artist/<id>` if an artist URL is in hand. |
+| **Claude AI (internal knowledge)** | **Last resort.** Used only when every web lookup above fails and the user has picked "Inschatten zonder internet (Claude + OpenAI)" in the uncertainty fork. Combined with OpenAI as a second training-data source when available; falls back to Claude-only with an explicit reason if OpenAI is down. | Track if Claude knows it, else artist | No tool — recall from training data. Label `bron: Claude (interne kennis)` or `bron: Claude + OpenAI (interne kennis)` per row depending on whether OpenAI succeeded. |
+| **OpenAI (via `analyze-only`)** | **Second-opinion-only.** Used only alongside Claude in the offline path above, via the read-only `analyze-only` command — never `smart-add`, never in the default web flow. Provides a second training-data classification to cross-check Claude's genres and playlists. Falls back gracefully on any OpenAI error. | Track-level | `Bash` → `.venv/bin/python playlist_manager.py analyze-only "<spotify-url-or-id>"`. Parse the printed genres + playlist matches from stdout. Check for OpenAI error strings listed in `templates/uncertainty.md` and fall back to Claude-only if any are present. |
 
 **Rules of thumb:**
-- If 2+ "strong" sources (AllMusic, RYM, Wikipedia, Discogs) agree on a genre → confidence ≥ 80%.
+- **Always start with web lookup.** Run WebSearch / WebFetch against at least 2 strong sources (AllMusic, RYM, Wikipedia, Discogs) before publishing genres. Never publish a genre based on training recall when web tools are available.
+- If 2+ "strong" web sources agree on a genre → confidence ≥ 80%.
 - If only Last.fm user tags agree → confidence ≤ 65% and call out the source weakness in the reason.
 - If sources contradict (e.g. AllMusic says "indie rock", RYM crowd says "post-punk") → list both with the higher-confidence one first, lower the headline number, and add the conflict to the reason.
-- If **all** external sources fail (no entries, or sharp unresolved conflict) → enter the uncertainty fork (`templates/uncertainty.md`). When the user picks "Laat Claude inschatten", Claude AI's own training knowledge is the named fallback source — never `smart-add` (OpenAI). Cap individual genre confidences at 70% and label `bron: Claude (interne kennis)` with `betrouwbaarheid: laag` (or `middel` only for well-known tracks).
+- If **all** web lookups fail (404s, no entries, or sharp unresolved conflict) → enter the uncertainty fork (`templates/uncertainty.md`). From that menu the user can broaden the lookup (artist-wide pages, weaker sources) — all of which still use WebFetch/WebSearch. The "Laat Claude inschatten zonder internet" option is the true last resort: training-only, capped at 70%, labeled `bron: Claude (interne kennis)` with `betrouwbaarheid: laag` (or `middel` only for well-known tracks). Never `smart-add` (OpenAI).
 
 ---
 

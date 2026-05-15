@@ -32,11 +32,11 @@ Print **only** this lead-in line in chat (Dutch):
 Sorry, ik heb moeite om de genres voor dit nummer te vinden. [korte uitleg waarom]
 ```
 
-Then call **AskUserQuestion** with the four uncertainty options from `templates/uncertainty.md`:
-- "Laat Claude inschatten" — primary Claude-AI fallback (best-effort estimate from internal knowledge, confidence capped at 70%). **Never** OpenAI / `smart-add`.
-- "Schat op basis van artiest"
-- "Minder betrouwbare bron"
-- "Sla genres over"
+Then call **AskUserQuestion** with the four uncertainty options from `templates/uncertainty.md` — ordered by accuracy, with web-driven lookups before training-only recall:
+- "Breder zoeken (artiestpagina's)" — broaden WebFetch/WebSearch to artist-level pages on AllMusic / Wikipedia / RYM / Last.fm.
+- "Zwakkere webbronnen" — fall back to Last.fm tags / SoundCloud / Bandcamp via WebFetch.
+- "Sla genres over" — no genre claim, playlist matching only.
+- "Inschatten zonder internet (Claude + OpenAI)" — last resort: Claude training recall combined with OpenAI's `analyze-only` (read-only, no Spotify writes) as a second opinion. Falls back to Claude-only with an explicit notification when OpenAI is unavailable. Never `smart-add`.
 
 Do not print the option list as chat text — the user picks via the UI prompt. Wait for the user's reply before continuing.
 
@@ -63,7 +63,14 @@ For each genre entry, **always include**: confidence %, source, reliability leve
 
 The "Sla genres over" option is special: skip the Genres section entirely and only render Playlist matches with a one-line note that no hard genre claim was made.
 
-The "Laat Claude inschatten" option is special too: use `bron: Claude (interne kennis)`, `betrouwbaarheid: laag` (default) or `middel` (well-known tracks only), and **cap individual genre confidences at 70%** — Claude's internal knowledge is not a cross-checked source. Add a one-line caveat noting the analysis is AI-only, not corroborated. Never substitute OpenAI / `smart-add` for this path. See `templates/uncertainty.md → "Laat Claude inschatten" — specific response shape`.
+The **"Inschatten zonder internet (Claude + OpenAI)"** option is the true last resort. Full step-by-step flow is in `templates/uncertainty.md`. Summary of response shapes:
+
+- **Claude + OpenAI both available, agree:** `bron: Claude + OpenAI (interne kennis)`, `betrouwbaarheid: middel`, confidence averaged and capped at **75%**.
+- **One source only:** `bron: Claude (interne kennis)` or `bron: OpenAI (interne kennis)`, capped at **65%**, note the other source didn't mention it.
+- **Both present but disagree:** two rows, each capped at **60%**, disagreement noted.
+- **OpenAI unavailable:** prepend `⚠️ OpenAI was niet beschikbaar ({reden}).` then render Claude-only rows: `bron: Claude (interne kennis)`, `betrouwbaarheid: laag` (or `middel` for well-known tracks), cap at **70%**, one-line AI-only caveat.
+
+The "Breder zoeken (artiestpagina's)" and "Zwakkere webbronnen" options still use **WebFetch / WebSearch** — they just broaden the source. Genre entries from those paths get a real source name (e.g. `bron: Last.fm tags via WebFetch`, `bron: AllMusic artist page`) and `betrouwbaarheid: middel` or `laag` depending on how strong the source was.
 
 ---
 

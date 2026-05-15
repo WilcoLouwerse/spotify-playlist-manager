@@ -24,6 +24,9 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 
+# Local scratch (in-progress scans, drafts)
+.scratch/
+
 # Editors / OS
 .vscode/
 .idea/

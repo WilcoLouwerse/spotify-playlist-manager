@@ -10,6 +10,7 @@ import os
 import re
 import socket
 import sys
+import time
 
 from dotenv import load_dotenv
 import spotipy
@@ -126,8 +127,60 @@ def _validate_config(data):
             raise ValueError("catch_all.rule must be a string when present")
 
 
+def _get_throttle_seconds():
+    raw = os.getenv("SPOTIFY_API_THROTTLE_MS", "50")
+    try:
+        return max(0.0, float(raw) / 1000.0)
+    except ValueError:
+        return 0.05
+
+
+class _RateLimitedSpotify:
+    # Dev-Mode rate limits are stricter than they used to be (Feb 2026): no
+    # batch fetch endpoints, no audio-features, fewer fields. Adding a small
+    # inter-call sleep and explicit Retry-After respect keeps the CLI well
+    # under the rolling 30s threshold and surfaces a clear message when
+    # Spotify pushes back.
+    def __init__(self, client, inter_call_sleep, max_429_retries=3):
+        self._client = client
+        self._sleep = inter_call_sleep
+        self._max_retries = max_429_retries
+
+    def __getattr__(self, name):
+        attr = getattr(self._client, name)
+        if not callable(attr):
+            return attr
+
+        def wrapper(*args, **kwargs):
+            for attempt in range(self._max_retries + 1):
+                try:
+                    result = attr(*args, **kwargs)
+                except spotipy.SpotifyException as exc:
+                    if exc.http_status == 429 and attempt < self._max_retries:
+                        retry_after = 1
+                        headers = getattr(exc, "headers", None) or {}
+                        try:
+                            retry_after = max(1, int(headers.get("Retry-After", 1)))
+                        except (TypeError, ValueError):
+                            retry_after = 1
+                        print(
+                            f"(rate-limited by Spotify; sleeping {retry_after}s "
+                            f"then retrying — attempt {attempt + 1}/{self._max_retries})",
+                            file=sys.stderr,
+                        )
+                        time.sleep(retry_after)
+                        continue
+                    raise
+                if self._sleep:
+                    time.sleep(self._sleep)
+                return result
+            return None
+
+        return wrapper
+
+
 def get_spotify_client():
-    return spotipy.Spotify(
+    client = spotipy.Spotify(
         auth_manager=SpotifyOAuth(
             client_id=os.getenv("SPOTIPY_CLIENT_ID"),
             client_secret=os.getenv("SPOTIPY_CLIENT_SECRET"),
@@ -139,6 +192,7 @@ def get_spotify_client():
         requests_timeout=30,
         retries=5,
     )
+    return _RateLimitedSpotify(client, inter_call_sleep=_get_throttle_seconds())
 
 
 def normalize_playlist_name(name):
@@ -178,8 +232,15 @@ def extract_playlist_id(playlist_input):
     return playlist_input
 
 
+_TRACK_CACHE = {}
+
+
 def get_track(sp, track_input):
     track_id = extract_track_id(track_input)
+    cached = _TRACK_CACHE.get(track_id)
+    if cached is not None and cached.get("metadata_available"):
+        return cached
+
     uri = f"spotify:track:{track_id}"
     fallback = {
         "id": track_id,
@@ -204,7 +265,7 @@ def get_track(sp, track_input):
     artist_names = [a["name"] for a in track["artists"]]
     album = track["album"]
     label = f"{artist_names[0]} - {track['name']}" if artist_names else track["name"]
-    return {
+    result = {
         "id": track["id"],
         "uri": track["uri"],
         "name": track["name"],
@@ -218,10 +279,13 @@ def get_track(sp, track_input):
         "label": label,
         "metadata_available": True,
     }
+    _TRACK_CACHE[track_id] = result
+    return result
 
 
 TRACKS_LOG_PATH = ".tracks_log.json"
 _WARNED_ABOUT_STRIPPED_DATA = False
+_PLAYLIST_URIS_CACHE = {}
 
 
 def _load_tracks_log():
@@ -243,6 +307,9 @@ def log_successful_add(playlist_id, track_uri):
     if track_uri not in uris:
         uris.append(track_uri)
         _save_tracks_log(log)
+    cached = _PLAYLIST_URIS_CACHE.get(playlist_id)
+    if cached is not None:
+        cached.add(track_uri)
 
 
 def remove_from_log(playlist_id, track_uri):
@@ -255,6 +322,34 @@ def remove_from_log(playlist_id, track_uri):
         else:
             del log[playlist_id]
         _save_tracks_log(log)
+    cached = _PLAYLIST_URIS_CACHE.get(playlist_id)
+    if cached is not None:
+        cached.discard(track_uri)
+
+
+def _fetch_playlist_uris(sp, playlist_id):
+    """Paginate a playlist once and return the set of track URIs Spotify returns.
+
+    Returns (uris_set, api_returned_any_uri). Empty set + False means Dev Mode
+    stripped the contents.
+    """
+    uris = set()
+    api_returned_any_uri = False
+    results = sp.playlist_items(
+        playlist_id,
+        fields="items(track(uri)),next",
+        additional_types=("track",),
+        limit=100,
+    )
+    while results:
+        for item in results["items"]:
+            t = item.get("track") or {}
+            uri = t.get("uri")
+            if uri:
+                api_returned_any_uri = True
+                uris.add(uri)
+        results = sp.next(results) if results.get("next") else None
+    return uris, api_returned_any_uri
 
 
 def playlist_contains_uri(sp, playlist_id, track_uri):
@@ -266,23 +361,16 @@ def playlist_contains_uri(sp, playlist_id, track_uri):
     if track_uri in log.get(playlist_id, []):
         return True
 
-    # Best-effort Spotify check as a secondary signal.
-    results = sp.playlist_items(
-        playlist_id,
-        fields="items(track(uri)),next",
-        additional_types=("track",),
-        limit=100,
-    )
-    api_returned_any_uri = False
-    while results:
-        for item in results["items"]:
-            t = item.get("track") or {}
-            uri = t.get("uri")
-            if uri:
-                api_returned_any_uri = True
-            if uri == track_uri:
-                return True
-        results = sp.next(results) if results.get("next") else None
+    # Best-effort Spotify check as a secondary signal. Paginate once per
+    # playlist per session — review_playlist can ask this question many times
+    # for the same target playlist, and Dev Mode has no batch fetch endpoint
+    # to amortise the cost.
+    cached = _PLAYLIST_URIS_CACHE.get(playlist_id)
+    if cached is not None:
+        return track_uri in cached
+
+    uris, api_returned_any_uri = _fetch_playlist_uris(sp, playlist_id)
+    _PLAYLIST_URIS_CACHE[playlist_id] = uris
 
     global _WARNED_ABOUT_STRIPPED_DATA
     if not api_returned_any_uri and not _WARNED_ABOUT_STRIPPED_DATA:
@@ -294,7 +382,7 @@ def playlist_contains_uri(sp, playlist_id, track_uri):
         )
         _WARNED_ABOUT_STRIPPED_DATA = True
 
-    return False
+    return track_uri in uris
 
 
 def add_track(sp, track_input, playlist_name, execute):

@@ -22,7 +22,7 @@ Each entry is dated. One insight per bullet. Include source: which song / which 
 
 ## Domain Knowledge
 
-*(empty)*
+- 2026-05-15 — Een meme-y / absurde **tracktitel** is op zichzelf niet genoeg voor `Funny meme`. Bij Sickmode - WHAAAT?? (YES!!! THE KICK IS ANVIL FROM M1N3CR4FT) scoorde ik Funny meme 70% op basis van de titel + anvil-kick gimmick, maar de user koos alleen Hardstyle & Hardcore + Electronic Music. Hypothese: `Funny meme` is bedoeld voor tracks waar het *muzikale materiaal* (lyrics, melodie, vocal hook) de grap is — niet voor reguliere genretracks met een grappige naam. Bij twijfel: scoor lager (≤50%) of laat weg.
 
 ## Open Questions
 

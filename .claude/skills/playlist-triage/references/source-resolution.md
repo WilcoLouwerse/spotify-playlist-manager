@@ -49,6 +49,35 @@ The CLI's bare-name matcher handles this. The skill shouldn't try to invert the 
 
 ---
 
+## Freshness check via .tracks_log.json
+
+CSVs in `exportify-exports/` are point-in-time exports — `.tracks_log.json` is updated live by every successful `add`, `bulk-playlist`, `review-playlist`, and `scan-for --execute` run. When the resolved source is a CSV, the skill should compare the two before triaging.
+
+**When to run the check**:
+- The source resolved to a CSV path (explicit or bare-name match under `exportify-exports/`).
+- AND the source playlist's name is present in `playlists.json -> playlists` (so we can look up its Spotify ID).
+
+If either condition fails, skip the check.
+
+**How**:
+1. Look up the source's Spotify ID via `playlists.json -> playlists[<source-name>]`.
+2. Read `.tracks_log.json` and grab the array at `[<source-id>]` (empty array if the key is missing).
+3. Parse the CSV — collect the URI set from the `Track URI` column (Exportify's first column). Normalize URLs to `spotify:track:<id>` form so the sets are comparable.
+4. Compute `log_only = log_uris - csv_uris` (tracks the log has that the CSV doesn't).
+
+**Surfacing a stale CSV** — if `len(log_only) > 0`, the CSV is likely stale. Use **AskUserQuestion**:
+
+> "De CSV `<file>` mist {N} tracks die wel in `.tracks_log.json` voor {source} staan — de CSV is mogelijk verouderd. Hoe wil je verder?"
+> - **Gebruik Spotify URL/URI** *(meest actueel)* — vraag om de URL/URI van de source en gebruik die in plaats van de CSV.
+> - **Ga door met deze CSV** — accepteer dat recente toevoegingen worden gemist.
+> - **Exporteer eerst opnieuw via Exportify** — stop de triage; user re-exports and re-runs.
+
+If `log_only` is empty, proceed silently — the CSV is in sync (or newer, which is fine).
+
+**Cases where the log is *less* complete than the CSV** (`len(csv_uris - log_uris) > 0`): do not warn. The log only records adds made via the CLI; tracks added through Spotify's UI are in the CSV but not the log. That's expected, not stale.
+
+---
+
 ## Stripped-data CSV fallback
 
 If a Spotify URL is given but the API returns no readable tracks (Developer Mode strips `track` URIs from `playlist_items`), `review-playlist` / `bulk-playlist` print:

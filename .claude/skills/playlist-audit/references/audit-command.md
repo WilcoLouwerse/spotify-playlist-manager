@@ -35,6 +35,31 @@ spotify:track:def456	Dua Lipa - Levitating
 
 ---
 
+## Freshness check via .tracks_log.json
+
+Only relevant when the track list came from a CSV under `exportify-exports/` (the dev-tier fallback). When the Spotify API returned tracks directly, skip this check — the API is authoritative.
+
+CSVs are point-in-time exports; `.tracks_log.json` is updated live by every `add`, `bulk-playlist`, `review-playlist`, and `scan-for --execute` run. So the log can hold URIs that the CSV snapshot missed.
+
+**How**:
+1. Look up the audited playlist's Spotify ID via `playlists.json -> playlists[<playlist-name>]`.
+2. Read `.tracks_log.json` and grab the array at `[<playlist-id>]` (empty array if the key is missing).
+3. Build the set of URIs in the parsed `list-tracks` output (the CSV-backed list).
+4. Compute `log_only = log_uris - listed_uris`.
+
+**Surfacing a stale CSV** — if `len(log_only) > 0`, use **AskUserQuestion** in Dutch:
+
+> "De CSV `<file>` mist {N} tracks die wel in `.tracks_log.json` voor {playlist} staan — de CSV is mogelijk verouderd. Hoe wil je verder?"
+> - **Audit alleen de CSV-tracks** — accepteer dat recente toevoegingen niet worden gecontroleerd.
+> - **Vraag een verse CSV-export aan** *(via [exportify.net](https://exportify.net))* — stop de audit; user re-exports.
+> - **Audit de extra URIs ook** — voor elke URI in `log_only` haal het label op via `list-tracks "<uri>"` of via Spotify; voeg ze toe aan de auditlijst.
+
+If `log_only` is empty, proceed silently.
+
+**Cases where the log is *less* complete than the CSV**: do not warn. The log only records adds made via the CLI; tracks added through Spotify's UI are in the CSV but not the log. That's expected, not stale.
+
+---
+
 ## `audit-playlist` — batch audit via OpenAI (quick mode)
 
 ```bash

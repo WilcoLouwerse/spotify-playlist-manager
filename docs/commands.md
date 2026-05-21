@@ -177,6 +177,87 @@ On a successful removal, the script removes the track URI from `.tracks_log.json
 - Playlist name not recognised → raises `ValueError: Unknown playlist: ...`.
 - Spotify API error → prints `FAILED: Spotify returned <status> <msg>`.
 
+## `batch-add`
+
+Add many tracks to a single playlist in batches of 100 (Spotify API max). The **preferred path** whenever a skill or workflow adds more than one track to the same target — one API call per 100 URIs instead of one per track.
+
+```bash
+# Dry-run from a file (one URI/URL/ID per line; '#' lines and blanks are skipped)
+python playlist_manager.py batch-add "Metal" candidates.txt
+
+# Execute from stdin
+cat candidates.txt | python playlist_manager.py batch-add "Metal" - --execute
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `playlist` | Target playlist name — must match a key under `"playlists"` in [playlists.json](../playlists.json) or an alias under `"aliases"` (case-insensitive) |
+| `source` | Path to a file with one Spotify track URI/URL/ID per line, or `-` to read from stdin. Blank lines and lines starting with `#` are ignored. |
+| `--execute` | Without this flag, nothing is written |
+
+### Behaviour
+
+- Input is de-duplicated before sending to Spotify (same URI listed twice → counted once).
+- The combined set of URIs already in the playlist (from `.tracks_log.json` plus a live `playlist_items` fetch) is filtered out — URIs already present are reported as `SKIP {N} URIs already in playlist (will not re-add)` and not sent.
+- Remaining URIs are sent to `playlist_add_items` in chunks of up to 100. Each chunk is one Spotify API call.
+- On a successful chunk, every URI in the chunk is logged via `log_successful_add` so `.tracks_log.json` stays current.
+- On a 429 (rate limit), the script honours `Retry-After` (see [architecture.md](architecture.md)).
+
+### Why batch instead of `add` in a loop
+
+- Each `add` invocation pays the Python + spotipy + auth bootstrap cost (~1-2s) and calls `playlist_contains_uri`, which paginates the playlist. 150 tracks via per-track `add` ≈ 150 bootstraps + 150 pagination calls + 150 add calls ≈ 600 API calls and several minutes.
+- `batch-add` paginates the playlist once, then sends 1 API call per 100 tracks. 150 tracks ≈ 1 pagination + 2 add calls ≈ ~3 API calls and ~10 seconds.
+
+### Exit behaviour
+
+- No URIs in input (empty file, only comments) → prints `No URIs to add. Nothing to do.` and exits.
+- All URIs already in the playlist → prints `Nothing new to add. Done.` and exits.
+- Chunk fails → prints `FAILED batch of {N}: <status> <msg>`, increments the failed counter, continues with remaining chunks.
+- Spotify returns no `snapshot_id` for a chunk → prints `WARN: no snapshot_id ...`, increments failed counter, continues.
+
+Final line summarises: `DONE: added {A}, failed {F}, skipped {S} (already in playlist).`
+
+## `batch-remove`
+
+Remove many tracks from a single playlist in batches of 100 (Spotify API max). The **preferred path** whenever a skill or workflow removes more than one track from the same playlist.
+
+```bash
+# Dry-run from a file
+python playlist_manager.py batch-remove "Rock" to_remove.txt
+
+# Execute from stdin
+cat to_remove.txt | python playlist_manager.py batch-remove "Rock" - --execute
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `playlist` | Target playlist name — must match a key under `"playlists"` in [playlists.json](../playlists.json) or an alias under `"aliases"` (case-insensitive) |
+| `source` | Path to a file with one Spotify track URI/URL/ID per line, or `-` to read from stdin. Blank lines and lines starting with `#` are ignored. |
+| `--execute` | Without this flag, nothing is written |
+
+### Behaviour
+
+- Input is de-duplicated before sending to Spotify.
+- URIs not in the playlist (per `.tracks_log.json` + live `playlist_items`) are reported as `SKIP {N} URIs not in playlist` and dropped — `playlist_remove_all_occurrences_of_items` is idempotent on non-present URIs, but skipping makes the log line accurate.
+- Remaining URIs are sent in chunks of up to 100 via `playlist_remove_all_occurrences_of_items`. Each chunk is one Spotify API call.
+- On a successful chunk, every URI is removed from `.tracks_log.json` via `remove_from_log`.
+
+### When NOT to use this command
+
+- **One track from many playlists** — Spotify's API removes from one playlist per call. There is no batch equivalent. Use a `remove --execute` loop or call the relevant skill (`/playlist-remove`) instead.
+
+### Exit behaviour
+
+- No URIs in input → prints `No URIs to remove. Nothing to do.` and exits.
+- All URIs absent from the playlist → prints `Nothing to remove. Done.` and exits.
+- Chunk failure handling is identical to `batch-add`.
+
+Final line summarises: `DONE: removed {R}, failed {F}, skipped {S} (not in playlist).`
+
 ## `smart-add`
 
 Classify a track with OpenAI, confirm interactively, then add it to the suggested playlists.

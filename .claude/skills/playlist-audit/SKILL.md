@@ -19,7 +19,7 @@ User-facing prose is **Dutch**. Keep SKILL.md, references, templates, and exampl
 
 **Input**: A playlist name (from `playlists.json`), a Spotify playlist URL, or a phrase like "controleer mijn House playlist", "audit mijn Techno", "welke nummers passen er niet in House?", "check House op mismatches".
 
-**Source of truth**: [`playlists.json`](../../../playlists.json) for valid playlist names and their declared genre/category. [`docs/commands.md`](../../../docs/commands.md) for CLI behaviour.
+**Source of truth**: [`playlists.json`](../../../playlists.json) for valid playlist names and their declared genre/category. [`docs/commands.md`](../../../docs/commands.md) for CLI behaviour. The removal step uses [`batch-remove`](../../../docs/commands.md#batch-remove) when ≥ 2 tracks are selected — never loop `remove --execute` per track.
 
 **Conversation memory**: Remember the playlist name and the audit results within the session so follow-up removal requests don't require re-running the audit.
 
@@ -65,6 +65,8 @@ User-facing prose is **Dutch**. Keep SKILL.md, references, templates, and exampl
    - Ask the user via **AskUserQuestion** if they have an exportify CSV export:
      - **Ja, ik heb een CSV** — ask for the path and re-run `list-tracks "<csv-path>"`
      - **Nee** — suggest exporting via https://exportify.net and stop.
+
+   **Cross-check with `.tracks_log.json` for freshness.** Whenever the track list came from a CSV (the fallback above) — not when the Spotify API returned tracks directly — also consult `.tracks_log.json[<playlist-id>]`. The log is updated by every `add`, `bulk-playlist`, `review-playlist`, and `scan-for --execute` run, so it can hold URIs that the CSV snapshot missed. See `references/audit-command.md` → "Freshness check via .tracks_log.json" for the rules. If the log has URIs not present in the CSV, surface this via **AskUserQuestion** before continuing — the audit's accuracy depends on completeness.
 
 4. **Choose audit mode**
 
@@ -166,9 +168,20 @@ User-facing prose is **Dutch**. Keep SKILL.md, references, templates, and exampl
 
    If the user selects none → skip to step 10.
 
-9. **Show the planned remove commands and confirm**
+9. **Show the planned remove command and confirm**
 
-   One `remove --execute` per selected track, then ask:
+   **Default: `batch-remove`** when ≥ 2 tracks are selected. Write the selected URIs to `.scratch/audit-<playlist>-remove.txt` (one per line), then plan a single command. For exactly 1 track, `remove --execute` is fine.
+
+   Show the planned command in a code block:
+   ```bash
+   # ≥ 2 tracks (default)
+   .venv/bin/python playlist_manager.py batch-remove "<Playlist>" .scratch/audit-<playlist>-remove.txt --execute
+
+   # exactly 1 track
+   .venv/bin/python playlist_manager.py remove "<uri>" "<Playlist>" --execute
+   ```
+
+   Then ask via **AskUserQuestion**:
 
    ```
    question: "Klaar om deze nummers te verwijderen?"
@@ -179,14 +192,12 @@ User-facing prose is **Dutch**. Keep SKILL.md, references, templates, and exampl
 
    Only proceed on explicit **Ja**. This confirmation is **mandatory** — it is the final safety gate before Spotify writes.
 
-   Show the commands in a code block:
-   ```bash
-   .venv/bin/python playlist_manager.py remove "<uri>" "<Playlist>" --execute
-   ```
-
 10. **Run and surface output verbatim**
 
-    Execute each `remove --execute` via **Bash** sequentially. Print output as-is. Tally results.
+    - **≥ 2 selected**: write URIs to `.scratch/audit-<playlist>-remove.txt`, then run `batch-remove --execute` once via Bash. Print output verbatim — the per-batch snapshot lines and final `DONE: removed {R}, failed {F}, skipped {S}` are what the user needs to see.
+    - **Exactly 1 selected**: run `remove --execute` once via Bash. Print output as-is.
+
+    `.scratch/` is gitignored — see [`.gitignore`](../../../.gitignore).
 
 11. **Summarise (Dutch)**
 
@@ -201,7 +212,9 @@ User-facing prose is **Dutch**. Keep SKILL.md, references, templates, and exampl
 ## Guardrails
 
 - **Always** start genre identification for web-first mode with live **WebSearch** + **WebFetch**. Never skip to training-data recall when web tools are available. Follow the same source priority as [`references/genre-sources.md`](references/genre-sources.md) and [playlist-match's genre-sources](../playlist-match/references/genre-sources.md).
-- **Never** run `remove --execute` without the explicit **AskUserQuestion** confirmation in step 9.
+- **Never** run `remove --execute` or `batch-remove --execute` without the explicit **AskUserQuestion** confirmation in step 9.
+- **Never** loop `remove --execute` per track when ≥ 2 tracks are selected. Use `batch-remove` with a `.scratch/audit-<playlist>-remove.txt` file — see [`docs/commands.md → batch-remove`](../../../docs/commands.md#batch-remove). The per-track loop costs ~3-5 API calls per track and bootstraps Python every time; `batch-remove` is 1 pagination + 1 API call per 100 URIs.
+- **Never** ask the user "batch or per-track?" when the answer is obviously batch (≥ 2 tracks, single playlist). Default to `batch-remove`.
 - **Never** audit `Random sht` — it is the catch-all; every track belongs there as a fallback. Explain this in Dutch if asked.
 - **Never** recommend removing a track based on a confidence score fabricated without web sources. If sources return nothing after 2 tries, mark the track as "geen data" and exclude it from removal candidates.
 - **Never** recommend removing a track solely because the artist's overall reputation doesn't fit the playlist — always check the specific track's genre signals.

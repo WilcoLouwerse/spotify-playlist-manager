@@ -14,8 +14,9 @@ The single source of truth is [`playlists.json`](../../../../playlists.json) at 
 | Pop / Mainstream | Top-40 pop, radio pop, mainstream singer-songwriter, dance-pop. |
 | Alternative / Indie | Indie rock, indie pop, dream pop, lo-fi indie, post-punk revival, art rock. |
 | K-pop | Korean pop, K-R&B, K-hip-hop, J-pop adjacents only when clearly K-pop-styled. |
-| Metal & Rock | All rock and metal with vocals: classic, hard, prog, nu, alt, metalcore, death, black, doom. |
-| Instrumental Metal | Rock/metal without vocals — djent, post-rock, instrumental prog. Separate from Metal & Rock. |
+| Rock | Rock with vocals: classic, hard, prog, alt, punk, post-punk, garage, blues rock, stoner rock. Metal goes in the dedicated Metal playlist. |
+| Metal | Metal with vocals: heavy, thrash, death, black, doom, sludge, nu, metalcore, prog metal. |
+| Instrumental Metal | Rock/metal without vocals — djent, post-rock, instrumental prog. Separate from Metal and Rock. |
 | Jazz / Funk / Soul | Jazz of any era, funk, soul, neo-soul, R&B with strong jazz/funk DNA. |
 | House | Deep, tech, future, tropical, French, classic Chicago — all house subgenres. |
 | Techno | Industrial, melodic, peak-time, minimal, acid techno. |

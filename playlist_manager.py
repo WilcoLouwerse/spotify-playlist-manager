@@ -447,6 +447,154 @@ def remove_track(sp, track_input, playlist_name, execute):
     print(f"\nDONE: track removed (snapshot {snapshot[:10]}…)")
 
 
+def _read_uri_list(source):
+    """Yield Spotify track URIs from a file path or '-' (stdin).
+
+    Accepts one URI/URL/ID per line. Blank lines and lines starting with '#' are skipped.
+    """
+    if source == "-":
+        stream = sys.stdin
+        close = False
+    else:
+        stream = open(source, encoding="utf-8")
+        close = True
+    try:
+        for raw in stream:
+            line = raw.strip()
+            if not line or line.startswith("#"):
+                continue
+            try:
+                track_id = extract_track_id(line)
+            except ValueError as exc:
+                print(f"  ! skipping invalid line: {line!r} ({exc})")
+                continue
+            yield f"spotify:track:{track_id}"
+    finally:
+        if close:
+            stream.close()
+
+
+def _chunked(lst, n):
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
+
+def _playlist_uris_combined(sp, playlist_id):
+    """Combined set of URIs known to be in a playlist (local log + Spotify API).
+
+    Dev Mode strips the API contents, so the local log (.tracks_log.json) is the
+    primary source of truth. The API set is added as a secondary signal in case
+    log-import was incomplete.
+    """
+    log = _load_tracks_log()
+    combined = set(log.get(playlist_id, []))
+    api_uris, _ = _fetch_playlist_uris(sp, playlist_id)
+    combined |= api_uris
+    return combined
+
+
+def batch_add(sp, playlist_name, source, execute):
+    """Add many tracks to one playlist in chunks of 100 (Spotify API max)."""
+    canonical_name = normalize_playlist_name(playlist_name)
+    playlist_id = load_config()["playlists"][canonical_name]
+
+    uris = list(dict.fromkeys(_read_uri_list(source)))  # de-dup input, preserve order
+    if not uris:
+        print("No URIs to add. Nothing to do.")
+        return
+
+    print(f"Target playlist: {canonical_name}")
+    print(f"Playlist ID: {playlist_id}")
+    print(f"Input URIs: {len(uris)}")
+
+    existing = _playlist_uris_combined(sp, playlist_id)
+    skipped_existing = [u for u in uris if u in existing]
+    to_add = [u for u in uris if u not in existing]
+    if skipped_existing:
+        print(f"SKIP {len(skipped_existing)} URIs already in playlist (will not re-add).")
+    print(f"To add: {len(to_add)} new URIs in {((len(to_add) - 1) // 100) + 1 if to_add else 0} batch(es) of up to 100.")
+
+    if not to_add:
+        print("Nothing new to add. Done.")
+        return
+
+    if not execute:
+        print("\nDRY RUN: no changes made. Add --execute to actually add the tracks.")
+        return
+
+    added = 0
+    failed = 0
+    for batch in _chunked(to_add, 100):
+        try:
+            resp = sp.playlist_add_items(playlist_id, batch)
+        except spotipy.SpotifyException as exc:
+            print(f"  ! FAILED batch of {len(batch)}: {exc.http_status} {exc.msg or exc.code}")
+            failed += len(batch)
+            continue
+        snapshot = (resp or {}).get("snapshot_id") if isinstance(resp, dict) else None
+        if not snapshot:
+            print(f"  ! WARN: no snapshot_id for batch of {len(batch)} (response={resp!r}); may not have persisted.")
+            failed += len(batch)
+            continue
+        for u in batch:
+            log_successful_add(playlist_id, u)
+        added += len(batch)
+        print(f"  + batch of {len(batch)}: snapshot {snapshot[:10]}…")
+
+    print(f"\nDONE: added {added}, failed {failed}, skipped {len(skipped_existing)} (already in playlist).")
+
+
+def batch_remove(sp, playlist_name, source, execute):
+    """Remove many tracks from one playlist in chunks of 100 (Spotify API max)."""
+    canonical_name = normalize_playlist_name(playlist_name)
+    playlist_id = load_config()["playlists"][canonical_name]
+
+    uris = list(dict.fromkeys(_read_uri_list(source)))  # de-dup input
+    if not uris:
+        print("No URIs to remove. Nothing to do.")
+        return
+
+    print(f"Target playlist: {canonical_name}")
+    print(f"Playlist ID: {playlist_id}")
+    print(f"Input URIs: {len(uris)}")
+
+    existing = _playlist_uris_combined(sp, playlist_id)
+    to_remove = [u for u in uris if u in existing]
+    not_present = [u for u in uris if u not in existing]
+    if not_present:
+        print(f"SKIP {len(not_present)} URIs not in playlist.")
+    print(f"To remove: {len(to_remove)} URIs in {((len(to_remove) - 1) // 100) + 1 if to_remove else 0} batch(es) of up to 100.")
+
+    if not to_remove:
+        print("Nothing to remove. Done.")
+        return
+
+    if not execute:
+        print("\nDRY RUN: no changes made. Add --execute to actually remove the tracks.")
+        return
+
+    removed = 0
+    failed = 0
+    for batch in _chunked(to_remove, 100):
+        try:
+            resp = sp.playlist_remove_all_occurrences_of_items(playlist_id, batch)
+        except spotipy.SpotifyException as exc:
+            print(f"  ! FAILED batch of {len(batch)}: {exc.http_status} {exc.msg or exc.code}")
+            failed += len(batch)
+            continue
+        snapshot = (resp or {}).get("snapshot_id") if isinstance(resp, dict) else None
+        if not snapshot:
+            print(f"  ! WARN: no snapshot_id for batch of {len(batch)} (response={resp!r}); may not have persisted.")
+            failed += len(batch)
+            continue
+        for u in batch:
+            remove_from_log(playlist_id, u)
+        removed += len(batch)
+        print(f"  - batch of {len(batch)}: snapshot {snapshot[:10]}…")
+
+    print(f"\nDONE: removed {removed}, failed {failed}, skipped {len(not_present)} (not in playlist).")
+
+
 def validate_classification(data):
     if not isinstance(data, dict):
         raise ValueError("response is not an object")
@@ -1670,6 +1818,32 @@ def main():
     remove_parser.add_argument("playlist", help="Target playlist name")
     remove_parser.add_argument("--execute", action="store_true", help="Actually perform the removal")
 
+    batch_add_parser = subparsers.add_parser(
+        "batch-add",
+        help="Add many tracks to a playlist from a URI list (one per line; '-' for stdin). Batches of 100.",
+    )
+    batch_add_parser.add_argument("playlist", help="Target playlist name")
+    batch_add_parser.add_argument(
+        "source",
+        help="Path to a file with one URI/URL/ID per line, or '-' to read from stdin",
+    )
+    batch_add_parser.add_argument(
+        "--execute", action="store_true", help="Actually perform the additions"
+    )
+
+    batch_remove_parser = subparsers.add_parser(
+        "batch-remove",
+        help="Remove many tracks from a playlist from a URI list (one per line; '-' for stdin). Batches of 100.",
+    )
+    batch_remove_parser.add_argument("playlist", help="Target playlist name")
+    batch_remove_parser.add_argument(
+        "source",
+        help="Path to a file with one URI/URL/ID per line, or '-' to read from stdin",
+    )
+    batch_remove_parser.add_argument(
+        "--execute", action="store_true", help="Actually perform the removals"
+    )
+
     list_tracks_parser = subparsers.add_parser(
         "list-tracks",
         help="List every track in a playlist as tab-separated URI and label. "
@@ -1796,6 +1970,10 @@ def main():
         )
     elif args.command == "remove":
         remove_track(sp, args.track, args.playlist, args.execute)
+    elif args.command == "batch-add":
+        batch_add(sp, args.playlist, args.source, args.execute)
+    elif args.command == "batch-remove":
+        batch_remove(sp, args.playlist, args.source, args.execute)
     elif args.command == "list-tracks":
         list_tracks(sp, args.playlist)
     elif args.command == "audit-playlist":

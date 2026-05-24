@@ -1,6 +1,8 @@
 """Unit tests for pure functions in playlist_manager."""
 
 import argparse
+import socket
+import time
 
 import pytest
 
@@ -10,10 +12,10 @@ import playlist_manager as pm
 @pytest.fixture(autouse=True)
 def _reset_module_state():
     pm._config_cache = None
-    pm._WARNED_ABOUT_STRIPPED_DATA = False
+    pm._reset_caches()
     yield
     pm._config_cache = None
-    pm._WARNED_ABOUT_STRIPPED_DATA = False
+    pm._reset_caches()
 
 
 @pytest.fixture
@@ -71,22 +73,25 @@ class TestExtractPlaylistId:
 
 
 class TestPromptReviewAction:
-    @pytest.mark.parametrize("answer,expected", [
-        ("y", "yes"),
-        ("Y", "yes"),
-        ("yes", "yes"),
-        ("ja", "yes"),
-        ("j", "yes"),
-        ("n", "no"),
-        ("no", "no"),
-        ("nee", "no"),  # falls through to default "no"
-        ("", "no"),
-        ("s", "skip"),
-        ("skip", "skip"),
-        ("q", "quit"),
-        ("quit", "quit"),
-        ("exit", "quit"),
-    ])
+    @pytest.mark.parametrize(
+        "answer,expected",
+        [
+            ("y", "yes"),
+            ("Y", "yes"),
+            ("yes", "yes"),
+            ("ja", "yes"),
+            ("j", "yes"),
+            ("n", "no"),
+            ("no", "no"),
+            ("nee", "no"),  # falls through to default "no"
+            ("", "no"),
+            ("s", "skip"),
+            ("skip", "skip"),
+            ("q", "quit"),
+            ("quit", "quit"),
+            ("exit", "quit"),
+        ],
+    )
     def test_answers(self, monkeypatch, answer, expected):
         monkeypatch.setattr("builtins.input", lambda _: answer)
         assert pm._prompt_review_action("prompt: ") == expected
@@ -94,6 +99,7 @@ class TestPromptReviewAction:
     def test_eof_treated_as_quit(self, monkeypatch):
         def _raise(_):
             raise EOFError
+
         monkeypatch.setattr("builtins.input", _raise)
         assert pm._prompt_review_action("prompt: ") == "quit"
 
@@ -208,45 +214,57 @@ class TestValidateConfig:
 
     def test_alias_targets_unknown_playlist(self):
         with pytest.raises(ValueError):
-            pm._validate_config({
-                "playlists": {"X": VALID_ID},
-                "aliases": {"y": "Z"},
-            })
+            pm._validate_config(
+                {
+                    "playlists": {"X": VALID_ID},
+                    "aliases": {"y": "Z"},
+                }
+            )
 
     def test_category_references_unknown_playlist(self):
         with pytest.raises(ValueError):
-            pm._validate_config({
-                "playlists": {"X": VALID_ID},
-                "categories": {"cat": ["Z"]},
-            })
+            pm._validate_config(
+                {
+                    "playlists": {"X": VALID_ID},
+                    "categories": {"cat": ["Z"]},
+                }
+            )
 
     def test_category_must_be_list(self):
         with pytest.raises(ValueError):
-            pm._validate_config({
-                "playlists": {"X": VALID_ID},
-                "categories": {"cat": "not-a-list"},
-            })
+            pm._validate_config(
+                {
+                    "playlists": {"X": VALID_ID},
+                    "categories": {"cat": "not-a-list"},
+                }
+            )
 
     def test_special_rules_unknown_playlist(self):
         with pytest.raises(ValueError):
-            pm._validate_config({
-                "playlists": {"X": VALID_ID},
-                "special_rules": {"Other": "rule"},
-            })
+            pm._validate_config(
+                {
+                    "playlists": {"X": VALID_ID},
+                    "special_rules": {"Other": "rule"},
+                }
+            )
 
     def test_catch_all_unknown_playlist(self):
         with pytest.raises(ValueError):
-            pm._validate_config({
-                "playlists": {"X": VALID_ID},
-                "catch_all": {"playlist": "Other"},
-            })
+            pm._validate_config(
+                {
+                    "playlists": {"X": VALID_ID},
+                    "catch_all": {"playlist": "Other"},
+                }
+            )
 
     def test_catch_all_threshold_out_of_range(self):
         with pytest.raises(ValueError):
-            pm._validate_config({
-                "playlists": {"X": VALID_ID},
-                "catch_all": {"playlist": "X", "threshold": 200},
-            })
+            pm._validate_config(
+                {
+                    "playlists": {"X": VALID_ID},
+                    "catch_all": {"playlist": "X", "threshold": 200},
+                }
+            )
 
 
 class TestNormalizePlaylistName:
@@ -269,9 +287,7 @@ class TestNormalizePlaylistName:
 
 class TestValidateClassification:
     def test_valid(self, config):
-        pm.validate_classification({
-            "playlist_matches": [{"playlist": "House", "confidence": 80}]
-        })
+        pm.validate_classification({"playlist_matches": [{"playlist": "House", "confidence": 80}]})
 
     def test_not_an_object(self, config):
         with pytest.raises(ValueError):
@@ -281,27 +297,22 @@ class TestValidateClassification:
         with pytest.raises(ValueError):
             pm.validate_classification({})
 
-    def test_empty_matches(self, config):
-        with pytest.raises(ValueError):
-            pm.validate_classification({"playlist_matches": []})
+    def test_empty_matches_is_allowed(self, config):
+        # Empty playlist_matches is legal — catch_all handles "nothing fits"
+        # downstream; validator only rejects structural problems.
+        pm.validate_classification({"playlist_matches": []})
 
     def test_unknown_playlist(self, config):
         with pytest.raises(ValueError):
-            pm.validate_classification({
-                "playlist_matches": [{"playlist": "Nope", "confidence": 50}]
-            })
+            pm.validate_classification({"playlist_matches": [{"playlist": "Nope", "confidence": 50}]})
 
     def test_confidence_out_of_range(self, config):
         with pytest.raises(ValueError):
-            pm.validate_classification({
-                "playlist_matches": [{"playlist": "House", "confidence": 150}]
-            })
+            pm.validate_classification({"playlist_matches": [{"playlist": "House", "confidence": 150}]})
 
     def test_confidence_not_int(self, config):
         with pytest.raises(ValueError):
-            pm.validate_classification({
-                "playlist_matches": [{"playlist": "House", "confidence": "high"}]
-            })
+            pm.validate_classification({"playlist_matches": [{"playlist": "House", "confidence": "high"}]})
 
 
 class TestAddsLog:
@@ -349,16 +360,11 @@ class TestLogImport:
 
     def test_imports_new_uris(self, config, log_path, tmp_path, capsys):
         src = tmp_path / "tracks.txt"
-        src.write_text(
-            f"spotify:track:{VALID_ID}\n"
-            f"https://open.spotify.com/track/{'a' * 22}?si=x\n"
-        )
+        src.write_text(f"spotify:track:{VALID_ID}\nhttps://open.spotify.com/track/{'a' * 22}?si=x\n")
         pm.log_import("House", str(src))
 
         house_id = config["playlists"]["House"]
-        assert pm._load_tracks_log() == {
-            house_id: [f"spotify:track:{VALID_ID}", f"spotify:track:{'a' * 22}"]
-        }
+        assert pm._load_tracks_log() == {house_id: [f"spotify:track:{VALID_ID}", f"spotify:track:{'a' * 22}"]}
         out = capsys.readouterr().out
         assert "Imported new URIs: 2" in out
         assert "Total URIs logged: 2" in out
@@ -370,17 +376,15 @@ class TestLogImport:
         new_id = "b" * 22
         src = tmp_path / "tracks.txt"
         src.write_text(
-            f"spotify:track:{VALID_ID}\n"     # already in log
-            f"spotify:track:{new_id}\n"        # new
-            f"spotify:track:{new_id}\n"        # duplicate within file
-            "this is not a track id\n"         # invalid (non-empty, unparseable)
-            "\n"                               # blank line — ignored, not counted as invalid
+            f"spotify:track:{VALID_ID}\n"  # already in log
+            f"spotify:track:{new_id}\n"  # new
+            f"spotify:track:{new_id}\n"  # duplicate within file
+            "this is not a track id\n"  # invalid (non-empty, unparseable)
+            "\n"  # blank line — ignored, not counted as invalid
         )
         pm.log_import("House", str(src))
 
-        assert pm._load_tracks_log() == {
-            house_id: [f"spotify:track:{VALID_ID}", f"spotify:track:{new_id}"]
-        }
+        assert pm._load_tracks_log() == {house_id: [f"spotify:track:{VALID_ID}", f"spotify:track:{new_id}"]}
         out = capsys.readouterr().out
         assert "Imported new URIs: 1" in out
         assert "Already in log:    1" in out
@@ -408,25 +412,25 @@ class TestLogImport:
             pm.log_import("Nonexistent", str(src))
 
 
-EXPORTIFY_HEADER = (
-    "Track URI,Track Name,Album Name,Artist Name(s),Release Date,Duration (ms),"
-    "Popularity,Explicit,Added By,Added At\n"
-)
+EXPORTIFY_HEADER = "Track URI,Track Name,Album Name,Artist Name(s),Release Date,Duration (ms),Popularity,Explicit,Added By,Added At\n"
 
 
 class TestNormalizeForCsvMatch:
-    @pytest.mark.parametrize("inp,expected", [
-        ("House", "house"),
-        ("Drum & Bass", "drum_&_bass"),
-        ("Drum_&_Bass", "drum_&_bass"),
-        ("Pop / Mainstream", "pop_mainstream"),
-        ("Pop_Mainstream", "pop_mainstream"),
-        ("Rustig / 'anders'", "rustig_'anders'"),
-        ("Random sht", "random_sht"),
-        ("Random_sht", "random_sht"),
-        ("", ""),
-        ("   ", ""),
-    ])
+    @pytest.mark.parametrize(
+        "inp,expected",
+        [
+            ("House", "house"),
+            ("Drum & Bass", "drum_&_bass"),
+            ("Drum_&_Bass", "drum_&_bass"),
+            ("Pop / Mainstream", "pop_mainstream"),
+            ("Pop_Mainstream", "pop_mainstream"),
+            ("Rustig / 'anders'", "rustig_'anders'"),
+            ("Random sht", "random_sht"),
+            ("Random_sht", "random_sht"),
+            ("", ""),
+            ("   ", ""),
+        ],
+    )
     def test_normalization(self, inp, expected):
         assert pm._normalize_for_csv_match(inp) == expected
 
@@ -527,9 +531,7 @@ class TestLoadTracksFromCsv:
         # Exportify writes a UTF-8 BOM as the first byte
         csv_file = tmp_path / "House.csv"
         csv_file.write_bytes(
-            b"\xef\xbb\xbf"
-            + EXPORTIFY_HEADER.encode("utf-8")
-            + f'spotify:track:{VALID_ID},"A","B","C",2020-01-01,1,1,false,u,t\n'.encode("utf-8")
+            b"\xef\xbb\xbf" + EXPORTIFY_HEADER.encode("utf-8") + f'spotify:track:{VALID_ID},"A","B","C",2020-01-01,1,1,false,u,t\n'.encode("utf-8")
         )
         items = pm._load_tracks_from_csv(str(csv_file))
         assert len(items) == 1
@@ -555,10 +557,14 @@ class TestLoadTracksFromCsv:
 class _StubSpotify:
     """Minimal stand-in for the spotipy client. Used in _resolve_source tests."""
 
-    def __init__(self, playlist_info=None, raise_on_playlist=None, items=None):
+    def __init__(self, playlist_info=None, raise_on_playlist=None, items=None, pages=None):
         self._playlist_info = playlist_info or {}
         self._raise = raise_on_playlist
-        self._items_pages = [{"items": items or [], "next": None}]
+        if pages is not None:
+            self._items_pages = pages
+        else:
+            self._items_pages = [{"items": items or [], "next": None}]
+        self._page_idx = 0
 
     def playlist(self, pid, fields=None):
         if self._raise:
@@ -566,9 +572,13 @@ class _StubSpotify:
         return self._playlist_info
 
     def playlist_items(self, pid, fields=None, additional_types=None, limit=None):
+        self._page_idx = 0
         return self._items_pages[0]
 
     def next(self, results):
+        if results.get("next") and self._page_idx + 1 < len(self._items_pages):
+            self._page_idx += 1
+            return self._items_pages[self._page_idx]
         return None
 
 
@@ -581,10 +591,7 @@ class TestResolveSource:
         return d
 
     def _write_csv(self, path, n=1):
-        rows = "".join(
-            f'spotify:track:{chr(ord("a") + i) * 22},"T{i}","A","Artist{i}",2020-01-01,1,1,false,u,t\n'
-            for i in range(n)
-        )
+        rows = "".join(f'spotify:track:{chr(ord("a") + i) * 22},"T{i}","A","Artist{i}",2020-01-01,1,1,false,u,t\n' for i in range(n))
         path.write_text(EXPORTIFY_HEADER + rows)
 
     def test_csv_path_input(self, exportify_dir, tmp_path):
@@ -616,14 +623,16 @@ class TestResolveSource:
     def test_url_with_tracks(self, exportify_dir):
         sp = _StubSpotify(
             playlist_info={"name": "My Playlist", "id": VALID_ID},
-            items=[{
-                "track": {
-                    "id": "b" * 22,
-                    "uri": f"spotify:track:{'b' * 22}",
-                    "name": "Song",
-                    "artists": [{"name": "Artist"}],
+            items=[
+                {
+                    "track": {
+                        "id": "b" * 22,
+                        "uri": f"spotify:track:{'b' * 22}",
+                        "name": "Song",
+                        "artists": [{"name": "Artist"}],
+                    }
                 }
-            }],
+            ],
         )
         name, locator, items = pm._resolve_source(sp, f"https://open.spotify.com/playlist/{VALID_ID}")
         assert name == "My Playlist"
@@ -673,8 +682,416 @@ class TestResolveSource:
 
     def test_spotify_error(self, exportify_dir, capsys):
         import spotipy
+
         exc = spotipy.SpotifyException(404, -1, "Not found")
         sp = _StubSpotify(raise_on_playlist=exc)
         name, locator, items = pm._resolve_source(sp, f"https://open.spotify.com/playlist/{VALID_ID}")
         assert (name, locator, items) == (None, None, None)
         assert "Could not load playlist" in capsys.readouterr().out
+
+
+# ---------------------------------------------------------------------------
+# CLI subcommands + new runtime semantics
+# ---------------------------------------------------------------------------
+
+
+class _CallCounter:
+    def __init__(self, return_value=None, raises=None):
+        self.calls = []
+        self.return_value = return_value
+        self.raises = raises
+
+    def __call__(self, *args, **kwargs):
+        self.calls.append((args, kwargs))
+        if self.raises:
+            raise self.raises
+        return self.return_value
+
+
+class _AddSpotify(_StubSpotify):
+    """Stub extending _StubSpotify with playlist_add_items / playlist_remove_*."""
+
+    def __init__(self, *args, track_info=None, add_response=None, add_raises=None, remove_response=None, remove_raises=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._track_info = track_info
+        self.add = _CallCounter(return_value=add_response, raises=add_raises)
+        self.remove = _CallCounter(return_value=remove_response, raises=remove_raises)
+
+    def track(self, track_id):
+        if self._track_info is None:
+            import spotipy
+
+            raise spotipy.SpotifyException(404, -1, "Not found")
+        return self._track_info
+
+    def playlist_add_items(self, pid, uris):
+        return self.add(pid, uris)
+
+    def playlist_remove_all_occurrences_of_items(self, pid, uris):
+        return self.remove(pid, uris)
+
+
+def _track_payload(track_id):
+    return {
+        "id": track_id,
+        "uri": f"spotify:track:{track_id}",
+        "name": "Title",
+        "artists": [{"name": "Artist"}],
+        "album": {"name": "Album", "release_date": "2024-01-01"},
+        "popularity": 50,
+        "duration_ms": 200000,
+        "explicit": False,
+        "external_urls": {"spotify": f"https://open.spotify.com/track/{track_id}"},
+    }
+
+
+class TestExtractIdValidation:
+    def test_track_garbage_raises(self):
+        with pytest.raises(ValueError):
+            pm.extract_track_id("not a real id")
+
+    def test_track_empty_raises(self):
+        with pytest.raises(ValueError):
+            pm.extract_track_id("")
+
+    def test_track_partial_url_raises(self):
+        with pytest.raises(ValueError):
+            pm.extract_track_id("https://open.spotify.com/track/abc")
+
+    def test_playlist_garbage_raises(self):
+        with pytest.raises(ValueError):
+            pm.extract_playlist_id("nothing valid")
+
+
+class TestParseRetryAfter:
+    def test_seconds(self):
+        assert pm._parse_retry_after("5") == 5
+
+    def test_clamps_to_max(self):
+        assert pm._parse_retry_after("3600") == pm._RETRY_AFTER_MAX
+
+    def test_floor_at_one(self):
+        assert pm._parse_retry_after("0") == 1
+        assert pm._parse_retry_after("-5") == 1
+
+    def test_none_returns_one(self):
+        assert pm._parse_retry_after(None) == 1
+
+    def test_malformed_returns_one(self):
+        assert pm._parse_retry_after("not a date") == 1
+
+    def test_http_date(self):
+        # An HTTP-date 10s in the future should yield ~10 (clamped).
+        import email.utils as eu
+
+        future = time.time() + 10
+        header = eu.formatdate(future, usegmt=True)
+        result = pm._parse_retry_after(header)
+        assert 1 <= result <= pm._RETRY_AFTER_MAX
+
+
+class TestRateLimitedSpotify:
+    def test_retries_on_429_then_succeeds(self, monkeypatch):
+        import spotipy
+
+        calls = {"n": 0}
+
+        class Inner:
+            def some_op(self_inner):
+                calls["n"] += 1
+                if calls["n"] < 2:
+                    raise spotipy.SpotifyException(429, -1, "Too Many Requests", headers={"Retry-After": "1"})
+                return {"ok": True}
+
+        monkeypatch.setattr(time, "sleep", lambda *_: None)
+        sp = pm._RateLimitedSpotify(Inner(), inter_call_sleep=0)
+        assert sp.some_op() == {"ok": True}
+        assert calls["n"] == 2
+
+    def test_raises_after_retries_exhausted(self, monkeypatch):
+        import spotipy
+
+        class Inner:
+            def some_op(self_inner):
+                raise spotipy.SpotifyException(429, -1, "Too Many Requests", headers={"Retry-After": "1"})
+
+        monkeypatch.setattr(time, "sleep", lambda *_: None)
+        sp = pm._RateLimitedSpotify(Inner(), inter_call_sleep=0, max_429_retries=2)
+        with pytest.raises(spotipy.SpotifyException):
+            sp.some_op()
+
+    def test_non_429_raises_immediately(self):
+        import spotipy
+
+        class Inner:
+            def some_op(self_inner):
+                raise spotipy.SpotifyException(500, -1, "Server Error")
+
+        sp = pm._RateLimitedSpotify(Inner(), inter_call_sleep=0)
+        with pytest.raises(spotipy.SpotifyException):
+            sp.some_op()
+
+
+class TestAtomicSave:
+    def test_save_uses_tmp_then_rename(self, monkeypatch, tmp_path):
+        path = tmp_path / "log.json"
+        monkeypatch.setattr(pm, "TRACKS_LOG_PATH", str(path))
+        pm._save_tracks_log({"pid1": ["spotify:track:a"]})
+        assert path.exists()
+        assert not (tmp_path / "log.json.tmp").exists()
+
+    def test_corrupt_log_warns(self, monkeypatch, tmp_path, capsys):
+        path = tmp_path / "log.json"
+        path.write_text("{ not json")
+        monkeypatch.setattr(pm, "TRACKS_LOG_PATH", str(path))
+        result = pm._load_tracks_log()
+        assert result == {}
+        out = capsys.readouterr().out
+        assert "corrupted" in out
+
+
+class TestPaginatedFetch:
+    def test_iter_playlist_tracks_walks_pages(self):
+        page1 = {
+            "items": [{"track": _track_payload("a" * 22)}],
+            "next": "https://api.spotify.com/...",
+        }
+        page2 = {
+            "items": [{"track": _track_payload("b" * 22)}],
+            "next": None,
+        }
+        sp = _StubSpotify(pages=[page1, page2])
+        items = pm._iter_playlist_tracks(sp, "pid1")
+        # Two tracks pulled across two pages.
+        assert len(items) == 2
+
+    def test_fetch_playlist_uris_walks_pages(self):
+        page1 = {
+            "items": [{"track": {"uri": "spotify:track:" + ("a" * 22)}}],
+            "next": "https://api.spotify.com/...",
+        }
+        page2 = {
+            "items": [{"track": {"uri": "spotify:track:" + ("b" * 22)}}],
+            "next": None,
+        }
+        sp = _StubSpotify(pages=[page1, page2])
+        uris, any_uri = pm._fetch_playlist_uris(sp, "pid1")
+        assert any_uri
+        assert "spotify:track:" + ("a" * 22) in uris
+        assert "spotify:track:" + ("b" * 22) in uris
+
+
+class TestPlaylistContainsUri:
+    def test_short_circuits_after_dev_tier_observed(self, monkeypatch, tmp_path):
+        # First call observes dev-tier stripping; second call must NOT paginate.
+        monkeypatch.setattr(pm, "TRACKS_LOG_PATH", str(tmp_path / "log.json"))
+        sp = _StubSpotify(pages=[{"items": [], "next": None}])
+        first = pm.playlist_contains_uri(sp, "pid1", "spotify:track:" + ("a" * 22))
+        assert first is False
+        # Replace pages with something that would lie; the cache should win.
+        sp._items_pages = [{"items": [{"track": {"uri": "spotify:track:" + ("a" * 22)}}], "next": None}]
+        second = pm.playlist_contains_uri(sp, "pid2", "spotify:track:" + ("a" * 22))
+        assert second is False  # dev-tier stripped flag bypasses fetch entirely
+
+
+class TestPlaylistUrisCombined:
+    def test_uses_cache_when_populated(self, monkeypatch, tmp_path):
+        monkeypatch.setattr(pm, "TRACKS_LOG_PATH", str(tmp_path / "log.json"))
+        pm._PLAYLIST_URIS_CACHE["pid1"] = {"spotify:track:" + ("a" * 22)}
+        # If the cache is consulted, sp.playlist_items should NOT be called.
+        called = {"n": 0}
+
+        class _CountedSp:
+            def playlist_items(self, *a, **k):
+                called["n"] += 1
+                return {"items": [], "next": None}
+
+            def next(self, results):
+                return None
+
+        result = pm._playlist_uris_combined(_CountedSp(), "pid1")
+        assert "spotify:track:" + ("a" * 22) in result
+        assert called["n"] == 0
+
+
+class TestSanitizeForPrompt:
+    def test_strips_control_chars(self):
+        assert "\x00" not in pm._sanitize_for_prompt("a\x00b\nc")
+
+    def test_truncates_long_string(self):
+        result = pm._sanitize_for_prompt("x" * 500, max_len=10)
+        assert len(result) == 10
+
+    def test_recurses_into_list(self):
+        result = pm._sanitize_for_prompt(["a\x01", "b\x02"])
+        assert result == ["a ", "b "]
+
+    def test_passes_through_non_strings(self):
+        assert pm._sanitize_for_prompt(42) == 42
+
+
+class TestAddTrack:
+    def test_skips_when_already_in_log(self, config, monkeypatch, tmp_path, capsys):
+        monkeypatch.setattr(pm, "TRACKS_LOG_PATH", str(tmp_path / "log.json"))
+        track_id = "c" * 22
+        track_uri = f"spotify:track:{track_id}"
+        house_id = config["playlists"]["House"]
+        pm._save_tracks_log({house_id: [track_uri]})
+
+        sp = _AddSpotify(track_info=_track_payload(track_id))
+        pm.add_track(sp, track_uri, "House", execute=True)
+        out = capsys.readouterr().out
+        assert "SKIP" in out
+        assert sp.add.calls == []
+
+    def test_logs_on_success(self, config, monkeypatch, tmp_path, capsys):
+        monkeypatch.setattr(pm, "TRACKS_LOG_PATH", str(tmp_path / "log.json"))
+        track_id = "d" * 22
+        track_uri = f"spotify:track:{track_id}"
+        house_id = config["playlists"]["House"]
+        pm._DEV_TIER_STRIPPED = True  # avoid paginating during the dup check
+
+        sp = _AddSpotify(
+            track_info=_track_payload(track_id),
+            add_response={"snapshot_id": "snap-1234567890"},
+        )
+        pm.add_track(sp, track_uri, "House", execute=True)
+        out = capsys.readouterr().out
+        assert "DONE" in out
+        assert pm._load_tracks_log() == {house_id: [track_uri]}
+
+    def test_dry_run_does_not_call_api(self, config, monkeypatch, tmp_path, capsys):
+        monkeypatch.setattr(pm, "TRACKS_LOG_PATH", str(tmp_path / "log.json"))
+        pm._DEV_TIER_STRIPPED = True
+        track_id = "e" * 22
+        sp = _AddSpotify(track_info=_track_payload(track_id))
+        pm.add_track(sp, f"spotify:track:{track_id}", "House", execute=False)
+        assert sp.add.calls == []
+        assert "DRY RUN" in capsys.readouterr().out
+
+    def test_handles_spotify_exception_no_log_write(self, config, monkeypatch, tmp_path, capsys):
+        monkeypatch.setattr(pm, "TRACKS_LOG_PATH", str(tmp_path / "log.json"))
+        pm._DEV_TIER_STRIPPED = True
+        import spotipy
+
+        track_id = "f" * 22
+        sp = _AddSpotify(
+            track_info=_track_payload(track_id),
+            add_raises=spotipy.SpotifyException(403, -1, "Forbidden"),
+        )
+        pm.add_track(sp, f"spotify:track:{track_id}", "House", execute=True)
+        assert "FAILED" in capsys.readouterr().out
+        assert pm._load_tracks_log() == {}
+
+
+class TestRemoveTrack:
+    def test_skips_when_not_present(self, config, monkeypatch, tmp_path, capsys):
+        monkeypatch.setattr(pm, "TRACKS_LOG_PATH", str(tmp_path / "log.json"))
+        pm._DEV_TIER_STRIPPED = True
+        track_id = "g" * 22
+        sp = _AddSpotify(track_info=_track_payload(track_id))
+        pm.remove_track(sp, f"spotify:track:{track_id}", "House", execute=True)
+        out = capsys.readouterr().out
+        assert "SKIP" in out
+        assert sp.remove.calls == []
+
+    def test_removes_and_unlogs(self, config, monkeypatch, tmp_path, capsys):
+        monkeypatch.setattr(pm, "TRACKS_LOG_PATH", str(tmp_path / "log.json"))
+        track_id = "h" * 22
+        uri = f"spotify:track:{track_id}"
+        house_id = config["playlists"]["House"]
+        pm._save_tracks_log({house_id: [uri]})
+
+        sp = _AddSpotify(
+            track_info=_track_payload(track_id),
+            remove_response={"snapshot_id": "snap-9876543210"},
+        )
+        pm.remove_track(sp, uri, "House", execute=True)
+        assert "DONE" in capsys.readouterr().out
+        assert pm._load_tracks_log() == {}
+
+
+class TestClassifyTrackWithOpenAI:
+    def test_returns_none_when_no_key(self, monkeypatch, capsys):
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        result = pm.classify_track_with_openai({"id": "x"}, max_playlists=3, min_playlists=1)
+        assert result is None
+        assert "OPENAI_API_KEY" in capsys.readouterr().out
+
+    def test_returns_none_on_rate_limit(self, config, monkeypatch, capsys):
+        monkeypatch.setenv("OPENAI_API_KEY", "fake")
+
+        import httpx
+        from openai import RateLimitError
+
+        def _create(*a, **k):
+            req = httpx.Request("POST", "https://api.openai.com/v1/chat/completions")
+            resp = httpx.Response(429, request=req)
+            raise RateLimitError("rl", response=resp, body=None)
+
+        class _Client:
+            def __init__(self, *a, **k):
+                self.chat = type("C", (), {"completions": type("D", (), {"create": _create})()})()
+
+        import openai
+
+        monkeypatch.setattr(openai, "OpenAI", _Client)
+        result = pm.classify_track_with_openai(
+            {"id": "x", "name": "T", "artists": ["A"], "album": "Al"},
+            max_playlists=3,
+            min_playlists=1,
+        )
+        assert result is None
+        out = capsys.readouterr().out
+        assert "OpenAI" in out
+
+    def test_returns_none_on_invalid_json(self, config, monkeypatch, capsys):
+        monkeypatch.setenv("OPENAI_API_KEY", "fake")
+
+        class _Msg:
+            content = "not json {"
+
+        class _Choice:
+            message = _Msg()
+
+        class _Resp:
+            choices = [_Choice()]
+
+        def _create(*a, **k):
+            return _Resp()
+
+        class _Client:
+            def __init__(self, *a, **k):
+                self.chat = type("C", (), {"completions": type("D", (), {"create": _create})()})()
+
+        import openai
+
+        monkeypatch.setattr(openai, "OpenAI", _Client)
+        result = pm.classify_track_with_openai(
+            {"id": "x", "name": "T", "artists": ["A"], "album": "Al"},
+            max_playlists=3,
+            min_playlists=1,
+        )
+        assert result is None
+        assert "invalid JSON" in capsys.readouterr().out
+
+
+class TestForceIpv4:
+    def test_skipped_when_env_disabled(self, monkeypatch):
+        monkeypatch.setenv("SPOTIFY_FORCE_IPV4", "0")
+        monkeypatch.setattr(pm, "_ipv4_patch_applied", False)
+        original = socket.getaddrinfo
+        pm._force_ipv4_if_needed()
+        assert socket.getaddrinfo is original
+        assert pm._ipv4_patch_applied is False
+
+    def test_applied_when_env_set(self, monkeypatch):
+        monkeypatch.setenv("SPOTIFY_FORCE_IPV4", "1")
+        monkeypatch.setattr(pm, "_ipv4_patch_applied", False)
+        original = socket.getaddrinfo
+        try:
+            pm._force_ipv4_if_needed()
+            assert pm._ipv4_patch_applied is True
+        finally:
+            socket.getaddrinfo = original
+            pm._ipv4_patch_applied = False

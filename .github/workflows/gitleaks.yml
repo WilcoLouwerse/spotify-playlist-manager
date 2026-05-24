@@ -4,6 +4,10 @@ on:
   pull_request:
     branches: [main, development]
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
   gitleaks:
     name: Scan for secrets
@@ -15,6 +19,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v2
+        # v2.3.9 — Dependabot will bump the SHA via .github/dependabot.yml
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

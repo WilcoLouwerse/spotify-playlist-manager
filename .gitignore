@@ -4,6 +4,7 @@
 !.env.example
 .spotify_token_cache
 .tracks_log.json
+.adds_log.json  # legacy name (pre-2026-05-15 rename); kept ignored for upgraders
 *.cache
 
 # Local playlist config — sample lives in playlists.example.json

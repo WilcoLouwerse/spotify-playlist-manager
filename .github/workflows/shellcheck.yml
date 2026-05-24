@@ -4,6 +4,9 @@ on:
   pull_request:
     branches: [main, development]
 
+permissions:
+  contents: read
+
 jobs:
   shellcheck:
     name: Run ShellCheck
@@ -18,4 +21,4 @@ jobs:
           SHELLCHECK_OPTS: -e SC1091
         with:
           severity: warning
-          ignore_paths: .venv __pycache__
+          ignore_paths: .venv __pycache__ .claude/skills/skill-creator

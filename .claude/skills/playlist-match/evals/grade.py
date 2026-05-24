@@ -23,9 +23,19 @@ WORKSPACE = SKILL_DIR / "evals" / "workspace"
 # --- check helpers -----------------------------------------------------------
 
 DUTCH_TOKENS = (
-    "Artiestinformatie", "Nummeromschrijving", "Playlist match", "Genres",
-    "Voeg toe", "Sorry, ik heb moeite", "Wat wil je", "voor deze",
-    "nummer", "geen", "playlist", "klaar", "playlists",
+    "Artiestinformatie",
+    "Nummeromschrijving",
+    "Playlist match",
+    "Genres",
+    "Voeg toe",
+    "Sorry, ik heb moeite",
+    "Wat wil je",
+    "voor deze",
+    "nummer",
+    "geen",
+    "playlist",
+    "klaar",
+    "playlists",
 )
 
 LETTER_MENU_RE = re.compile(
@@ -34,9 +44,7 @@ LETTER_MENU_RE = re.compile(
 ZYXW_MENU_RE = re.compile(
     r'(?m)^\s*"?[ZYXW]"?\s*:\s+',  # old Z/Y/X/W
 )
-PLAYLIST_BULLET_RE = re.compile(
-    r'(?m)^\s*[-*]\s+(.+?)\s+—\s+(\d{1,3})\s*%\s*—\s*(.+?)$'
-)
+PLAYLIST_BULLET_RE = re.compile(r"(?m)^\s*[-*]\s+(.+?)\s+—\s+(\d{1,3})\s*%\s*—\s*(.+?)$")
 
 
 def read(path: Path) -> str:
@@ -48,7 +56,7 @@ def read(path: Path) -> str:
 
 def find_section(content: str, header: str) -> str | None:
     """Return the bulleted body following a bold Dutch section header, or None."""
-    header_pat = re.compile(rf'\*\*{re.escape(header)}\s*:?\*\*', re.IGNORECASE)
+    header_pat = re.compile(rf"\*\*{re.escape(header)}\s*:?\*\*", re.IGNORECASE)
     lines = content.splitlines()
     start = None
     for i, ln in enumerate(lines):
@@ -100,15 +108,18 @@ def dutch_score(content: str) -> int:
 
 # --- per-eval assertions -----------------------------------------------------
 
+
 def grade_eval_1(content: str) -> list[dict]:
     pls = playlist_entries(content)
     pl_names = [n for n, _, _ in pls]
     pl_confs = {n: c for n, c, _ in pls}
     genres = genre_entries(content)
-    title_ok = bool(re.search(
-        r'(?m)^\s*#{0,3}\s*Tame Impala\s*[-–—]\s*The Less I Know The Better\s*$',
-        content,
-    ))
+    title_ok = bool(
+        re.search(
+            r"(?m)^\s*#{0,3}\s*Tame Impala\s*[-–—]\s*The Less I Know The Better\s*$",
+            content,
+        )
+    )
     return [
         {
             "text": "title line is exactly 'Tame Impala - The Less I Know The Better'",
@@ -118,8 +129,7 @@ def grade_eval_1(content: str) -> list[dict]:
         {
             "text": "Artiestinformatie block is present (first occurrence in chat)",
             "passed": "**Artiestinformatie" in content,
-            "evidence": ("Artiestinformatie header present" if "**Artiestinformatie" in content
-                         else "no Artiestinformatie header found"),
+            "evidence": ("Artiestinformatie header present" if "**Artiestinformatie" in content else "no Artiestinformatie header found"),
         },
         {
             "text": "Genres section has 2-4 bullets with percentage and short reason",
@@ -129,29 +139,34 @@ def grade_eval_1(content: str) -> list[dict]:
         {
             "text": "Playlist match includes 'Alternative / Indie' with confidence >= 80%",
             "passed": pl_confs.get("Alternative / Indie", 0) >= 80,
-            "evidence": (f"Alternative / Indie at {pl_confs.get('Alternative / Indie', 0)}%"
-                         if "Alternative / Indie" in pl_names
-                         else f"Alternative / Indie not in playlist match (found: {pl_names})"),
+            "evidence": (
+                f"Alternative / Indie at {pl_confs.get('Alternative / Indie', 0)}%"
+                if "Alternative / Indie" in pl_names
+                else f"Alternative / Indie not in playlist match (found: {pl_names})"
+            ),
         },
         {
             "text": "Playlist match does NOT include 'Random sht'",
             "passed": "Random sht" not in content,
-            "evidence": "Random sht not mentioned" if "Random sht" not in content
-                        else "Random sht appears in response",
+            "evidence": "Random sht not mentioned" if "Random sht" not in content else "Random sht appears in response",
         },
         {
             "text": "Output does NOT print the old A-F / Z-Y-X-W letter menu",
             "passed": not LETTER_MENU_RE.search(content) and not ZYXW_MENU_RE.search(content),
-            "evidence": ("no letter menu detected"
-                         if not LETTER_MENU_RE.search(content) and not ZYXW_MENU_RE.search(content)
-                         else "letter menu detected (A-F or Z-Y-X-W lines)"),
+            "evidence": (
+                "no letter menu detected"
+                if not LETTER_MENU_RE.search(content) and not ZYXW_MENU_RE.search(content)
+                else "letter menu detected (A-F or Z-Y-X-W lines)"
+            ),
         },
         {
             "text": "User-facing prose is in Dutch (Artiestinformatie, Nummeromschrijving, Genres, Playlist match)",
             "passed": all(h in content for h in ("Artiestinformatie", "Nummeromschrijving", "Genres", "Playlist match")),
-            "evidence": ("Dutch section headers all present" if all(h in content for h in (
-                "Artiestinformatie", "Nummeromschrijving", "Genres", "Playlist match"))
-                else "one or more Dutch headers missing"),
+            "evidence": (
+                "Dutch section headers all present"
+                if all(h in content for h in ("Artiestinformatie", "Nummeromschrijving", "Genres", "Playlist match"))
+                else "one or more Dutch headers missing"
+            ),
         },
     ]
 
@@ -166,13 +181,12 @@ def grade_eval_2(content: str) -> list[dict]:
         {
             "text": "Playlist match includes 'Techno' with confidence >= 85%",
             "passed": pl_confs.get("Techno", 0) >= 85,
-            "evidence": (f"Techno at {pl_confs.get('Techno', 0)}%"
-                         if "Techno" in pl_names else f"Techno not in playlist match (found: {pl_names})"),
+            "evidence": (f"Techno at {pl_confs.get('Techno', 0)}%" if "Techno" in pl_names else f"Techno not in playlist match (found: {pl_names})"),
         },
         {
             "text": "Playlist match also includes 'Electronic Music' alongside Techno (umbrella rule)",
             "passed": "Electronic Music" in pl_names and "Techno" in pl_names,
-            "evidence": f"present={[n for n in pl_names if n in ('Techno','Electronic Music')]}",
+            "evidence": f"present={[n for n in pl_names if n in ('Techno', 'Electronic Music')]}",
         },
         {
             "text": "Playlist match does NOT include 'Random sht'",
@@ -182,15 +196,14 @@ def grade_eval_2(content: str) -> list[dict]:
         {
             "text": "Genres section identifies Techno (or a Techno subgenre) as primary",
             "passed": techno_in_genres,
-            "evidence": "techno-family keyword found in Genres" if techno_in_genres
-                        else "no techno-family keyword found in Genres section",
+            "evidence": "techno-family keyword found in Genres" if techno_in_genres else "no techno-family keyword found in Genres section",
         },
         {
             "text": "Output does NOT print the old A-F / Z-Y-X-W letter menu",
             "passed": not LETTER_MENU_RE.search(content) and not ZYXW_MENU_RE.search(content),
-            "evidence": "no letter menu detected" if (
-                not LETTER_MENU_RE.search(content) and not ZYXW_MENU_RE.search(content))
-                else "letter menu detected",
+            "evidence": "no letter menu detected"
+            if (not LETTER_MENU_RE.search(content) and not ZYXW_MENU_RE.search(content))
+            else "letter menu detected",
         },
     ]
 
@@ -208,8 +221,11 @@ def grade_eval_3(content: str) -> list[dict]:
         {
             "text": "Playlist match includes 'Funny meme' with confidence >= 80% (Rick Roll cultural context)",
             "passed": pl_confs.get("Funny meme", 0) >= 80,
-            "evidence": (f"Funny meme at {pl_confs.get('Funny meme', 0)}%"
-                         if "Funny meme" in pl_names else f"Funny meme not in playlist match (found: {pl_names})"),
+            "evidence": (
+                f"Funny meme at {pl_confs.get('Funny meme', 0)}%"
+                if "Funny meme" in pl_names
+                else f"Funny meme not in playlist match (found: {pl_names})"
+            ),
         },
         {
             "text": "Playlist match includes 'Pop / Mainstream' or 'Happy tunes'",
@@ -229,40 +245,34 @@ def grade_eval_3(content: str) -> list[dict]:
         {
             "text": "Output does NOT print the old A-F / Z-Y-X-W letter menu",
             "passed": not LETTER_MENU_RE.search(content) and not ZYXW_MENU_RE.search(content),
-            "evidence": "no letter menu detected" if (
-                not LETTER_MENU_RE.search(content) and not ZYXW_MENU_RE.search(content))
-                else "letter menu detected",
+            "evidence": "no letter menu detected"
+            if (not LETTER_MENU_RE.search(content) and not ZYXW_MENU_RE.search(content))
+            else "letter menu detected",
         },
     ]
 
 
 def grade_eval_4(content: str) -> list[dict]:
-    cli_in_output = "playlist_manager.py add" in content and (
-        "--execute" in content or "ADDED" in content
-    )
+    cli_in_output = "playlist_manager.py add" in content and ("--execute" in content or "ADDED" in content)
     invented_id_pat = re.compile(r"spotify[:.]/?/?(open\.spotify\.com/track/|track[:/])\w{20,24}")
     has_id = bool(invented_id_pat.search(content))
-    askq_hint = re.search(r"AskUserQuestion|spotify[- ]?(link|url|id)|\?$|annuleren|disambig",
-                          content, re.IGNORECASE)
+    askq_hint = re.search(r"AskUserQuestion|spotify[- ]?(link|url|id)|\?$|annuleren|disambig", content, re.IGNORECASE)
     dutch = dutch_score(content) >= 3
     return [
         {
             "text": "Skill does NOT call '.venv/bin/python playlist_manager.py add' on the basis of 'F'",
             "passed": not cli_in_output,
-            "evidence": "no executed add command" if not cli_in_output
-                        else "add command appears in output",
+            "evidence": "no executed add command" if not cli_in_output else "add command appears in output",
         },
         {
             "text": "Skill does NOT invent or guess a Spotify track ID",
             "passed": not has_id,
-            "evidence": "no Spotify track id pattern" if not has_id
-                        else "appears to reference a Spotify track id",
+            "evidence": "no Spotify track id pattern" if not has_id else "appears to reference a Spotify track id",
         },
         {
             "text": "Skill either treats 'F' as unrelated OR uses AskUserQuestion-style disambiguation rather than executing the add flow",
             "passed": bool(askq_hint) and not cli_in_output,
-            "evidence": "disambiguation/AskUserQuestion-style language present" if askq_hint
-                        else "no disambiguation language found",
+            "evidence": "disambiguation/AskUserQuestion-style language present" if askq_hint else "no disambiguation language found",
         },
         {
             "text": "Response is in Dutch",
@@ -276,34 +286,32 @@ def grade_eval_5(content: str) -> list[dict]:
     cli_in_output = bool(re.search(r"\.venv/bin/python\s+playlist_manager\.py\s+add", content))
     # No actual execution: no ADDED / SKIP literal output lines
     no_execute = "ADDED" not in content and "SKIP: track already in playlist" not in content
-    f_only = re.search(r"\bonly the letter\s+'F'\b|treat\s+'F'\s+as", content, re.IGNORECASE)
     quoted_playlist = re.search(r'\.venv/bin/python\s+playlist_manager\.py\s+add\s+"https?://[^"]+"\s+"[^"]+"', content)
     dutch = dutch_score(content) >= 3
     return [
         {
             "text": "Skill does NOT actually run playlist_manager.py (no execute)",
             "passed": no_execute,
-            "evidence": "no ADDED / SKIP execution markers in response" if no_execute
-                        else "looks like the command was executed",
+            "evidence": "no ADDED / SKIP execution markers in response" if no_execute else "looks like the command was executed",
         },
         {
             "text": "Skill does NOT treat 'F https://...' as the literal letter 'F' alone — the URL is acted on",
             "passed": "spotify.com/track" in content or "track/" in content or "open.spotify.com" in content,
-            "evidence": "Spotify URL referenced in response" if "spotify.com/track" in content or "track/" in content
-                        else "URL not referenced",
+            "evidence": "Spotify URL referenced in response" if "spotify.com/track" in content or "track/" in content else "URL not referenced",
         },
         {
             "text": "If add commands are rendered, each uses '.venv/bin/python playlist_manager.py add'",
             "passed": (cli_in_output if "playlist_manager.py" in content else True),
-            "evidence": ("venv-prefixed add command present" if cli_in_output
-                         else "no add command rendered, vacuously true"),
+            "evidence": ("venv-prefixed add command present" if cli_in_output else "no add command rendered, vacuously true"),
         },
         {
             "text": "If add commands are rendered, each quotes the playlist name with double quotes",
             "passed": (bool(quoted_playlist) if cli_in_output else True),
-            "evidence": ("quoted playlist name found" if quoted_playlist
-                         else ("no add command rendered, vacuously true" if not cli_in_output
-                               else "add command found but playlist name not double-quoted")),
+            "evidence": (
+                "quoted playlist name found"
+                if quoted_playlist
+                else ("no add command rendered, vacuously true" if not cli_in_output else "add command found but playlist name not double-quoted")
+            ),
         },
         {
             "text": "Response is in Dutch",
@@ -332,14 +340,16 @@ def grade_eval_6(content: str) -> list[dict]:
         {
             "text": "Skill does NOT produce a Genres section with fabricated entries",
             "passed": no_fab_genres,
-            "evidence": "no Genres section / no fabricated bullets" if no_fab_genres
-                        else f"Genres section with {len(genre_entries(content))} bullets",
+            "evidence": "no Genres section / no fabricated bullets"
+            if no_fab_genres
+            else f"Genres section with {len(genre_entries(content))} bullets",
         },
         {
             "text": "Skill does NOT produce a Playlist match section (user has not picked an option yet)",
             "passed": no_playlist_match,
-            "evidence": "no Playlist match section / no bullets" if no_playlist_match
-                        else f"Playlist match section with {len(playlist_entries(content))} bullets",
+            "evidence": "no Playlist match section / no bullets"
+            if no_playlist_match
+            else f"Playlist match section with {len(playlist_entries(content))} bullets",
         },
     ]
 

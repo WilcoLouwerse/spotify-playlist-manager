@@ -101,6 +101,20 @@ User-facing prose is **Dutch** (the user authored the format spec in Dutch). Kee
 
    If the user's free-text reply doesn't map clearly to one of the actions, call **AskUserQuestion** again to disambiguate; do not guess.
 
+   **If the user disputes the analysis** (says the genres/artist/match is wrong, claims they know the artist or song personally, contradicts your classification, or otherwise pushes back on what you produced):
+
+   a. **Acknowledge briefly and don't double down on public sources.** A short Dutch apology + admission that your web-based reading may have landed on a namesake / wrong artist / wrong vibe is appropriate. Never argue back from AllMusic / RYM / Bandcamp when the user says they know better — their first-hand knowledge outranks public metadata.
+
+   b. **Call AskUserQuestion** to offer a re-classification path. The options must include at minimum:
+      - **Opnieuw de uncertainty-opties** — re-show the exact four web-driven / training-data options from `templates/uncertainty.md`, so the user can pick a broader / weaker / no-web path.
+      - **Ik geef je de juiste info** (via Other / free-text) — the user types the right genre / stijl / context / artist clarification, and you re-classify on that (label `bron: gebruiker`, `betrouwbaarheid: hoog`).
+      - **Sla genres over** — geen genre-claim, alleen playlist-match op basis van wat de gebruiker zegt of niets.
+      - **Klaar** — sluit de flow zonder verdere actie.
+
+   c. **Wait for the user's choice** before producing any new analysis. If they pick "Opnieuw de uncertainty-opties", re-render the uncertainty lead-in line and the four options verbatim from `templates/uncertainty.md`. If they provide info via Other, treat that as the authoritative source — don't second-guess it with web lookups unless the user asks you to.
+
+   d. **Never silently repeat the same classification.** If new sources or new info don't materialize, say so plainly in Dutch and offer to skip the genre claim rather than re-publish the disputed analysis.
+
 10. **Add the song to recommended playlists**
 
     Triggered when the user picks **Voeg toe aan playlists** or sends a natural-language add request. Follow `references/add-command.md`. Compressed flow:
@@ -143,6 +157,7 @@ User-facing prose is **Dutch** (the user authored the format spec in Dutch). Kee
 - **Never** invoke `add` for a playlist that was not in the list you recommended in step 6 — unless the user explicitly typed a different one.
 - **Never** print the old letter-shortcut menu (A-F / Z/Y/X/W / ?). All follow-ups go through **AskUserQuestion**.
 - When genre sources disagree strongly, default to the **uncertainty flow** via **AskUserQuestion**. Do not silently pick a single source.
+- **Never** double down on a public-source classification when the user pushes back saying it's wrong (e.g. "klopt niet", "ik ken de artiest", "verkeerde band"). Apologize briefly and re-open the dispute fork via **AskUserQuestion** — see step 9's "If the user disputes the analysis" sub-section. User first-hand knowledge outranks AllMusic / RYM / Bandcamp metadata.
 - User-facing text is **Dutch**. Playlist names stay verbatim from `playlists.json` (don't translate them).
 - Follow-up answers reply to **only** the chosen action — never re-render the full analysis.
 - If you cannot identify the song at all, say so plainly; do not invent a track.

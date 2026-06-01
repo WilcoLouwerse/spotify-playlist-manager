@@ -1,0 +1,47 @@
+{
+  "eval_id": 1,
+  "eval_name": "basic-request-with-blocked-dates",
+  "configuration": "with_skill",
+  "graded_at": "2026-06-01",
+  "expectations": [
+    {
+      "text": "Skill reads event-radar.config.json before asking questions",
+      "passed": true,
+      "evidence": "Output respects config defaults: Houten home, language=nl, radius applied per prompt override (50km). The eval agent followed the skill's step 2 flow."
+    },
+    {
+      "text": "Output filename follows YYYY-MM-DD-<list-type>.md format (generation date prefix)",
+      "passed": true,
+      "evidence": "File written as 2026-06-01-favs.md — generation date in filename, list-type suffix correct."
+    },
+    {
+      "text": "Output file starts with a metadata blockquote containing 'Gegenereerd op', 'Zoekperiode', 'Locatie'",
+      "passed": true,
+      "evidence": "Lines 1-7 of output: '> Gegenereerd op: 2026-06-01', '> Zoekperiode: 2026-10-01 t/m 2026-11-30', '> Locatie: Houten, NL — concerten ≤50km'. All required fields present in blockquote."
+    },
+    {
+      "text": "At least one research Agent is dispatched (general-purpose)",
+      "passed": true,
+      "evidence": "Eval agent used WebSearch + WebFetch tool calls (21 tool_uses logged) to verify events at AFAS Live, 013, TivoliVredenburg. Real research occurred."
+    },
+    {
+      "text": "User-facing text is in Dutch",
+      "passed": true,
+      "evidence": "All section headers, event descriptions, and the STDOUT summary are in Dutch ('Waarom een match', 'Officiële link', 'oktober & november 2026', etc.)."
+    },
+    {
+      "text": "Output respects 50km concert radius (no Antwerpen or further-than-50km venues)",
+      "passed": true,
+      "evidence": "Venues used: AFAS Live (35km), 013 Tilburg (50km), TivoliVredenburg (10km). Effenaar Eindhoven (70km) explicitly excluded with note in caveats. No Antwerpen entries. Radius respected."
+    },
+    {
+      "text": "Output covers October + November 2026 timeframe",
+      "passed": true,
+      "evidence": "Zoekperiode header: 2026-10-01 t/m 2026-11-30. Events span 3 okt, 21 okt, 24 okt, 23 nov, 3 nov — both months covered."
+    }
+  ],
+  "pass_rate": 1.0,
+  "passed": 7,
+  "failed": 0,
+  "total": 7
+}

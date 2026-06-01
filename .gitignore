@@ -10,6 +10,13 @@
 # Local playlist config — sample lives in playlists.example.json
 playlists.json
 
+# Event-radar personal config — sample lives in event-radar.config.example.json
+event-radar.config.json
+
+# Generated event lists — folder + README tracked, generated lists are personal
+docs/events/*.md
+!docs/events/README.md
+
 # Local Exportify CSV dumps — folder is tracked, contents are not
 exportify-exports/*
 !exportify-exports/.gitkeep

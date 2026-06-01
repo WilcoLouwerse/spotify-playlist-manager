@@ -1,0 +1,14 @@
+{
+  "eval_id": 1,
+  "eval_name": "basic-request-with-blocked-dates",
+  "prompt": "Welke concerten zou ik leuk vinden in oktober en november 2026? Locatie Houten, alleen binnen 50km, geen blokkades.",
+  "assertions": [
+    "Skill reads event-radar.config.json before asking questions",
+    "Output filename follows YYYY-MM-DD-<list-type>.md format (generation date prefix)",
+    "Output file starts with a metadata blockquote containing 'Gegenereerd op', 'Zoekperiode', 'Locatie'",
+    "At least one research Agent is dispatched (general-purpose)",
+    "User-facing text is in Dutch",
+    "Output respects 50km concert radius (no Antwerpen or further-than-50km venues)",
+    "Output covers October + November 2026 timeframe"
+  ]
+}

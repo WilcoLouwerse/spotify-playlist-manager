@@ -4,13 +4,23 @@ Pure subgenre-events (alleen DnB, alleen techno, alleen hardstyle, etc.) bij {{e
 
 Geblokkeerde datums ({{blocked_ranges_short}}) al uitgefilterd.
 
+## 🎯 Hype-rating legenda
+
+Elk event start met een inschatting van hoe leuk je dit waarschijnlijk gaat vinden:
+
+- 🔥 **95–100%** — lock-it-in, top-tier, drop-everything
+- 🟢 **80–94%** — sterke match, hoge kans op enthousiasme
+- 🟡 **65–79%** — solide match, de moeite waard
+- 🟠 **50–64%** — stretch / interessante experimentele uitstap
+- 🔵 **<50%** — niche wildcard, hit-or-miss
+
 ---
 
 {{#each genre}}
 ## {{genre_name}}
 
 {{#each event}}
-- **{{date}}** — [{{event_name}}]({{url}}) ({{lineup_short}}) — {{venue}}, {{city}} — *{{why_match}}*
+- {{hype_glyph}} **{{hype_pct}}%** — **{{date}}** — [{{event_name}}]({{url}}) ({{lineup_short}}) — {{venue}}, {{city}} — *{{why_match}}*
 {{/each}}
 
 {{/each}}

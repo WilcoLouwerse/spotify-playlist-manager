@@ -188,9 +188,35 @@ Use templates from `templates/`:
 
 Always include in each file:
 - Metadata block (above)
+- **Hype-rating prefix** on every event (see *Hype rating* below)
 - Per-event: date, artist/festival name, venue, city, distance (rounded km), why-match note, **official URL**
 - A "Geblokkeerd door je agenda (ter info)" section listing events the user couldn't make
 - A "Caveats" section listing fake-news / cancelled / skip-NL findings
+
+#### Hype rating (mandatory on every event)
+
+Every event entry must begin with a **rating glyph + percentage** (e.g. `🟢 82%`) representing the skill's estimate of how much the user will enjoy it. The score combines four signals:
+
+- **Adjacency** to known top favs (closer = higher)
+- **Format/venue fit** with the user's preferences
+- **Artist quality / buzz** in the relevant scene
+- **Listen-frequency proxy** — for known artists, weight by playlist appearances
+
+Bands of the score:
+
+| Glyph | Range | Meaning |
+|---|---|---|
+| 🔥 | 95–100% | Lock-it-in, top-tier, drop-everything |
+| 🟢 | 80–94% | Sterke match, hoge kans op enthousiasme |
+| 🟡 | 65–79% | Solide match, de moeite waard |
+| 🟠 | 50–64% | Stretch / interessante experimentele uitstap |
+| 🔵 | <50% | Niche wildcard, hit-or-miss |
+
+Format: `- 🟢 82% — **DD mmm** — [Artist](URL) (genre) — Venue, City`
+
+Include a **Hype-rating legenda** section near the top of each output file (just below the metadata block) that explains the glyphs in Dutch so the user can read the file standalone.
+
+The rating is a **judgement call** — not a deterministic formula. State the rating as the skill's estimate, not as ground truth. The user may push back, in which case capture it as a learning candidate.
 
 ### 7. Update INDEX (NOT README)
 

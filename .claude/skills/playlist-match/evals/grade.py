@@ -11,6 +11,7 @@ Run from the skill root:
 """
 
 from __future__ import annotations
+
 import json
 import re
 import sys
@@ -67,7 +68,7 @@ def find_section(content: str, header: str) -> str | None:
         return None
     body = []
     for ln in lines[start:]:
-        if ln.startswith("**") or ln.startswith("#") or ln.startswith("---"):
+        if ln.startswith(("**", "#", "---")):
             break
         body.append(ln)
         # heuristic stop: blank line followed by another section is fine via above checks

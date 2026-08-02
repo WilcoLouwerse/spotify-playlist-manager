@@ -531,7 +531,7 @@ class TestLoadTracksFromCsv:
         # Exportify writes a UTF-8 BOM as the first byte
         csv_file = tmp_path / "House.csv"
         csv_file.write_bytes(
-            b"\xef\xbb\xbf" + EXPORTIFY_HEADER.encode("utf-8") + f'spotify:track:{VALID_ID},"A","B","C",2020-01-01,1,1,false,u,t\n'.encode("utf-8")
+            b"\xef\xbb\xbf" + EXPORTIFY_HEADER.encode("utf-8") + f'spotify:track:{VALID_ID},"A","B","C",2020-01-01,1,1,false,u,t\n'.encode()
         )
         items = pm._load_tracks_from_csv(str(csv_file))
         assert len(items) == 1
@@ -1055,7 +1055,7 @@ class TestClassifyTrackWithOpenAI:
             message = _Msg()
 
         class _Resp:
-            choices = [_Choice()]
+            choices = (_Choice(),)
 
         def _create(*a, **k):
             return _Resp()

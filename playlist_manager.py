@@ -14,8 +14,8 @@ import socket
 import sys
 import time
 
-from dotenv import load_dotenv
 import spotipy
+from dotenv import load_dotenv
 from spotipy.oauth2 import SpotifyOAuth
 
 # WSL's IPv6 route to api.spotify.com is broken (connect hangs until read
@@ -87,7 +87,7 @@ def load_config(required=True):
 
 def _validate_config(data):
     if not isinstance(data, dict):
-        raise ValueError("must be a JSON object")
+        raise ValueError("must be a JSON object")  # noqa: TRY004
 
     playlists = data.get("playlists")
     if not isinstance(playlists, dict) or not playlists:
@@ -98,24 +98,24 @@ def _validate_config(data):
 
     aliases = data.get("aliases", {})
     if not isinstance(aliases, dict):
-        raise ValueError("'aliases' must be an object")
+        raise ValueError("'aliases' must be an object")  # noqa: TRY004
     for alias, target in aliases.items():
         if target not in playlists:
             raise ValueError(f"alias '{alias}' -> '{target}' does not match any playlist")
 
     categories = data.get("categories", {})
     if not isinstance(categories, dict):
-        raise ValueError("'categories' must be an object of category -> [playlist names]")
+        raise ValueError("'categories' must be an object of category -> [playlist names]")  # noqa: TRY004
     for cat, names in categories.items():
         if not isinstance(names, list):
-            raise ValueError(f"category '{cat}' must be a list of playlist names")
+            raise ValueError(f"category '{cat}' must be a list of playlist names")  # noqa: TRY004
         for n in names:
             if n not in playlists:
                 raise ValueError(f"category '{cat}' references unknown playlist: {n}")
 
     special_rules = data.get("special_rules", {})
     if not isinstance(special_rules, dict):
-        raise ValueError("'special_rules' must be an object of playlist -> rule string")
+        raise ValueError("'special_rules' must be an object of playlist -> rule string")  # noqa: TRY004
     for name in special_rules:
         if name not in playlists:
             raise ValueError(f"special_rules references unknown playlist: {name}")
@@ -533,7 +533,7 @@ def _read_uri_list(source):
         stream = sys.stdin
         close = False
     else:
-        stream = open(source, encoding="utf-8")
+        stream = open(source, encoding="utf-8")  # noqa: SIM115
         close = True
     try:
         for raw in stream:
@@ -698,11 +698,11 @@ def _sanitize_for_prompt(value, max_len=200):
 
 def validate_classification(data):
     if not isinstance(data, dict):
-        raise ValueError("response is not an object")
+        raise ValueError("response is not an object")  # noqa: TRY004
 
     matches = data.get("playlist_matches")
     if not isinstance(matches, list):
-        raise ValueError("playlist_matches must be a list")
+        raise ValueError("playlist_matches must be a list")  # noqa: TRY004
     # Empty list is legal: catch_all handles the "nothing fits" case downstream.
 
     playlists = load_config()["playlists"]

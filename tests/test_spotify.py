@@ -5,8 +5,8 @@ import platform
 import socket
 import sys
 
-from dotenv import load_dotenv
 import spotipy
+from dotenv import load_dotenv
 from spotipy.oauth2 import SpotifyOAuth
 
 _orig_getaddrinfo = socket.getaddrinfo
@@ -26,16 +26,7 @@ def _force_ipv4_if_needed():
         socket.getaddrinfo = _ipv4_only_getaddrinfo
 
 
-SCOPE = " ".join(
-    [
-        "playlist-read-private",
-        "playlist-read-collaborative",
-        "playlist-modify-private",
-        "playlist-modify-public",
-        "user-library-read",
-        "user-read-private",
-    ]
-)
+SCOPE = "playlist-read-private playlist-read-collaborative playlist-modify-private playlist-modify-public user-library-read user-read-private"
 
 
 def main() -> int:

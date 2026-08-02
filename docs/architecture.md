@@ -92,9 +92,14 @@ The fix lives at the top of `playlist_manager.py` and `tests/test_spotify.py`:
 
 ```python
 import socket
+
 _orig_getaddrinfo = socket.getaddrinfo
+
+
 def _ipv4_only_getaddrinfo(*args, **kwargs):
     return [info for info in _orig_getaddrinfo(*args, **kwargs) if info[0] == socket.AF_INET]
+
+
 socket.getaddrinfo = _ipv4_only_getaddrinfo
 ```
 

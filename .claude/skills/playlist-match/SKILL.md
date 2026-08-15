@@ -121,21 +121,17 @@ User-facing prose is **Dutch** (the user authored the format spec in Dutch). Kee
 
     a. **Need a Spotify URL/URI/ID.** If the original input was a URL/URI/ID, use it. If not, use **AskUserQuestion** to ask the user to paste one. Do not invent or guess a track ID.
 
-    b. **Pick playlists.** Use **AskUserQuestion** with `multiSelect: true` listing the playlists you recommended in step 6 (only those — not the full taxonomy). Optionally let the user choose **all recommended**.
+    b. **Pick playlists.** Use **AskUserQuestion** with `multiSelect: true` listing the playlists you recommended in step 6 (only those — not the full taxonomy). Optionally let the user choose **all recommended**. **This selection is the confirmation gate** — the user's choice here authorizes the write. Do **not** call `AskUserQuestion` again to confirm the command afterwards.
 
-    c. **Show the commands you are about to run** using `templates/add-confirmation.md`. One `add` invocation per playlist, always with `--execute`:
+    c. **Show the commands and run them.** Render the plan using `templates/add-confirmation.md` (list of playlists + fenced code block with the exact commands), then **immediately execute** each command via **Bash** sequentially. One `add` invocation per playlist, always with `--execute`:
 
        ```bash
        .venv/bin/python playlist_manager.py add "<url>" "<Playlist Name>" --execute
        ```
 
-       Run from the repo root. Quote playlist names verbatim from `playlists.json` (the script accepts aliases too, but exact names are unambiguous).
+       Run from the repo root. Quote playlist names verbatim from `playlists.json` (the script accepts aliases too, but exact names are unambiguous). Report the script's output back to the user verbatim — it tells them `ADD` or `SKIP (already in playlist)`. Do not paraphrase the script's own messages.
 
-    d. **Confirm before running.** Use **AskUserQuestion** ("Klaar om deze commando's uit te voeren?"). Only proceed on explicit yes. This confirmation is **mandatory** — it replaces the old dry-run safety net.
-
-    e. **Run** each command via **Bash** sequentially. Report the script's output back to the user verbatim — it tells them `ADD` or `SKIP (already in playlist)`. Do not paraphrase the script's own messages.
-
-    f. **No `smart-add` fallback — Claude AI is the classifier.** The project's `smart-add` command calls OpenAI to pick playlists. This skill does **not** invoke it. Claude AI already classified the song in steps 5–6 with multi-source analysis that is more rigorous than `smart-add`'s single OpenAI call. If the user says "let the classifier decide", "use smart-add", or "let AI pick the playlists", explain that Claude AI is the classifier here and re-do the analysis with whatever framing they want (different sources, stricter confidence band, only electronic subgenres, broader sweep, etc.) — then loop step 10's `add` calls over the resulting picks. Never shell out to `smart-add` (or any OpenAI-driven command) from this skill.
+    d. **No `smart-add` fallback — Claude AI is the classifier.** The project's `smart-add` command calls OpenAI to pick playlists. This skill does **not** invoke it. Claude AI already classified the song in steps 5–6 with multi-source analysis that is more rigorous than `smart-add`'s single OpenAI call. If the user says "let the classifier decide", "use smart-add", or "let AI pick the playlists", explain that Claude AI is the classifier here and re-do the analysis with whatever framing they want (different sources, stricter confidence band, only electronic subgenres, broader sweep, etc.) — then loop step 10's `add` calls over the resulting picks. Never shell out to `smart-add` (or any OpenAI-driven command) from this skill.
 
 11. **Capture Learnings**
 
@@ -150,7 +146,7 @@ User-facing prose is **Dutch** (the user authored the format spec in Dutch). Kee
 - **Never** recommend `Random sht`. It is the script-side fallback under `playlists.json -> catch_all` and must not appear in user-facing output.
 - **Never** recommend a playlist that is not currently present in `playlists.json -> categories`. Read the file each run; user edits are authoritative.
 - **Never** print the internal step numbers (1./2./3./...) from the templates in user-facing output. They are an authoring scaffold only.
-- **Never** invoke `playlist_manager.py add` without explicit user confirmation in the same turn — call **AskUserQuestion** to confirm before running any python script.
+- **Never** invoke `playlist_manager.py add` for a playlist the user did not explicitly select via the `AskUserQuestion` multi-select in step 10.b. That selection is the confirmation gate — do not add an extra "Klaar om deze commando's uit te voeren?" prompt afterwards.
 - **Never** invoke `smart-add` from this skill. `smart-add` writes to Spotify after classifying with OpenAI; Claude AI is the writer's classifier here, so use `add` directly.
 - **May** invoke the read-only `analyze-only` command **only** in the "Inschatten zonder internet (Claude + OpenAI)" path of the uncertainty fork. It calls OpenAI for a training-data second opinion without touching Spotify. Always combine the result with Claude's own training recall; fall back to Claude-only with an explicit reason message when OpenAI fails (no API key, quota, auth, connection, invalid JSON, validation rejection). Never use it as the default classifier — web lookup is still primary.
 - **Never** invent or guess a Spotify track ID. If the user only gave you `Artist - Title`, ask for a URL via **AskUserQuestion** before invoking `add`.

@@ -20,13 +20,13 @@ The project's `smart-add` and `analyze-only` commands call OpenAI to pick playli
 
 ## `add` — exact invocation
 
-From the repo root, with the venv. The skill always runs with `--execute` (it confirms with the user via **AskUserQuestion** before invoking Bash):
+From the repo root, with the venv. The skill always runs with `--execute`. The confirmation gate is the multi-select in step 10.b — the user's playlist choice authorizes the write, so no extra "Klaar om deze commando's uit te voeren?" prompt is needed afterwards:
 
 ```bash
 .venv/bin/python playlist_manager.py add "<track>" "<Playlist Name>" --execute
 ```
 
-Dry-run (omitting `--execute`) still exists in the CLI, but the skill no longer asks the user to choose between dry-run and execute — the confirmation prompt is the safety gate.
+Dry-run (omitting `--execute`) still exists in the CLI, but the skill no longer uses it — the playlist multi-select is the safety gate.
 
 Argument rules:
 
@@ -44,7 +44,7 @@ Special playlist-name characters to handle:
 
 From [`docs/commands.md`](../../../../docs/commands.md):
 
-- **Dry-run by default in the CLI.** Without `--execute`, the script prints the planned action and exits without writing. The skill always passes `--execute` because it has already confirmed with the user via **AskUserQuestion**.
+- **Dry-run by default in the CLI.** Without `--execute`, the script prints the planned action and exits without writing. The skill always passes `--execute` because the user has already authorized the write by picking the playlist(s) in step 10.b's `AskUserQuestion` multi-select.
 - **Duplicate guard is always on.** Before writing, the script consults the local `.tracks_log.json`. If the track is already logged for that playlist, the script prints `SKIP: track already in playlist` and exits. There is no override flag.
 - **Development Mode WARN.** When the script prints `WARN: Spotify returned no track URIs from playlist_items — the app is in Development Mode...`, surface it verbatim and add a Dutch tip: *"Gebruik `/playlist-log-import` om `.tracks_log.json` te seeden vanuit een Exportify CSV-export, zodat de duplicate-guard weet welke tracks al in je playlists zitten."* The WARN does not mean the add failed — check the line after it for `DONE` or `SKIP`.
 - **IPv4 only.** Spotify's IPv6 route is broken on WSL; the script forces IPv4. No skill action needed — just know that the first call may take a moment.
@@ -62,21 +62,13 @@ From [`docs/commands.md`](../../../../docs/commands.md):
 
      If the user pastes a URL, continue. If they cancel, end the add flow gracefully and offer the follow-up menu again.
 
-2. **Which playlists?** **AskUserQuestion** with `multiSelect: true`, listing **only the playlists you recommended in step 6**. Optionally add an "All recommended" shortcut. Honor the user's selection literally — never silently add a playlist they didn't pick.
+2. **Which playlists?** **AskUserQuestion** with `multiSelect: true`, listing **only the playlists you recommended in step 6**. Optionally add an "All recommended" shortcut. Honor the user's selection literally — never silently add a playlist they didn't pick. **This selection is the confirmation gate** for the write; do not add a second `AskUserQuestion` afterwards.
 
 3. **Render the plan** using `templates/add-confirmation.md`. One `add --execute` command per playlist, on its own line, in a code block.
 
-4. **Mandatory confirmation before running.** **AskUserQuestion**:
+4. **Run** each command via Bash, sequentially — immediately after rendering the plan, no extra confirmation prompt. Print the script's output verbatim. Order: same order the user selected the playlists.
 
-   > "Klaar om deze commando's uit te voeren?"
-   > - Ja, voer uit
-   > - Nee, annuleren
-
-   On *Nee*, end the add flow and re-offer the follow-up menu. This step is **never skipped** — it is the single safety gate before any python script runs.
-
-5. **Run** each command via Bash, sequentially. Print the script's output verbatim. Order: same order the user selected the playlists.
-
-6. **Summarise** with one Dutch sentence at the end:
+5. **Summarise** with one Dutch sentence at the end:
 
    > "Klaar! N toegevoegd, M overgeslagen (al in playlist)."
 

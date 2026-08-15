@@ -1,13 +1,13 @@
-# Add-confirmation template (add flow)
+# Add-plan template (add flow)
 
-Render after the user has chosen playlists. Substitute placeholders. Show **before** the mandatory `AskUserQuestion` confirmation, which itself comes **before** any Bash call.
+Render after the user has chosen playlists via the `AskUserQuestion` multi-select in step 10.b. That selection **is** the confirmation gate — do **not** call `AskUserQuestion` again to confirm the commands. Render the plan, then run the commands directly.
 
 ```
 Je wilt {TRACK_TITLE} toevoegen aan {N} playlist(s):
 
 {LIST_OF_PLAYLISTS}
 
-Ik ga deze commando's draaien vanuit de repo-root:
+Ik draai deze commando's vanuit de repo-root:
 
 {CODE_BLOCK_WITH_COMMANDS}
 ```
@@ -28,19 +28,9 @@ Ik ga deze commando's draaien vanuit de repo-root:
   ```
   Quote every playlist name with double quotes.
 
-## Confirmation step (mandatory)
+## Execute the commands
 
-After rendering the plan, call **AskUserQuestion**:
-
-> "Klaar om deze commando's uit te voeren?"
-> - Ja, voer uit
-> - Nee, annuleren
-
-Only run the commands when the user picks **Ja, voer uit**. This is the single safety gate — the skill never invokes the python script without it.
-
-## After the user confirms
-
-Run each command via Bash. Print the script's output verbatim, in order. Don't paraphrase the duplicate-guard messages — `SKIP: track already in playlist` and `ADDED ...` come from the script and should appear as-is.
+Immediately after rendering the plan, run each command via Bash sequentially. No extra confirmation prompt — the multi-select in step 10.b already authorized the write. Print the script's output verbatim, in order. Don't paraphrase the duplicate-guard messages — `SKIP: track already in playlist` and `ADDED ...` come from the script and should appear as-is.
 
 End with one Dutch summary line:
 
@@ -50,7 +40,9 @@ Klaar! {ADDED} toegevoegd, {SKIPPED} overgeslagen (al in playlist).
 
 Then call **AskUserQuestion** again (per `templates/followup.md`) so the user can chain another action or pick "Klaar".
 
-## If the user cancels
+## If the user selected zero playlists
+
+If the multi-select came back empty, skip the plan render and the Bash calls:
 
 ```
 Oké, niets gewijzigd.

@@ -19,7 +19,7 @@ header:   "Vervolg"
 multiSelect: false
 options:
   - label:       "Voeg toe aan playlists"
-    description: "Voeg dit nummer toe aan één of meer van de aanbevolen playlists (dry-run of execute)."
+    description: "Voeg dit nummer toe aan één of meer van de aanbevolen playlists — je selectie bevestigt meteen de write."
   - label:       "Meer over de artiest"
     description: "Uitgebreidere artiestinformatie — geschiedenis, stijl, context."
   - label:       "Meer over het nummer"

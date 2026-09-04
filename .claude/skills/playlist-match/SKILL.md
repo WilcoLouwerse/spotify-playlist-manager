@@ -93,7 +93,7 @@ User-facing prose is **Dutch** (the user authored the format spec in Dutch). Kee
 
    Supported follow-up actions:
    - **Meer over de artiest** — extended bio
-   - **Meer over het nummer** — deeper song analysis (lyrics, meaning, message)
+   - **Meer over het nummer** — deeper song analysis (lyrics, meaning, message). **Prioritise band-quoted sources** (interviews, press releases, label / artist site, Belgian/genre music mags like FrontView) over interpretation aggregators (Lyreka, SongMeanings, Genius annotations). Search `"<artist> <song> interview meaning"` and `"<artist> <album> press release"` first; only fall back to interpretation sites if no band-quoted source is available, and label them explicitly as interpretation.
    - **Album & albumhoes** — album name + link to the cover-art image
    - **Streaming links** — links to YouTube, Spotify, and other platforms
    - **Uitgebreide playlist-analyse** — why each playlist does / does not fit + alternatives

@@ -4,7 +4,11 @@
 !.env.example
 .spotify_token_cache
 .tracks_log.json
-.adds_log.json  # legacy name (pre-2026-05-15 rename); kept ignored for upgraders
+# timestamped local backups of the duplicate-guard log
+.tracks_log.json.bak.*
+# legacy name (pre-2026-05-15 rename); kept ignored for upgraders
+# NB: a trailing '#' is NOT a comment in .gitignore — it becomes part of the pattern
+.adds_log.json
 *.cache
 
 # Local playlist config — sample lives in playlists.example.json

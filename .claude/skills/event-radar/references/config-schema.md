@@ -15,7 +15,7 @@ The authoritative source of user defaults + self-learned data for the event-rada
 | `distance_cache_km` | object | "City, Country" → km from `user.home_city`. Self-populated. |
 | `ticket_history` | object | `bought` / `attended` / `wishlist` lists with date+event |
 | `recurring_blocked_dates` | array | Yearly-recurring blocks (Christmas, etc.) |
-| `research_caveats` | object | `fake_news` / `cancelled_events` / `skip_nl_artists` arrays. Self-populated. |
+| `research_caveats` | object | `fake_news` / `cancelled_events` / `skip_nl_artists` / `corrected_skip_nl` / `out_of_radius_high_match` / `lineup_format_notes` arrays. Self-populated. |
 | `event_series_calendar_hints` | object | User-curated list of recurring annual festivals/events grouped by `spring_summer` / `autumn_winter`. Each entry: `{event, typical_dates, location, url, note?}`. Skill uses these as research seeds — "is the 2026 edition of this confirmed?" |
 
 ## `user` object
@@ -125,11 +125,26 @@ Auto-applied to every run as default blocked dates. User can still add one-off b
   ],
   "skip_nl_artists": [
     {"artist": "Metallica", "year": "2026", "reason": "M72 tour ends in London 5 jul; no NL date", "first_seen": "2026-05-29"}
+  ],
+  "corrected_skip_nl": [
+    {"artist": "Slipknot", "year": "2026", "corrected_on": "2026-09-07", "was": "Wacken Aug 2026 only; no NL standalone", "now": "Ziggo Dome 5 dec 2026 (source: Knotfest)"}
+  ],
+  "out_of_radius_high_match": [
+    {"event": "Summer Breeze Open Air 2026", "location": "Dinkelsbuhl, DE", "distance_km": 620, "lineup_strength": "high (In Flames + Alestorm + Lamb of God)", "status": "grotendeels uitverkocht", "first_seen": "2026-06-26", "note": "Flag if the user wants to stretch the 500 km radius for one of the strongest lineups"}
+  ],
+  "lineup_format_notes": [
+    {"event": "Wacken Open Air", "note": "Default ticket is a 4-day weekend pass; single-day tickets historically uncertain. Verify day-ticket availability before recommending when only one festival day falls in the window.", "first_seen": "2026-06-26"}
   ]
 }
 ```
 
 Skill appends here when agents discover new entries. Read at the start of every run so agents don't waste time re-researching.
+
+Key semantics:
+
+- **`corrected_skip_nl`** — skip-NL entries later proven wrong. **Never re-add these to `skip_nl_artists`.** A skip-NL entry has a shelf life of roughly one quarter, so date-stamp every entry and re-verify anything older than ~3 months rather than trusting it. Mirror each correction into `references/caveats.md` under "Corrected on re-verify".
+- **`out_of_radius_high_match`** — events outside the distance radius whose lineup is strong enough to be worth offering the user as an explicit radius-stretch, rather than silently dropping.
+- **`lineup_format_notes`** — ticketing-format gotchas (weekend-pass-only festivals, day-ticket uncertainty) that change whether an in-window event is actually attendable.
 
 ## Read/write semantics
 

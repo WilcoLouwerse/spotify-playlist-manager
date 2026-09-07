@@ -14,7 +14,7 @@ User-facing prose is **Dutch**. Skill internals (this file, references, template
 
 **Input**: a free-text request to find events. May include hints (year, genres, dates). The skill collects missing parameters via **AskUserQuestion**.
 
-**Output**: writes 1–3 `.md` files into `docs/events/<YYYY-MM-DD>-<list-type>.md` where `YYYY-MM-DD` is the **generation date** (today). Updates `docs/events/INDEX.md` (gitignored local index) with a new TOC row for the run. **Never write to `docs/events/README.md`** — that file is tracked in git and describes the folder's purpose generically; the TOC with personal run-metadata lives in `INDEX.md` instead.
+**Output**: writes 1–4 `.md` files into `docs/events/<YYYY-MM-DD>-<list-type>.md` where `YYYY-MM-DD` is the **generation date** (today). Updates `docs/events/INDEX.md` (gitignored local index) with a new TOC row for the run. **Never write to `docs/events/README.md`** — that file is tracked in git and describes the folder's purpose generically; the TOC with personal run-metadata lives in `INDEX.md` instead.
 
 **Config**: [`event-radar.config.json`](../../../event-radar.config.json) at repo root (gitignored). Sample in [`event-radar.config.example.json`](../../../event-radar.config.example.json). The skill **reads** this every run for user defaults (home city, radii, language, preferred venues, favorite genres, distance cache) and **writes back** to it after a successful run (new distances learned, new venues discovered, ticket history additions). See `references/config-schema.md`.
 
@@ -161,8 +161,14 @@ Default outputs:
 - `<YYYY-MM-DD>-favs.md` — known artists list
 - `<YYYY-MM-DD>-discovery.md` — small venues + unknown adjacent artists
 - `<YYYY-MM-DD>-edm-genres.md` — pure subgenre nights
+- `<YYYY-MM-DD>-tribute.md` — tribute bands for deceased/inactive favs (only when the `tribute` list type is selected; off by default)
 - `INDEX.md` (gitignored, always update) — table of contents + per-run metadata. Prepend the new run's row at the top so newest runs are first.
 - `README.md` — **do not touch**. It's the tracked, generic folder-description with no per-run data.
+
+**Filtered runs**: when the user asks for a genre- or format-filtered run, write one file with a
+**descriptive** `<list-type>` slug instead of the fixed names above — e.g.
+`2026-06-26-metal-festivals.md` (metal festivals only, aug–dec), `2026-09-07-verify.md`. Same
+metadata block and hype-rating, narrower scope.
 
 **Required metadata block at top of every output file** (quote block):
 ```markdown
@@ -180,6 +186,7 @@ Use templates from `templates/`:
 - `templates/favs.md` — favorites list scaffold
 - `templates/discovery.md` — discovery list scaffold
 - `templates/edm-genres.md` — EDM genres scaffold
+- `templates/tribute.md` — tribute list scaffold
 - `templates/index.md` — local `INDEX.md` scaffold (gitignored TOC, NOT the tracked README)
 
 **Never overwrite existing run files** (different filename per day prevents this naturally). If the user re-runs on the same day, prompt: overwrite, suffix `-v2`, or merge.

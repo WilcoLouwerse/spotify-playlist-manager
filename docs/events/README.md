@@ -92,4 +92,4 @@ Wat **wel** in git staat:
 
 ## Maturity
 
-De skill staat per laatste meting op **L6** (zie [skill-level-overview.html](../../.claude/skills/skill-level-overview.html)). L7 vereist herhaald gebruik om learnings te accumuleren en de baseline-delta te meten — dat gebeurt naturally over volgende runs.
+De skill staat per laatste meting op **M7** (zie [skill-level-overview.html](../../.claude/skills/skill-level-overview.html)), met **L6** als target. Volle L5/L6-maturity vereist herhaald gebruik om learnings te accumuleren en de baseline-delta te meten — dat gebeurt naturally over volgende runs.

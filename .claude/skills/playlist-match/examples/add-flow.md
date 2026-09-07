@@ -29,13 +29,14 @@ The skill recommended `Alternative / Indie`, `Pop / Mainstream`, `Happy tunes`, 
 > - **Happy tunes — 62%**
 > - **Ket420 — 58%**
 
-User selects `Alternative / Indie` and `Pop / Mainstream`.
+User selects `Alternative / Indie` and `Pop / Mainstream`. **This multi-select is the
+confirmation gate** — the selection authorizes the write.
 
 ---
 
 ## Step 3 — show the plan (via `templates/add-confirmation.md`)
 
-Commands are always rendered with `--execute` — the dry-run/execute question is gone; the next step's confirmation is the safety gate.
+Commands are always rendered with `--execute` — the dry-run/execute question is gone; the playlist multi-select in step 2 is the safety gate.
 
 ```
 Je wilt Tame Impala - The Less I Know The Better toevoegen aan 2 playlist(s):
@@ -43,7 +44,7 @@ Je wilt Tame Impala - The Less I Know The Better toevoegen aan 2 playlist(s):
 - Alternative / Indie — 88%
 - Pop / Mainstream — 74%
 
-Ik ga deze commando's draaien vanuit de repo-root:
+Ik draai deze commando's vanuit de repo-root:
 
 .venv/bin/python playlist_manager.py add "https://open.spotify.com/track/6K4t31amVTZDgR3sKmwUJJ" "Alternative / Indie" --execute
 .venv/bin/python playlist_manager.py add "https://open.spotify.com/track/6K4t31amVTZDgR3sKmwUJJ" "Pop / Mainstream" --execute
@@ -51,23 +52,10 @@ Ik ga deze commando's draaien vanuit de repo-root:
 
 ---
 
-## Step 4 — mandatory confirmation
+## Step 4 — run, print verbatim
 
-**AskUserQuestion**:
-
-> "Klaar om deze commando's uit te voeren?"
-> - **Ja, voer uit**
-> - **Nee, annuleren**
-
-This step is **never skipped**. The skill only invokes Bash after the user picks **Ja, voer uit**.
-
-User picks **Ja, voer uit**.
-
----
-
-## Step 5 — run, print verbatim
-
-The skill runs each command via Bash. The script output, verbatim:
+Immediately after rendering the plan — no extra confirmation prompt — the skill runs each
+command via Bash. The script output, verbatim:
 
 ```
 Tame Impala - The Less I Know The Better -> Alternative / Indie: ADDED
@@ -76,7 +64,7 @@ Tame Impala - The Less I Know The Better -> Pop / Mainstream: SKIP: track alread
 
 ---
 
-## Step 6 — summarise + re-offer the follow-up menu
+## Step 5 — summarise + re-offer the follow-up menu
 
 ```
 Klaar! 1 toegevoegd, 1 overgeslagen (al in playlist).
@@ -86,15 +74,16 @@ Then call **AskUserQuestion** again (per `templates/followup.md`) so the user ca
 
 ---
 
-## Variant — user picks "Nee, annuleren"
+## Variant — user selected zero playlists
 
-The skill prints:
+If the step-2 multi-select comes back empty, the skill skips the plan render and the Bash
+calls, and prints:
 
 ```
 Oké, niets gewijzigd.
 ```
 
-…and immediately calls **AskUserQuestion** again with the follow-up menu so the user can pick another action or "Klaar". No python script runs.
+…and immediately calls **AskUserQuestion** again with the follow-up menu so the user can pick another action or "Klaar". No plan is rendered and no python script runs.
 
 ---
 
@@ -109,4 +98,4 @@ If the user's original message was `https://open.spotify.com/track/6K4t31amVTZDg
 User says "voeg toe aan House en Techno" instead of clicking the **Voeg toe aan playlists** button. The skill:
 1. Treats this as the add action with `House` and `Techno` pre-selected.
 2. Validates that both playlists were in the step-6 recommendations — if not, asks for confirmation via **AskUserQuestion** before adding to a playlist that wasn't on the recommended list.
-3. Skips to step 3 (render the plan) and then the mandatory confirmation in step 4.
+3. Skips to step 3 (render the plan) and then runs the commands in step 4.

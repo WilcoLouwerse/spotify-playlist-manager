@@ -4,6 +4,8 @@
 !.env.example
 .spotify_token_cache
 .tracks_log.json
+# atomic-write temp file from _save_tracks_log(); survives a crash mid-write
+.tracks_log.json.tmp
 # timestamped local backups of the duplicate-guard log
 .tracks_log.json.bak.*
 # legacy name (pre-2026-05-15 rename); kept ignored for upgraders

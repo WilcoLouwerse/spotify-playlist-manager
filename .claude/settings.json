@@ -2,7 +2,7 @@
   "permissions": {
     "allow": [
       "Edit(/.claude/skills/**)",
-      "Bash(git add:.claude/settings.json)"
+      "Bash(git add .claude/settings.json)"
     ]
   }
 }

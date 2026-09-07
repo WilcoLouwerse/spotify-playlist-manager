@@ -64,7 +64,11 @@
     "_comment": "Self-learned during runs. Skill appends here when it discovers fake-news / cancelled events / skip-NL artists worth remembering across runs.",
     "fake_news": [],
     "cancelled_events": [],
-    "skip_nl_artists": []
+    "skip_nl_artists": [],
+    "corrected_skip_nl": [],
+    "_corrected_comment": "Entries proven wrong on a later verify run. Do NOT re-add these to skip_nl_artists. A skip-NL entry has a shelf life of roughly one quarter — re-verify any entry older than ~3 months.",
+    "out_of_radius_high_match": [],
+    "lineup_format_notes": []
   },
 
   "event_series_calendar_hints": {

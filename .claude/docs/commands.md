@@ -45,7 +45,7 @@ Artist - Title
 4. Determines genres via live web lookup (AllMusic, Wikipedia, RYM, Discogs, Last.fm) as the primary source; training-data recall is the last resort only.
 5. Matches 1–5 playlists from `playlists.json` categories, each scored with a confidence percentage and a short reason.
 6. Renders a Dutch analysis (artist info, song description, genres, playlist matches), then calls `AskUserQuestion` with a standard follow-up menu.
-7. On "Voeg toe aan playlists", uses `AskUserQuestion` to pick playlists from the recommended set, shows the exact `playlist_manager.py add` commands, asks for one final confirmation, then runs them via Bash.
+7. On "Voeg toe aan playlists", uses `AskUserQuestion` with `multiSelect: true` to pick playlists from the recommended set — that selection is the confirmation gate — then shows the exact `playlist_manager.py add` commands and runs them via Bash.
 
 **Guardrails:**
 

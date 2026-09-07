@@ -141,6 +141,32 @@ YOUR JOB:
 
 For deceased / inactive favs (Pink Floyd, Queen, Michael Jackson, 2Pac, etc.) — find quality tribute acts in the user's region.
 
+```
+This round is TRIBUTE and LEGACY acts only. The user has favs who are deceased, disbanded, or
+have not toured in years — the original act is not an option, so a high-quality tribute is.
+
+INACTIVE / DECEASED FAVS (with why they're unavailable):
+{{inactive_favs_with_reason}}
+
+VENUES TO SCAN:
+{{venue_list}}
+
+YOUR JOB:
+1. For each inactive fav, WebFetch venue agendas + the tribute act's own site/socials.
+2. Judge ACT QUALITY, not just adjacency — this is the axis that matters here. A mediocre
+   tribute to a top fav is worth less than an excellent tribute to a mid fav. Rank by:
+   official endorsement or ex-members in the line-up > established act with a strong live
+   reputation > good reviews > local/unknown quality.
+3. Filter blocked dates.
+4. Report chronologically, grouped by month. Per entry give: tribute act name, which original
+   artist it covers, venue + city + distance, date, source URL, and an endorsement marker
+   (`officieel geëndorseerd` / `met oud-bandleden` / `-`) so the writer can render it.
+5. Name every inactive fav you found NOTHING for, so the output can say it was searched.
+6. Flag tribute-scene traps explicitly: two competing tributes with near-identical names,
+   acts that swap line-ups without announcing, and "officieel" claims not confirmed by the
+   rights holders. Verify on the venue agenda before asserting.
+```
+
 ---
 
 ## Tips for all agents

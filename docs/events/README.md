@@ -71,7 +71,7 @@ Wat **wel** in git staat:
 | [`.claude/skills/event-radar/references/venue-list.md`](../../.claude/skills/event-radar/references/venue-list.md) | Seed venue-catalog (config takes precedence) |
 | [`.claude/skills/event-radar/references/distance-table.md`](../../.claude/skills/event-radar/references/distance-table.md) | Seed distance-table (config takes precedence) |
 | [`.claude/skills/event-radar/references/caveats.md`](../../.claude/skills/event-radar/references/caveats.md) | Seed van fake-news / cancelled / skip-NL artiesten |
-| [`.claude/skills/event-radar/templates/`](../../.claude/skills/event-radar/templates/) | Output-scaffolds (`favs.md`, `discovery.md`, `edm-genres.md`, `index.md`) |
+| [`.claude/skills/event-radar/templates/`](../../.claude/skills/event-radar/templates/) | Output-scaffolds (`favs.md`, `discovery.md`, `edm-genres.md`, `tribute.md`, `index.md`) |
 | [`.claude/skills/event-radar/examples/run-2026-06.md`](../../.claude/skills/event-radar/examples/run-2026-06.md) | Voorbeeld van een volledige run incl. agent-dispatch |
 | [`.claude/skills/event-radar/learning-candidates.md`](../../.claude/skills/event-radar/learning-candidates.md) | Dated observaties die nog niet gepromoveerd zijn |
 | [`.claude/skills/event-radar/learnings.md`](../../.claude/skills/event-radar/learnings.md) | Self-improvement pipeline (L6) |

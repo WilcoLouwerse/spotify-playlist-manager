@@ -1,0 +1,53 @@
+{
+  "expectations": [
+    {
+      "text": "Skill asks for the track (URL/URI/ID) via AskUserQuestion",
+      "passed": false,
+      "evidence": "Transcript: 'Agent asked for clarification (track name or URL).' — agent asked via natural language, not via the structured AskUserQuestion tool with defined options."
+    },
+    {
+      "text": "After track is provided, skill uses AskUserQuestion with multiSelect:true for playlist selection",
+      "passed": false,
+      "evidence": "Transcript: 'No mention of multiSelect or structured playlist selection.' — baseline did not present a structured playlist picker."
+    },
+    {
+      "text": "Skill does NOT run CLI commands until both track and playlist(s) are confirmed",
+      "passed": true,
+      "evidence": "Transcript: 'No CLI commands run.' — baseline paused to ask for clarification before running any commands."
+    }
+  ],
+  "summary": {
+    "passed": 1,
+    "failed": 2,
+    "total": 3,
+    "pass_rate": 0.33
+  },
+  "execution_metrics": {
+    "tool_calls": {
+      "Read": 0,
+      "Write": 0,
+      "Bash": 0
+    },
+    "total_tool_calls": 2,
+    "total_steps": 1,
+    "errors_encountered": 0,
+    "output_chars": 280,
+    "transcript_chars": 320
+  },
+  "timing": {
+    "executor_duration_seconds": 63.2,
+    "total_duration_seconds": 63.2
+  },
+  "claims": [
+    {
+      "claim": "Baseline recognized missing track from 'dit nummer' and asked for clarification",
+      "type": "process",
+      "verified": true,
+      "evidence": "Transcript: 'Agent recognized missing track input — user said 'dit nummer' (this track) but provided nothing.'"
+    }
+  ],
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "Good discrimination on the multiSelect assertion (0 vs 1 from the skill). The baseline's unstructured clarification is less safe — no Random sht exclusion, no playlist enumeration from playlists.json."
+  }
+}

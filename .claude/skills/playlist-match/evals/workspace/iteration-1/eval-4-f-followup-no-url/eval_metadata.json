@@ -1,0 +1,12 @@
+{
+  "eval_id": 4,
+  "eval_name": "f-followup-no-url",
+  "prompt": "F",
+  "context": "Follows a prior analysis of 'Tame Impala - The Less I Know The Better' with no Spotify URL. The current skill no longer accepts single-letter shortcuts — 'F' should be treated as unrelated/ambiguous.",
+  "assertions": [
+    "Skill does NOT call '.venv/bin/python playlist_manager.py add' on the basis of 'F'",
+    "Skill does NOT invent or guess a Spotify track ID",
+    "Skill either treats 'F' as unrelated OR uses AskUserQuestion-style disambiguation rather than executing the add flow",
+    "Response is in Dutch"
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "expectations": [
+    {
+      "text": "Skill does NOT run playlist_manager.py remove",
+      "passed": true,
+      "evidence": "Transcript: 'No CLI commands were run.' and metrics.json confirms remove_command_executed: false."
+    },
+    {
+      "text": "Skill mentions /playlist-match as the right skill for adding tracks",
+      "passed": true,
+      "evidence": "Response to user: 'Voor het toevoegen van https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC aan House kun je /playlist-match gebruiken — die classificeert het nummer en kan het direct toevoegen.'"
+    },
+    {
+      "text": "Skill does not pretend to handle the add flow itself",
+      "passed": true,
+      "evidence": "Step 1 decision: 'This is an add request, not a remove request. The skill is out of scope. Route to /playlist-match.' Steps 2–9 all skipped."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 0,
+    "total": 3,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "tool_calls": {
+      "Read": 0,
+      "Write": 0,
+      "Bash": 0
+    },
+    "total_tool_calls": 6,
+    "total_steps": 1,
+    "errors_encountered": 0,
+    "output_chars": 0,
+    "transcript_chars": 0
+  },
+  "timing": {
+    "executor_duration_seconds": 49.2,
+    "total_duration_seconds": 49.2
+  },
+  "claims": [
+    {
+      "claim": "Skill detected add intent in Step 1 and stopped there",
+      "type": "process",
+      "verified": true,
+      "evidence": "Transcript: 'ADD intent detected' in Step 1 with 'Steps 2–9 — Skipped'."
+    }
+  ],
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "All three assertions pass. Fast execution (49s, only 1 step) demonstrates the skill exits quickly on out-of-scope intent."
+  }
+}

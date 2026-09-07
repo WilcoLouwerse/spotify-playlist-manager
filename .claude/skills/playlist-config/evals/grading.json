@@ -1,0 +1,89 @@
+{
+  "skill_name": "playlist-config",
+  "schema_version": "1.0.0",
+  "notes": "Iteration-1 ran 2026-05-13: 1 eval (eval-1) executed with_skill + baseline via parallel subagents. Remaining evals 2-5 are scaffolded in evals.json and pending in future iterations.",
+  "runs": [
+    {
+      "date": "2026-05-13",
+      "method": "parallel subagents (with_skill vs baseline) graded against assertions in evals.json",
+      "eval_id": 1,
+      "config": "with_skill",
+      "score": 1.0,
+      "assertions": [
+        {
+          "text": "Skill identifies this as sub-flow C (extend) — playlists.json already exists",
+          "passed": true,
+          "evidence": "Output literally opens with 'sub-flow C: extend'."
+        },
+        {
+          "text": "Skill plans to run '.venv/bin/python playlist_manager.py list-playlists --all' from the repo root",
+          "passed": true,
+          "evidence": "Code block uses `.venv/bin/python playlist_manager.py list-playlists --all` verbatim."
+        },
+        {
+          "text": "Skill uses AskUserQuestion to confirm the playlists.json edit before writing",
+          "passed": true,
+          "evidence": "Stap 5 'Schrijfbevestiging (enige safety gate) via AskUserQuestion' with Ja / Pas eerst aan / Annuleren options."
+        },
+        {
+          "text": "Skill preserves the existing key order in playlists.json (append, do not reorder)",
+          "passed": true,
+          "evidence": "'additieve Edit op playlists.json (key-volgorde + indentatie behouden)' explicitly stated."
+        },
+        {
+          "text": "Skill plans a verification step ('.venv/bin/python playlist_manager.py list-playlists' after the edit)",
+          "passed": true,
+          "evidence": "Stap 6 includes `.venv/bin/python playlist_manager.py list-playlists` plus rollback offer on parse error."
+        }
+      ]
+    },
+    {
+      "date": "2026-05-13",
+      "method": "parallel subagents (with_skill vs baseline) graded against assertions in evals.json",
+      "eval_id": 1,
+      "config": "without_skill",
+      "score": 0.4,
+      "assertions": [
+        {
+          "text": "Skill identifies this as sub-flow C (extend) — playlists.json already exists",
+          "passed": true,
+          "evidence": "Baseline implicitly treats this as an extend operation (shows appending Coffee Shop after Random sht in existing playlists block), though it does not use the sub-flow terminology."
+        },
+        {
+          "text": "Skill plans to run '.venv/bin/python playlist_manager.py list-playlists --all' from the repo root",
+          "passed": false,
+          "evidence": "Baseline uses bare `python playlist_manager.py list-playlists --all` — venv routing requirement not surfaced without the skill."
+        },
+        {
+          "text": "Skill uses AskUserQuestion to confirm the playlists.json edit before writing",
+          "passed": false,
+          "evidence": "Baseline says 'De edit op playlists.json doe ik zelf met het Edit-tool zodra ik de ID heb' — would write without an explicit confirmation gate."
+        },
+        {
+          "text": "Skill preserves the existing key order in playlists.json (append, do not reorder)",
+          "passed": true,
+          "evidence": "Baseline shows Coffee Shop appended after Random sht in the JSON block; existing order preserved implicitly."
+        },
+        {
+          "text": "Skill plans a verification step ('.venv/bin/python playlist_manager.py list-playlists' after the edit)",
+          "passed": false,
+          "evidence": "Baseline plans the verification but uses bare `python` not `.venv/bin/python` — fails the venv-routing form of the assertion."
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "date": "2026-05-13",
+    "iteration": 1,
+    "eval_count": 1,
+    "evals_run": [1],
+    "evals_pending": [2, 3, 4, 5],
+    "pass_threshold": 0.8,
+    "with_skill_pass_rate": 1.0,
+    "without_skill_pass_rate": 0.4,
+    "delta": 0.6,
+    "passing_evals": 1,
+    "below_threshold": [],
+    "improve_cycle_next": "Baseline missed three of five assertions, all preventable: .venv/bin/python routing, AskUserQuestion confirmation gate, and bare `python` in the verify step. The skill's value-add is clear on this eval. Expand iteration-2 to cover evals 2-5 (bootstrap, inspect, alias-only edit, out-of-scope routing) to confirm the delta holds across sub-flows."
+  }
+}

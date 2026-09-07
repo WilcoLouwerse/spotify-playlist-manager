@@ -1,0 +1,17 @@
+{
+  "skill_name": "playlist-remove",
+  "schema_version": "1.0.0",
+  "notes": "Iteration-1 evals run 2026-05-15 via /skill-creator. with_skill: 100% (17/17). without_skill: 21.2% (4/17). Delta: +0.79.",
+  "runs": [
+    {"iteration": 1, "date": "2026-05-15", "with_skill_pass_rate": 1.0, "without_skill_pass_rate": 0.212, "delta": "+0.79", "workspace": "evals/workspace/iteration-1"}
+  ],
+  "summary": {
+    "latest_iteration": 1,
+    "latest_date": "2026-05-15",
+    "with_skill_pass_rate": 1.0,
+    "without_skill_pass_rate": 0.212,
+    "delta": "+0.79",
+    "eval_count": 5,
+    "total_assertions": 17
+  }
+}

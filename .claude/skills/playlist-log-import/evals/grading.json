@@ -1,0 +1,99 @@
+{
+  "skill_name": "playlist-log-import",
+  "schema_version": "1.0.0",
+  "notes": "Iteration-1 ran 2026-05-13: eval-1 (happy-path log-import for House) executed with_skill + baseline via parallel subagents. Remaining evals 2-5 are scaffolded in evals.json and pending future iterations.",
+  "runs": [
+    {
+      "date": "2026-05-13",
+      "method": "parallel subagents (with_skill vs baseline) graded against assertions in evals.json",
+      "eval_id": 1,
+      "config": "with_skill",
+      "score": 1.0,
+      "assertions": [
+        {
+          "text": "Skill identifies 'House' as the target playlist",
+          "passed": true,
+          "evidence": "Response opens with 'Je wilt de log voor **House** seeden ...' — target named explicitly."
+        },
+        {
+          "text": "Skill resolves the file to 'exportify-exports/House.csv' (or asks for the path if it can't tell)",
+          "passed": true,
+          "evidence": "File resolved to `exportify-exports/House.csv` per the no-space mangling rule. Lowercase 'house.csv' is offered as a fallback alternative in the AskUserQuestion."
+        },
+        {
+          "text": "Skill renders the planned command using '.venv/bin/python playlist_manager.py log-import'",
+          "passed": true,
+          "evidence": "Code block: `.venv/bin/python playlist_manager.py log-import \"House\" \"exportify-exports/House.csv\"`"
+        },
+        {
+          "text": "Both target and file are double-quoted in the rendered command",
+          "passed": true,
+          "evidence": "`\"House\"` and `\"exportify-exports/House.csv\"` are both double-quoted."
+        },
+        {
+          "text": "Skill does NOT include any flags (no --execute, no --dry-run) — log-import takes only two positionals",
+          "passed": true,
+          "evidence": "Command has zero flags. The response explicitly states: 'Geen vlaggen — log-import accepteert alleen <playlist> en <file>, en is altijd lokaal (geen --execute/--dry-run).'"
+        },
+        {
+          "text": "Skill explicitly confirms via AskUserQuestion BEFORE running, calling out that this is local-only and mutates .tracks_log.json",
+          "passed": true,
+          "evidence": "Response includes a Ja/Nee/Annuleren confirmation block AND explicitly states 'Dit is een lokale operatie — er wordt niets naar Spotify geschreven. Alleen .tracks_log.json wordt bijgewerkt.'"
+        }
+      ]
+    },
+    {
+      "date": "2026-05-13",
+      "method": "parallel subagents (with_skill vs baseline) graded against assertions in evals.json",
+      "eval_id": 1,
+      "config": "without_skill",
+      "score": 0.67,
+      "assertions": [
+        {
+          "text": "Skill identifies 'House' as the target playlist",
+          "passed": true,
+          "evidence": "Baseline correctly identifies 'House' as a valid target."
+        },
+        {
+          "text": "Skill resolves the file to 'exportify-exports/House.csv' (or asks for the path if it can't tell)",
+          "passed": true,
+          "evidence": "Baseline assumes 'exportify-exports/house.csv' (lowercase, per the docs example) and explicitly asks the user to confirm or correct the filename — satisfies the 'or asks for the path' branch."
+        },
+        {
+          "text": "Skill renders the planned command using '.venv/bin/python playlist_manager.py log-import'",
+          "passed": false,
+          "evidence": "Baseline uses bare `python` not `.venv/bin/python` — venv routing requirement not surfaced without the skill."
+        },
+        {
+          "text": "Both target and file are double-quoted in the rendered command",
+          "passed": false,
+          "evidence": "Target is double-quoted but file path is bare: `python playlist_manager.py log-import \"House\" exportify-exports/house.csv` — file argument lacks quotes (would break on paths with spaces or special characters)."
+        },
+        {
+          "text": "Skill does NOT include any flags (no --execute, no --dry-run) — log-import takes only two positionals",
+          "passed": true,
+          "evidence": "Command has zero flags — baseline read the docs correctly."
+        },
+        {
+          "text": "Skill explicitly confirms via AskUserQuestion BEFORE running, calling out that this is local-only and mutates .tracks_log.json",
+          "passed": true,
+          "evidence": "Baseline mentions 'This is local-only (no Spotify API call). It seeds .tracks_log.json ...' AND asks 'Wil je dat ik 'm meteen draai?' — a free-form confirmation rather than a structured AskUserQuestion, but the safety gate is present."
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "date": "2026-05-13",
+    "iteration": 1,
+    "eval_count": 1,
+    "evals_run": [1],
+    "evals_pending": [2, 3, 4, 5],
+    "pass_threshold": 0.8,
+    "with_skill_pass_rate": 1.0,
+    "without_skill_pass_rate": 0.67,
+    "delta": 0.33,
+    "passing_evals": 1,
+    "below_threshold": [],
+    "improve_cycle_next": "Baseline failed on (a) .venv/bin/python invocation and (b) double-quoting the file path. Both are codified in the skill's guardrails. Iteration-2 should expand to eval-2 (alias resolution, dnb → Drum & Bass) and eval-3 (the --dry-run refusal case) where the skill's value-add over baseline is likely larger than the +0.33 delta seen here."
+  }
+}

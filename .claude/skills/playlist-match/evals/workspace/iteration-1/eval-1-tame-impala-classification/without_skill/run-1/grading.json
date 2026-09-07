@@ -1,0 +1,52 @@
+{
+  "expectations": [
+    {
+      "text": "title line is exactly 'Tame Impala - The Less I Know The Better'",
+      "passed": false,
+      "evidence": "no exact-match title line found"
+    },
+    {
+      "text": "Artiestinformatie block is present (first occurrence in chat)",
+      "passed": false,
+      "evidence": "no Artiestinformatie header found"
+    },
+    {
+      "text": "Genres section has 2-4 bullets with percentage and short reason",
+      "passed": false,
+      "evidence": "found 0 genre bullets matching `name \u2014 XX% \u2014 reason`"
+    },
+    {
+      "text": "Playlist match includes 'Alternative / Indie' with confidence >= 80%",
+      "passed": false,
+      "evidence": "Alternative / Indie not in playlist match (found: [])"
+    },
+    {
+      "text": "Playlist match does NOT include 'Random sht'",
+      "passed": true,
+      "evidence": "Random sht not mentioned"
+    },
+    {
+      "text": "Output does NOT print the old A-F / Z-Y-X-W letter menu",
+      "passed": true,
+      "evidence": "no letter menu detected"
+    },
+    {
+      "text": "User-facing prose is in Dutch (Artiestinformatie, Nummeromschrijving, Genres, Playlist match)",
+      "passed": false,
+      "evidence": "one or more Dutch headers missing"
+    }
+  ],
+  "summary": {
+    "passed": 2,
+    "failed": 5,
+    "total": 7,
+    "pass_rate": 0.2857
+  },
+  "execution_metrics": {
+    "total_tool_calls": 5,
+    "errors_encountered": 0,
+    "output_chars": 1420,
+    "tokens": 16634
+  },
+  "timing": {}
+}

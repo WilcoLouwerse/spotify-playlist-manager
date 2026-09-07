@@ -1,0 +1,96 @@
+{
+  "skill_name": "playlist-log-import",
+  "version": "1.0.0",
+  "created": "2026-05-13",
+  "last_validated": "2026-05-13",
+  "baseline_score": 0.67,
+  "notes": "Iteration-1 ran 2026-05-13: eval-1 executed with_skill (6/6 = 100%) vs baseline (4/6 = 67%, +0.33 delta). Evals 2-5 are scaffolded and pending future iterations. See evals/grading.json and evals/workspace/iteration-1/.",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "kan je mijn House export importeren in de log?",
+      "expected_output": "Skill resolves 'House' as the target against playlists.json. Resolves the file: bare playlist name 'House' should map to exportify-exports/House.csv via the references/file-resolution.md mangling rules. Renders the log-import command with both arguments double-quoted. Confirms via AskUserQuestion BEFORE running (since log-import has no --execute flag, the confirmation gate is pre-run).",
+      "expectations": [
+        "Skill identifies 'House' as the target playlist",
+        "Skill resolves the file to 'exportify-exports/House.csv' (or asks for the path if it can't tell)",
+        "Skill renders the planned command using '.venv/bin/python playlist_manager.py log-import'",
+        "Both target and file are double-quoted in the rendered command",
+        "Skill does NOT include any flags (no --execute, no --dry-run) — log-import takes only two positionals",
+        "Skill explicitly confirms via AskUserQuestion BEFORE running, calling out that this is local-only and mutates .tracks_log.json"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "log-import dnb exportify-exports/Drum_&_Bass.csv",
+      "expected_output": "Skill resolves the alias 'dnb' -> 'Drum & Bass' (canonical name from playlists.json). Uses the explicit CSV path verbatim. Renders the command with the canonical target name double-quoted.",
+      "expectations": [
+        "Skill resolves 'dnb' to the canonical playlist name 'Drum & Bass'",
+        "Rendered command uses the canonical name 'Drum & Bass' as the target (double-quoted)",
+        "Skill confirms the alias resolution via AskUserQuestion or surfaces it in the plan",
+        "File path 'exportify-exports/Drum_&_Bass.csv' passed verbatim and double-quoted",
+        "No flags appended (log-import takes only positionals)"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "doe een dry-run van log-import House",
+      "expected_output": "Skill explains that log-import has no dry-run mode — it's local-only and only mutates .tracks_log.json. Offers to either proceed with the real (only) run or abort.",
+      "expectations": [
+        "Skill does NOT add --dry-run to the command (the flag does not exist)",
+        "Skill explains log-import is local-only (no Spotify side-effect, no dry-run)",
+        "Skill offers a choice: proceed with the real run OR abort",
+        "Skill does NOT silently proceed without confirmation"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "seed mijn log voor Random sht met random_sht.csv",
+      "expected_output": "Random sht is the catch-all playlist. Highly unusual to seed the catch-all log. Skill confirms explicitly via AskUserQuestion before proceeding.",
+      "expectations": [
+        "Skill recognises 'Random sht' as the catch-all playlist and flags this as unusual",
+        "Skill asks for explicit confirmation via AskUserQuestion before passing 'Random sht' as the target",
+        "Skill does NOT silently proceed with the seeding"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "welke tracks uit deze csv passen in House: exportify-exports/Random_sht.csv",
+      "expected_output": "This is not a log-import use case — the user wants source-to-target classification, which is scan-for / playlist-scan's domain. Skill politely routes to that skill.",
+      "expectations": [
+        "Skill does NOT proceed with log-import",
+        "Skill points the user at the playlist-scan skill (or at scan-for directly)",
+        "Skill does NOT actually run playlist_manager.py log-import"
+      ]
+    }
+  ],
+  "trigger_tests": {
+    "should_trigger": [
+      "kan je mijn House export importeren in de log?",
+      "seed mijn log voor Techno",
+      "log-import House exportify-exports/House.csv",
+      "import deze csv voor Drum & Bass: exportify-exports/Drum_&_Bass.csv",
+      "registreer mijn House export in de duplicate guard",
+      "House CSV importeren",
+      "voeg deze exportify file toe aan de adds log van Techno",
+      "seed the dedup log for Trance",
+      "import this csv into the log for dnb",
+      "log-import dnb Drum_&_Bass.csv",
+      "kan je mijn Techno-export in .tracks_log.json zetten?",
+      "ik heb een nieuwe exportify file voor House, kun je 'm seeden?"
+    ],
+    "should_not_trigger": [
+      "welke tracks uit 'Random sht' zouden in House passen?",
+      "sorteer mijn triage in al mijn playlists",
+      "review-playlist exportify-exports/House.csv",
+      "voeg dit nummer toe aan House: https://open.spotify.com/track/...",
+      "Tame Impala - The Less I Know The Better",
+      "maak een nieuwe playlist 'Workouts'",
+      "wat zijn mijn beschikbare playlists?",
+      "geef me de Spotify Web API docs",
+      "hoe schrijf ik een test voor playlist_manager.py?",
+      "wat doet smart-add?",
+      "fix the IPv6 routing in playlist_manager.py",
+      "leeg mijn 'Random sht' helemaal"
+    ]
+  }
+}

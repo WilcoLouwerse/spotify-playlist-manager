@@ -1,0 +1,96 @@
+{
+  "skill_name": "playlist-triage",
+  "version": "1.0.0",
+  "created": "2026-05-13",
+  "last_validated": "2026-05-13",
+  "baseline_score": 0.2,
+  "notes": "Iteration-1 ran 2026-05-13: eval-1 executed with_skill (5/5 = 100%) vs baseline (1/5 = 20%, +0.8 delta — the skill's workflow-pick + venv-routing + terminal-handoff guidance are real value-adds over a generic baseline). Evals 2-5 are scaffolded and pending future iterations. See evals/grading.json and evals/workspace/iteration-1/.",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "kun je deze playlist voor me reviewen? https://open.spotify.com/playlist/3aBcDeFgHiJkLmNoPqRsTu",
+      "expected_output": "Skill picks review-playlist (user said 'reviewen'), defaults to dry-run, renders the planned command using .venv/bin/python from repo root, quotes the URL.",
+      "expectations": [
+        "Skill picks the review-playlist command (not bulk-playlist)",
+        "Default mode is dry-run, with execute offered as an explicit second choice",
+        "Planned command uses '.venv/bin/python playlist_manager.py review-playlist'",
+        "Source URL is double-quoted in the rendered command",
+        "Skill explicitly explains that --execute requires per-track y/N from the user's terminal"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "leeg mijn 'Random sht' helemaal — ik vertrouw de classifier",
+      "expected_output": "Skill picks bulk-playlist (user said 'leeg' + 'vertrouw'), resolves 'Random sht' against exportify-exports/, offers the 'yes |' auto-accept path for execute mode.",
+      "expectations": [
+        "Skill picks the bulk-playlist command (not review-playlist)",
+        "Skill resolves the bare name 'Random sht' against exportify-exports/ rather than guessing a URL",
+        "Skill offers the 'yes | ...' auto-accept option for the single y/N (bulk-only)",
+        "Planned command uses '.venv/bin/python playlist_manager.py bulk-playlist'",
+        "Skill does NOT pipe yes into review-playlist anywhere in the response"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "sorteer deze: spotify:playlist:3aBcDeFgHiJkLmNoPqRsTu",
+      "expected_output": "Source is recognised as a Spotify URI. Skill asks via AskUserQuestion whether the user wants review (per-track) or bulk (single y/N) since 'sorteer' is neutral. Defaults to dry-run.",
+      "expectations": [
+        "Skill recognises the spotify:playlist:... URI as the source argument and passes it verbatim",
+        "Skill asks (rather than guesses) which workflow to use — review vs bulk — when the user phrase is neutral",
+        "Default mode is dry-run",
+        "Planned command quotes the URI"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "review-playlist exportify-exports/House.csv met --min-confidence 90",
+      "expected_output": "Skill recognises the CSV path and the explicit tuning flag, renders the command with --min-confidence 90 added.",
+      "expectations": [
+        "Skill uses the literal CSV path 'exportify-exports/House.csv' as the source argument",
+        "Skill includes '--min-confidence 90' in the rendered command",
+        "Skill does NOT silently change other defaults the user didn't mention",
+        "Default mode is dry-run unless the user said otherwise"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "voeg dit ene nummer toe aan House: https://open.spotify.com/track/6K4t31amVTZDgR3sKmwUJJ",
+      "expected_output": "The skill recognises this is a single-track add (not a triage flow), and either declines politely or routes the user to the playlist-match skill.",
+      "expectations": [
+        "Skill does NOT invoke review-playlist or bulk-playlist for a single track",
+        "Skill points the user at the playlist-match skill (or at the 'add' command directly)",
+        "Skill does NOT actually run playlist_manager.py"
+      ]
+    }
+  ],
+  "trigger_tests": {
+    "should_trigger": [
+      "kun je deze playlist voor me reviewen? https://open.spotify.com/playlist/...",
+      "sorteer mijn 'to triage' playlist",
+      "leeg mijn Random sht helemaal",
+      "review-playlist exportify-exports/House.csv",
+      "bulk-playlist Random_sht.csv --execute",
+      "triage deze: https://open.spotify.com/playlist/3aBcDeFgHiJkLmNoPqRsTu",
+      "ik wil deze playlist een voor een doorlopen en uitsorteren",
+      "haal mijn triage-playlist leeg, ik vertrouw de classifier",
+      "sort this playlist into my target playlists",
+      "review every track in exportify-exports/Random_sht.csv",
+      "bulk sort spotify:playlist:3aBcDeFgHiJkLmNoPqRsTu",
+      "sorteer deze CSV in mijn doelpllaylists: exportify-exports/Random_sht.csv"
+    ],
+    "should_not_trigger": [
+      "voeg dit ene nummer toe aan House: https://open.spotify.com/track/...",
+      "Tame Impala - The Less I Know The Better",
+      "welke playlists zijn er beschikbaar?",
+      "maak een nieuwe playlist 'Workouts'",
+      "geef me de syntax voor de Spotify Web API",
+      "scan deze playlist op House-tracks",
+      "log-import exportify-exports/House.csv naar House",
+      "hoe seed ik .tracks_log.json?",
+      "wat doet de smart-add subcommand?",
+      "hoe schrijf ik een test voor playlist_manager.py?",
+      "wat is mijn Spotify-statistiek deze maand?",
+      "fix the IPv6 routing issue in playlist_manager.py"
+    ]
+  }
+}

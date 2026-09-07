@@ -1,0 +1,74 @@
+{
+  "eval_id": "eval-2-artist-title-only",
+  "skill": "playlist-remove",
+  "iteration": 1,
+  "user_message": "Verwijder Dua Lipa - Levitating uit Techno",
+  "date": "2026-05-15",
+
+  "input_type": "artist_title_only",
+  "track_provided": "Dua Lipa - Levitating",
+  "track_id_provided": false,
+  "playlist_provided": "Techno",
+  "playlist_valid": true,
+
+  "steps_executed": {
+    "step_1_detect_input": true,
+    "step_2_resolve_track": "blocked_waiting_for_url",
+    "step_3_resolve_playlist": true,
+    "step_4_genre_check": "skipped_not_requested",
+    "step_5_show_plan": true,
+    "step_6_confirmation": "ask_user_question_issued",
+    "step_7_run_command": "not_executed_eval_mode",
+    "step_8_summarise": true,
+    "step_9_learnings": "nothing_to_capture"
+  },
+
+  "guardrails": {
+    "no_execute_without_confirmation": true,
+    "no_invented_track_id": true,
+    "no_random_sht_without_extra_confirm": "not_applicable",
+    "playlist_validated_against_config": true,
+    "venv_python_used": true,
+    "double_quoted_args": true
+  },
+
+  "ask_user_question_calls": [
+    {
+      "step": 2,
+      "purpose": "request_spotify_url_for_artist_title_track",
+      "question": "Om Dua Lipa - Levitating uit Techno te verwijderen heb ik een Spotify-link, URI of track-ID nodig. Plak die via 'Other', of kies 'Annuleren'.",
+      "options": ["Other", "Annuleren"]
+    },
+    {
+      "step": 6,
+      "purpose": "mandatory_confirmation_before_execute",
+      "question": "Klaar om dit nummer te verwijderen?",
+      "options": ["Ja, verwijder", "Nee, annuleren"]
+    },
+    {
+      "step": 8,
+      "purpose": "post_remove_followup",
+      "question": "Wil je nog iets doen met dit nummer?",
+      "options": ["Voeg toe aan andere playlist", "Klaar"]
+    }
+  ],
+
+  "command_planned": ".venv/bin/python playlist_manager.py remove \"https://open.spotify.com/track/463CkQjx2Zk1yXoBuierM9\" \"Techno\" --execute",
+  "command_executed": false,
+  "writes_to_spotify": false,
+
+  "correctness": {
+    "skill_triggered": true,
+    "scope_detected_correctly": true,
+    "track_id_correctly_not_guessed": true,
+    "playlist_resolved_correctly": true,
+    "confirmation_gate_present": true,
+    "dutch_user_facing_prose": true,
+    "sibling_skills_surfaced_if_needed": "not_applicable"
+  },
+
+  "score": {
+    "overall": 1.0,
+    "notes": "All skill steps followed correctly. No track ID invented. AskUserQuestion issued at Step 2 to request Spotify URL, then again at Step 6 for mandatory confirmation, and Step 8 for follow-up. Guardrails all respected."
+  }
+}

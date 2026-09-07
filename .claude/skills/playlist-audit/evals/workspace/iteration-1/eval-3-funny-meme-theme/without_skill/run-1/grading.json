@@ -1,0 +1,53 @@
+{
+  "expectations": [
+    {
+      "text": "Skill reads special_rules for 'Funny meme' from playlists.json",
+      "passed": false,
+      "evidence": "Transcript: 'Did NOT read special_rules from playlists.json for theme criteria.' — baseline ran audit-playlist CLI without reading the theme special_rules."
+    },
+    {
+      "text": "Skill applies the meme/theme criteria when classifying tracks, not just genre",
+      "passed": false,
+      "evidence": "Transcript: 'Key miss: should apply \"is it a meme/internet classic\" criteria, not just genre match.' — baseline produced 14 low-confidence candidates based on genre classification alone."
+    },
+    {
+      "text": "Audit report notes the theme-based scoring approach",
+      "passed": false,
+      "evidence": "Transcript: 'Did NOT explain meme-identity vs genre-based scoring.' — baseline report used raw genre-match output with no theme annotation."
+    }
+  ],
+  "summary": {
+    "passed": 0,
+    "failed": 3,
+    "total": 3,
+    "pass_rate": 0.0
+  },
+  "execution_metrics": {
+    "tool_calls": {
+      "Read": 2,
+      "Write": 0,
+      "Bash": 5
+    },
+    "total_tool_calls": 10,
+    "total_steps": 3,
+    "errors_encountered": 0,
+    "output_chars": 620,
+    "transcript_chars": 400
+  },
+  "timing": {
+    "executor_duration_seconds": 280.1,
+    "total_duration_seconds": 280.1
+  },
+  "claims": [
+    {
+      "claim": "Baseline produced 14 low-confidence candidates using genre classification on a theme playlist",
+      "type": "quality",
+      "verified": true,
+      "evidence": "Transcript: '20 tracks classified. Did NOT read special_rules from playlists.json for theme criteria. Produced 14 low-confidence candidates based on OpenAI genre classification.'"
+    }
+  ],
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "Maximum discrimination (0/3 baseline vs 3/3 skill). The baseline's genre-only classification is fundamentally wrong for a theme playlist — it would flag real meme songs as mismatches."
+  }
+}

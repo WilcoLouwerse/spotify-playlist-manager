@@ -1,0 +1,17 @@
+{
+  "eval_id": "eval-5-add-intent-routed",
+  "variant": "with_skill",
+  "user_message": "voeg dit nummer toe aan House: https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC",
+  "intent_detected": "add",
+  "skill_triggered": "playlist-remove",
+  "scope_check_passed": true,
+  "routed_to_sibling": "playlist-match",
+  "remove_command_executed": false,
+  "confirmation_shown": false,
+  "response_language": "nl",
+  "sibling_skill_named": true,
+  "steps_executed": [1],
+  "steps_skipped": [2, 3, 4, 5, 6, 7, 8, 9],
+  "pass": true,
+  "notes": "Skill correctly identified add intent in Step 1 and routed to /playlist-match without running any remove commands."
+}

@@ -1,0 +1,59 @@
+{
+  "expectations": [
+    {
+      "text": "Skill asks for the track (URL/URI/ID) via AskUserQuestion",
+      "passed": true,
+      "evidence": "Step 1a AskUserQuestion: 'Welk nummer wil je verwijderen? Plak een Spotify-link, URI of track-ID, of type Artiest – Titel.' with options: Other (free text), Annuleren."
+    },
+    {
+      "text": "After track is provided, skill uses AskUserQuestion with multiSelect:true for playlist selection",
+      "passed": true,
+      "evidence": "Step 3 AskUserQuestion call: 'multiSelect: true' with 24 options including all 23 non-Random-sht playlists plus an 'Other' option for Random sht."
+    },
+    {
+      "text": "Skill does NOT run CLI commands until both track and playlist(s) are confirmed",
+      "passed": true,
+      "evidence": "Step 7 explicitly marked '(Not executed in this eval — Bash commands are not run per eval instructions.)' All commands shown at Step 5 only after user would have confirmed at Step 6."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 0,
+    "total": 3,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "tool_calls": {
+      "Read": 0,
+      "Write": 0,
+      "Bash": 0
+    },
+    "total_tool_calls": 7,
+    "total_steps": 9,
+    "errors_encountered": 0,
+    "output_chars": 0,
+    "transcript_chars": 0
+  },
+  "timing": {
+    "executor_duration_seconds": 132.0,
+    "total_duration_seconds": 132.0
+  },
+  "claims": [
+    {
+      "claim": "Random sht is excluded from the default multiSelect list and offered only via 'Other'",
+      "type": "process",
+      "verified": true,
+      "evidence": "Step 3 options include 'Other (voor Random sht of andere)' — Random sht is not in the main list per guardrail."
+    },
+    {
+      "claim": "23 playlists are included (all from playlists.json except Random sht)",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Transcript enumerates all 23 playlists explicitly. Step 6 confirms: 'Klaar om dit nummer te verwijderen uit 23 playlists?'"
+    }
+  ],
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "All three assertions pass. This eval effectively tests the hardest path (both track and playlist missing). The multiSelect assertion is particularly discriminating."
+  }
+}

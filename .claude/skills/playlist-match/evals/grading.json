@@ -1,0 +1,188 @@
+{
+  "skill_name": "playlist-match",
+  "schema_version": "1.0.0",
+  "notes": "Iteration-1 ran 2026-05-13: 6 evals, 12 subagent runs (6 with_skill + 6 baseline). Grading is programmatic via evals/grade.py.",
+  "runs": [
+    {
+      "date": "2026-05-13",
+      "method": "parallel subagents (with_skill vs baseline) graded by evals/grade.py",
+      "eval_id": 1,
+      "score": 0.86,
+      "assertions": [
+        {
+          "id": "title line is exactly 'Tame Impala - The Less I Know The Better'",
+          "result": "pass"
+        },
+        {
+          "id": "Artiestinformatie block is present (first occurrence in chat)",
+          "result": "pass"
+        },
+        {
+          "id": "Genres section has 2-4 bullets with percentage and short reason",
+          "result": "pass"
+        },
+        {
+          "id": "Playlist match includes 'Alternative / Indie' with confidence >= 80%",
+          "result": "pass"
+        },
+        {
+          "id": "Playlist match does NOT include 'Random sht'",
+          "result": "pass"
+        },
+        {
+          "id": "Output does NOT print the old A-F / Z-Y-X-W letter menu",
+          "result": "fail"
+        },
+        {
+          "id": "User-facing prose is in Dutch (Artiestinformatie, Nummeromschrijving, Genres, Playlist match)",
+          "result": "pass"
+        }
+      ]
+    },
+    {
+      "date": "2026-05-13",
+      "method": "parallel subagents (with_skill vs baseline) graded by evals/grade.py",
+      "eval_id": 2,
+      "score": 1.0,
+      "assertions": [
+        {
+          "id": "Playlist match includes 'Techno' with confidence >= 85%",
+          "result": "pass"
+        },
+        {
+          "id": "Playlist match also includes 'Electronic Music' alongside Techno (umbrella rule)",
+          "result": "pass"
+        },
+        {
+          "id": "Playlist match does NOT include 'Random sht'",
+          "result": "pass"
+        },
+        {
+          "id": "Genres section identifies Techno (or a Techno subgenre) as primary",
+          "result": "pass"
+        },
+        {
+          "id": "Output does NOT print the old A-F / Z-Y-X-W letter menu",
+          "result": "pass"
+        }
+      ]
+    },
+    {
+      "date": "2026-05-13",
+      "method": "parallel subagents (with_skill vs baseline) graded by evals/grade.py",
+      "eval_id": 3,
+      "score": 0.8,
+      "assertions": [
+        {
+          "id": "Playlist match includes 'Funny meme' with confidence >= 80% (Rick Roll cultural context)",
+          "result": "pass"
+        },
+        {
+          "id": "Playlist match includes 'Pop / Mainstream' or 'Happy tunes'",
+          "result": "pass"
+        },
+        {
+          "id": "Funny meme reason explicitly cites the meme / Rick Roll / cultural context, not just genre",
+          "result": "pass"
+        },
+        {
+          "id": "Genres section identifies the track as 80s synth-pop / dance-pop / pop, not 'meme music'",
+          "result": "pass"
+        },
+        {
+          "id": "Output does NOT print the old A-F / Z-Y-X-W letter menu",
+          "result": "fail"
+        }
+      ]
+    },
+    {
+      "date": "2026-05-13",
+      "method": "parallel subagents (with_skill vs baseline) graded by evals/grade.py",
+      "eval_id": 4,
+      "score": 1.0,
+      "assertions": [
+        {
+          "id": "Skill does NOT call '.venv/bin/python playlist_manager.py add' on the basis of 'F'",
+          "result": "pass"
+        },
+        {
+          "id": "Skill does NOT invent or guess a Spotify track ID",
+          "result": "pass"
+        },
+        {
+          "id": "Skill either treats 'F' as unrelated OR uses AskUserQuestion-style disambiguation rather than executing the add flow",
+          "result": "pass"
+        },
+        {
+          "id": "Response is in Dutch",
+          "result": "pass"
+        }
+      ]
+    },
+    {
+      "date": "2026-05-13",
+      "method": "parallel subagents (with_skill vs baseline) graded by evals/grade.py",
+      "eval_id": 5,
+      "score": 1.0,
+      "assertions": [
+        {
+          "id": "Skill does NOT actually run playlist_manager.py (no execute)",
+          "result": "pass"
+        },
+        {
+          "id": "Skill does NOT treat 'F https://...' as the literal letter 'F' alone \u2014 the URL is acted on",
+          "result": "pass"
+        },
+        {
+          "id": "If add commands are rendered, each uses '.venv/bin/python playlist_manager.py add'",
+          "result": "pass"
+        },
+        {
+          "id": "If add commands are rendered, each quotes the playlist name with double quotes",
+          "result": "pass"
+        },
+        {
+          "id": "Response is in Dutch",
+          "result": "pass"
+        }
+      ]
+    },
+    {
+      "date": "2026-05-13",
+      "method": "parallel subagents (with_skill vs baseline) graded by evals/grade.py",
+      "eval_id": 6,
+      "score": 1.0,
+      "assertions": [
+        {
+          "id": "Output contains the Dutch uncertainty lead-in 'Sorry, ik heb moeite om de genres voor dit nummer te vinden'",
+          "result": "pass"
+        },
+        {
+          "id": "Output does NOT print the old Z/Y/X/W letter menu",
+          "result": "pass"
+        },
+        {
+          "id": "Skill does NOT produce a Genres section with fabricated entries",
+          "result": "pass"
+        },
+        {
+          "id": "Skill does NOT produce a Playlist match section (user has not picked an option yet)",
+          "result": "pass"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "date": "2026-05-13",
+    "iteration": 1,
+    "eval_count": 6,
+    "pass_threshold": 0.8,
+    "baseline_score": 0.9428,
+    "with_skill_pass_rate": 0.9428,
+    "without_skill_pass_rate": 0.4976,
+    "delta": 0.4452,
+    "passing_evals": 6,
+    "below_threshold": [],
+    "improve_cycle_next": "Eval-1 (Tame Impala) is the weakest at 6/7 \u2014 the failing assertion is likely the title heading format. Re-run after the SKILL.md edit lands."
+  }
+}

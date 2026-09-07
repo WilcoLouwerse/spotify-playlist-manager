@@ -3,7 +3,29 @@
 .env.*
 !.env.example
 .spotify_token_cache
+.tracks_log.json
+# atomic-write temp file from _save_tracks_log(); survives a crash mid-write
+.tracks_log.json.tmp
+# timestamped local backups of the duplicate-guard log
+.tracks_log.json.bak.*
+# legacy name (pre-2026-05-15 rename); kept ignored for upgraders
+# NB: a trailing '#' is NOT a comment in .gitignore — it becomes part of the pattern
+.adds_log.json
 *.cache
+
+# Local playlist config — sample lives in playlists.example.json
+playlists.json
+
+# Event-radar personal config — sample lives in event-radar.config.example.json
+event-radar.config.json
+
+# Generated event lists — folder + README tracked, generated lists are personal
+docs/events/*.md
+!docs/events/README.md
+
+# Local Exportify CSV dumps — folder is tracked, contents are not
+exportify-exports/*
+!exportify-exports/.gitkeep
 
 # Python
 .venv/
@@ -15,6 +37,9 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
+# Local scratch (in-progress scans, drafts)
+.scratch/
 
 # Editors / OS
 .vscode/

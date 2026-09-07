@@ -1,0 +1,13 @@
+{
+  "eval_id": 5,
+  "eval_name": "f-followup-with-url",
+  "prompt": "F https://open.spotify.com/track/6K4t31amVTZDgR3sKmwUJJ",
+  "context": "Follows a prior analysis of Tame Impala. The new skill no longer accepts 'F' as a shortcut; the embedded Spotify URL is the meaningful input.",
+  "assertions": [
+    "Skill does NOT actually run playlist_manager.py (no execute)",
+    "Skill does NOT treat 'F https://...' as the literal letter 'F' alone — the URL is acted on",
+    "If add commands are rendered, each uses '.venv/bin/python playlist_manager.py add'",
+    "If add commands are rendered, each quotes the playlist name with double quotes",
+    "Response is in Dutch"
+  ]
+}

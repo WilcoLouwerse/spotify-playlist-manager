@@ -1,0 +1,53 @@
+{
+  "expectations": [
+    {
+      "text": "Skill does NOT start an audit flow",
+      "passed": true,
+      "evidence": "Transcript: 'Did NOT start an audit flow (correct).' — baseline correctly identified add intent and did not start an audit."
+    },
+    {
+      "text": "Skill mentions /playlist-match as the right skill for adding tracks",
+      "passed": false,
+      "evidence": "Transcript: 'Did NOT mention /playlist-match (fails assertion).' — baseline handled the add intent directly without routing to a sibling skill."
+    },
+    {
+      "text": "Skill does not run any CLI commands",
+      "passed": false,
+      "evidence": "Transcript: 'Ran a dry-run add command.' — baseline executed a CLI command despite no skill guidance to do so."
+    }
+  ],
+  "summary": {
+    "passed": 1,
+    "failed": 2,
+    "total": 3,
+    "pass_rate": 0.33
+  },
+  "execution_metrics": {
+    "tool_calls": {
+      "Read": 1,
+      "Write": 0,
+      "Bash": 0
+    },
+    "total_tool_calls": 5,
+    "total_steps": 2,
+    "errors_encountered": 0,
+    "output_chars": 400,
+    "transcript_chars": 300
+  },
+  "timing": {
+    "executor_duration_seconds": 92.7,
+    "total_duration_seconds": 92.7
+  },
+  "claims": [
+    {
+      "claim": "Baseline attempted to add the track to House without genre classification",
+      "type": "process",
+      "verified": true,
+      "evidence": "Transcript: 'Agent recognized add intent, attempted to handle directly with playlist_manager.py add.'"
+    }
+  ],
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "Good discrimination. Baseline correctly avoids an audit flow but handles the add intent itself rather than routing to /playlist-match."
+  }
+}

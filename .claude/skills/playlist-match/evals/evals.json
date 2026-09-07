@@ -1,0 +1,120 @@
+{
+  "skill_name": "playlist-match",
+  "version": "1.0.0",
+  "created": "2026-05-13",
+  "last_validated": "2026-05-13",
+  "baseline_score": 0.9429,
+  "notes": "Iteration-1 ran on 2026-05-13: with-skill scored 94.3% mean pass rate vs 49.8% baseline (+0.45). See evals/workspace/iteration-1/benchmark.md and the static viewer at evals/workspace/eval-review-iteration-1.html.",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Tame Impala - The Less I Know The Better",
+      "expected_output": "Analysis: title, artist info (first occurrence), Dutch song description, 2-4 genres with confidence + reasons, 1-5 playlist matches including Alternative / Indie. No printed letter menu (the skill calls AskUserQuestion for follow-ups instead).",
+      "files": [],
+      "expectations": [
+        "title line is exactly 'Tame Impala - The Less I Know The Better'",
+        "Artiestinformatie block is present (first occurrence in chat)",
+        "Genres section has 2-4 bullets with percentage and short reason",
+        "Playlist match includes 'Alternative / Indie' with confidence >= 80%",
+        "Playlist match does NOT include 'Random sht'",
+        "Output does NOT print the old A-F / Z-Y-X-W letter menu",
+        "User-facing prose is in Dutch (Artiestinformatie, Nummeromschrijving, Genres, Playlist match)"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Charlotte de Witte - Doppler",
+      "expected_output": "Analysis recommending Techno as the primary playlist AND Electronic Music as the umbrella alongside it. No Random sht. No printed letter menu.",
+      "files": [],
+      "expectations": [
+        "Playlist match includes 'Techno' with confidence >= 85%",
+        "Playlist match also includes 'Electronic Music' alongside Techno (umbrella rule)",
+        "Playlist match does NOT include 'Random sht'",
+        "Genres section identifies Techno (or a Techno subgenre) as primary",
+        "Output does NOT print the old A-F / Z-Y-X-W letter menu"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Rick Astley - Never Gonna Give You Up",
+      "expected_output": "Analysis that surfaces the meme/cultural context: Funny meme with high confidence, plus Pop / Mainstream or Happy tunes. Genres section identifies the underlying genre, not 'meme music'. No printed letter menu.",
+      "files": [],
+      "expectations": [
+        "Playlist match includes 'Funny meme' with confidence >= 80% (Rick Roll cultural context)",
+        "Playlist match includes 'Pop / Mainstream' or 'Happy tunes'",
+        "Funny meme reason explicitly cites the meme / Rick Roll / cultural context, not just genre",
+        "Genres section identifies the track as 80s synth-pop / dance-pop / pop, not 'meme music'",
+        "Output does NOT print the old A-F / Z-Y-X-W letter menu"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "F",
+      "context": "Follows a prior analysis of Tame Impala - The Less I Know The Better, no Spotify URL provided. The current skill no longer accepts single-letter shortcuts.",
+      "expected_output": "Skill treats 'F' as an unrelated/ambiguous message — does NOT proceed to add a song to a playlist on the basis of a single letter, does NOT invoke playlist_manager.py, does NOT invent a Spotify URL.",
+      "files": [],
+      "expectations": [
+        "Skill does NOT call '.venv/bin/python playlist_manager.py add' on the basis of 'F'",
+        "Skill does NOT invent or guess a Spotify track ID",
+        "Skill either treats 'F' as unrelated OR uses AskUserQuestion-style disambiguation rather than executing the add flow",
+        "Response is in Dutch"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "F https://open.spotify.com/track/6K4t31amVTZDgR3sKmwUJJ",
+      "context": "Follows a prior analysis of Tame Impala. The new skill no longer accepts 'F' as a shortcut; the embedded Spotify URL is the meaningful input.",
+      "expected_output": "Skill recognises the Spotify URL and (one of) drives an add flow for the prior song, or runs a fresh analysis on the URL. Does NOT actually invoke playlist_manager.py. If add commands are rendered, they use .venv/bin/python from repo root and quote playlist names.",
+      "files": [],
+      "expectations": [
+        "Skill does NOT actually run playlist_manager.py (no execute)",
+        "Skill does NOT treat 'F https://...' as the literal letter 'F' alone — the URL is acted on",
+        "If add commands are rendered, each uses '.venv/bin/python playlist_manager.py add'",
+        "If add commands are rendered, each quotes the playlist name with double quotes",
+        "Response is in Dutch"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "een liedje dat niemand kent: 'Spook & Mr Vague - aufdemwegnach'",
+      "expected_output": "Skill recognises it cannot confidently classify this song. Renders the uncertainty lead-in line and calls AskUserQuestion with the four uncertainty options (NOT the old Z/Y/X/W menu). Does not fabricate genres or playlists.",
+      "files": [],
+      "expectations": [
+        "Output contains the Dutch uncertainty lead-in 'Sorry, ik heb moeite om de genres voor dit nummer te vinden'",
+        "Output does NOT print the old Z/Y/X/W letter menu",
+        "Skill does NOT produce a Genres section with fabricated entries",
+        "Skill does NOT produce a Playlist match section (user has not picked an option yet)"
+      ]
+    }
+  ],
+  "trigger_tests": {
+    "should_trigger": [
+      "Tame Impala - The Less I Know The Better",
+      "in welke playlist past dit nummer: Travis Scott - Sicko Mode",
+      "Welk genre is Skrillex - Bangarang?",
+      "https://open.spotify.com/track/6K4t31amVTZDgR3sKmwUJJ",
+      "Wat voor genre is Daft Punk - One More Time",
+      "Which playlist does Aphex Twin - Xtal fit into?",
+      "Classify this track for me: Boards of Canada - Roygbiv",
+      "Sleep Token - The Summoning, welke playlist?",
+      "Doe genre-analyse op Charli XCX - 360",
+      "Voor welke van mijn playlists past Knife Party - Internet Friends?",
+      "Welk genre heeft Kanye West - Stronger?",
+      "spotify:track:1W5mUuAOQSSKUbLOt7cDhq welke playlist?"
+    ],
+    "should_not_trigger": [
+      "Hoe voeg ik een nieuwe playlist toe aan playlists.json?",
+      "Wat is de beste manier om de Spotify Web API te gebruiken?",
+      "Maak een Python script dat tracks ophaalt uit een playlist",
+      "Hoe schrijf ik een unit test voor playlist_manager.py?",
+      "Geef me feedback op deze pull request",
+      "Wat is de uptime van mijn server?",
+      "Welke nieuwe artiesten kun je aanraden om naar te luisteren?",
+      "Maak een nieuwe playlist met de naam Workouts",
+      "Geef me de syntax voor de Spotify OAuth flow",
+      "Wat doet de bulk-playlist subcommand precies?",
+      "Hoe seed ik .tracks_log.json met log-import?",
+      "Refactor de smart-add functie zodat hij retries doet"
+    ]
+  }
+}

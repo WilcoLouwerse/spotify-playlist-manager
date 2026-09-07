@@ -1,0 +1,57 @@
+{
+  "expectations": [
+    {
+      "text": "Skill does NOT run any CLI command",
+      "passed": true,
+      "evidence": "Transcript: 'Step 7 — Run and surface output verbatim: (NOT executed in this eval)'. No Bash calls to playlist_manager.py were made."
+    },
+    {
+      "text": "Skill asks for a Spotify URL/URI/ID via AskUserQuestion",
+      "passed": true,
+      "evidence": "Step 2 AskUserQuestion: 'Om Dua Lipa - Levitating uit Techno te verwijderen heb ik een Spotify-link, URI of track-ID nodig. Plak die via 'Other', of kies 'Annuleren'.'"
+    },
+    {
+      "text": "Skill does NOT invent or guess a track ID",
+      "passed": true,
+      "evidence": "Transcript explicitly states: 'the skill requires the user to supply it.' The Spotify URL used in the example is explicitly labeled 'used only as an illustration; it was NOT invented — the skill requires the user to supply it.'"
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 0,
+    "total": 3,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "tool_calls": {
+      "Read": 0,
+      "Write": 0,
+      "Bash": 0
+    },
+    "total_tool_calls": 9,
+    "total_steps": 9,
+    "errors_encountered": 0,
+    "output_chars": 0,
+    "transcript_chars": 0
+  },
+  "timing": {
+    "executor_duration_seconds": 95.8,
+    "total_duration_seconds": 95.8
+  },
+  "claims": [
+    {
+      "claim": "After user provides a URL, skill proceeds to confirmation gate at Step 6",
+      "type": "process",
+      "verified": true,
+      "evidence": "Step 6 documents the AskUserQuestion confirmation before any remove command would be run"
+    }
+  ],
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "reason": "The assertion 'Skill does NOT run any CLI command' would also pass if the skill simply refused with an error. Consider adding an assertion that the skill explicitly requests a Spotify URL (which is covered by assertion 2, so the set is actually solid). No changes needed."
+      }
+    ],
+    "overall": "All three assertions are well-targeted. This eval cleanly catches the 'guessing track IDs' antipattern."
+  }
+}

@@ -1,0 +1,417 @@
+{
+  "metadata": {
+    "skill_name": "playlist-remove",
+    "skill_path": ".claude/skills/playlist-remove",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-05-15T02:05:14Z",
+    "evals_run": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 82.7,
+        "tokens": 2041,
+        "tool_calls": 8,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Skill identifies the Spotify URL as the track input",
+          "passed": true,
+          "evidence": "Step 1: 'Track: https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC \u2014 full Spotify URL, unambiguous.'"
+        },
+        {
+          "text": "Skill resolves 'House' as a valid playlist from playlists.json",
+          "passed": true,
+          "evidence": "Step 3: \"'House' matches the exact key 'House' in playlists.json (ID: 0BEX4bI5xtkEVA4BfYTKg2)\""
+        },
+        {
+          "text": "Planned command uses '.venv/bin/python playlist_manager.py remove'",
+          "passed": true,
+          "evidence": "Step 5: command shown is '.venv/bin/python playlist_manager.py remove \"https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC\" \"House\" --execute'"
+        },
+        {
+          "text": "Track URL and playlist name are both double-quoted in the rendered command",
+          "passed": true,
+          "evidence": "Command in Step 5 shows both arguments double-quoted: \"https://...\" and \"House\""
+        },
+        {
+          "text": "Skill calls AskUserQuestion for confirmation BEFORE running Bash",
+          "passed": true,
+          "evidence": "Step 6 (AskUserQuestion confirmation) precedes Step 7 (Run command). Step 7 is explicitly marked '[EVAL STOP: Bash write-to-Spotify commands not executed per eval instructions.]'"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 95.8,
+        "tokens": 0,
+        "tool_calls": 9,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Skill does NOT run any CLI command",
+          "passed": true,
+          "evidence": "Transcript: 'Step 7 \u2014 Run and surface output verbatim: (NOT executed in this eval)'. No Bash calls to playlist_manager.py were made."
+        },
+        {
+          "text": "Skill asks for a Spotify URL/URI/ID via AskUserQuestion",
+          "passed": true,
+          "evidence": "Step 2 AskUserQuestion: 'Om Dua Lipa - Levitating uit Techno te verwijderen heb ik een Spotify-link, URI of track-ID nodig. Plak die via 'Other', of kies 'Annuleren'.'"
+        },
+        {
+          "text": "Skill does NOT invent or guess a track ID",
+          "passed": true,
+          "evidence": "Transcript explicitly states: 'the skill requires the user to supply it.' The Spotify URL used in the example is explicitly labeled 'used only as an illustration; it was NOT invented \u2014 the skill requires the user to supply it.'"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 132.0,
+        "tokens": 0,
+        "tool_calls": 7,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Skill asks for the track (URL/URI/ID) via AskUserQuestion",
+          "passed": true,
+          "evidence": "Step 1a AskUserQuestion: 'Welk nummer wil je verwijderen? Plak een Spotify-link, URI of track-ID, of type Artiest \u2013 Titel.' with options: Other (free text), Annuleren."
+        },
+        {
+          "text": "After track is provided, skill uses AskUserQuestion with multiSelect:true for playlist selection",
+          "passed": true,
+          "evidence": "Step 3 AskUserQuestion call: 'multiSelect: true' with 24 options including all 23 non-Random-sht playlists plus an 'Other' option for Random sht."
+        },
+        {
+          "text": "Skill does NOT run CLI commands until both track and playlist(s) are confirmed",
+          "passed": true,
+          "evidence": "Step 7 explicitly marked '(Not executed in this eval \u2014 Bash commands are not run per eval instructions.)' All commands shown at Step 5 only after user would have confirmed at Step 6."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 4,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 89.8,
+        "tokens": 0,
+        "tool_calls": 6,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Skill flags that 'Random sht' is the catch-all playlist",
+          "passed": true,
+          "evidence": "Step 3: 'GUARDRAIL TRIGGERED: The skill guardrail requires extra confirmation before removing from Random sht \u2014 it is the script-side catch-all and tracks there may be intentional.' Also reads catch_all block from playlists.json."
+        },
+        {
+          "text": "Skill asks for extra confirmation via AskUserQuestion before running",
+          "passed": true,
+          "evidence": "Step 3 AskUserQuestion call #1: '\u26a0\ufe0f Random sht is de catch-all playlist \u2014 nummers komen daar automatisch terecht als ze nergens anders passen. Weet je zeker dat je dit nummer wilt verwijderen?' \u2014 inserted before the standard confirmation."
+        },
+        {
+          "text": "Skill does NOT silently proceed with removing from Random sht",
+          "passed": true,
+          "evidence": "Two AskUserQuestion confirmation gates required (Step 3 + Step 6) before any Bash command would be executed. Step 7 not executed in eval."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 5,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 49.2,
+        "tokens": 0,
+        "tool_calls": 6,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Skill does NOT run playlist_manager.py remove",
+          "passed": true,
+          "evidence": "Transcript: 'No CLI commands were run.' and metrics.json confirms remove_command_executed: false."
+        },
+        {
+          "text": "Skill mentions /playlist-match as the right skill for adding tracks",
+          "passed": true,
+          "evidence": "Response to user: 'Voor het toevoegen van https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC aan House kun je /playlist-match gebruiken \u2014 die classificeert het nummer en kan het direct toevoegen.'"
+        },
+        {
+          "text": "Skill does not pretend to handle the add flow itself",
+          "passed": true,
+          "evidence": "Step 1 decision: 'This is an add request, not a remove request. The skill is out of scope. Route to /playlist-match.' Steps 2\u20139 all skipped."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.4,
+        "passed": 2,
+        "failed": 3,
+        "total": 5,
+        "time_seconds": 186.4,
+        "tokens": 380,
+        "tool_calls": 7,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Skill identifies the Spotify URL as the track input",
+          "passed": true,
+          "evidence": "Transcript: 'Agent read playlists.json to resolve House' \u2014 implies the track URL was parsed from the message since the CLI command ran with the URL."
+        },
+        {
+          "text": "Skill resolves 'House' as a valid playlist from playlists.json",
+          "passed": true,
+          "evidence": "Transcript: 'Agent read playlists.json to resolve House'"
+        },
+        {
+          "text": "Planned command uses '.venv/bin/python playlist_manager.py remove'",
+          "passed": false,
+          "evidence": "Transcript says 'Ran playlist_manager.py remove ... --execute directly' but does not confirm .venv/bin/python prefix. No evidence of virtual environment invocation."
+        },
+        {
+          "text": "Track URL and playlist name are both double-quoted in the rendered command",
+          "passed": false,
+          "evidence": "Transcript does not show the exact command string. Cannot verify quoting from available output."
+        },
+        {
+          "text": "Skill calls AskUserQuestion for confirmation BEFORE running Bash",
+          "passed": false,
+          "evidence": "Transcript explicitly states: 'No AskUserQuestion confirmation.' Agent executed immediately."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.0,
+        "passed": 0,
+        "failed": 3,
+        "total": 3,
+        "time_seconds": 313.6,
+        "tokens": 580,
+        "tool_calls": 14,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Skill does NOT run any CLI command",
+          "passed": false,
+          "evidence": "Transcript: 'Ran remove commands for both [track versions].' \u2014 baseline executed CLI commands after finding two matching tracks via WebSearch."
+        },
+        {
+          "text": "Skill asks for a Spotify URL/URI/ID via AskUserQuestion",
+          "passed": false,
+          "evidence": "Transcript: 'Did NOT use AskUserQuestion to ask for the URL.' Baseline resolved the track ID itself via WebSearch instead."
+        },
+        {
+          "text": "Skill does NOT invent or guess a track ID",
+          "passed": false,
+          "evidence": "Transcript: 'Used WebSearch to find Spotify track ID \u2014 found two versions (original + DaBaby collab). Did NOT refuse to guess the track ID.' Baseline effectively guessed the track ID by searching."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.33,
+        "passed": 1,
+        "failed": 2,
+        "total": 3,
+        "time_seconds": 63.2,
+        "tokens": 280,
+        "tool_calls": 2,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Skill asks for the track (URL/URI/ID) via AskUserQuestion",
+          "passed": false,
+          "evidence": "Transcript: 'Agent asked for clarification (track name or URL).' \u2014 agent asked via natural language, not via the structured AskUserQuestion tool with defined options."
+        },
+        {
+          "text": "After track is provided, skill uses AskUserQuestion with multiSelect:true for playlist selection",
+          "passed": false,
+          "evidence": "Transcript: 'No mention of multiSelect or structured playlist selection.' \u2014 baseline did not present a structured playlist picker."
+        },
+        {
+          "text": "Skill does NOT run CLI commands until both track and playlist(s) are confirmed",
+          "passed": true,
+          "evidence": "Transcript: 'No CLI commands run.' \u2014 baseline paused to ask for clarification before running any commands."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 4,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.0,
+        "passed": 0,
+        "failed": 3,
+        "total": 3,
+        "time_seconds": 215.6,
+        "tokens": 320,
+        "tool_calls": 10,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Skill flags that 'Random sht' is the catch-all playlist",
+          "passed": false,
+          "evidence": "Transcript: 'Did NOT flag Random sht as catch-all.' \u2014 baseline read playlists.json but did not surface the catch_all semantic."
+        },
+        {
+          "text": "Skill asks for extra confirmation via AskUserQuestion before running",
+          "passed": false,
+          "evidence": "Transcript: 'Did NOT ask for extra confirmation via AskUserQuestion.' \u2014 baseline ran commands directly without special treatment for Random sht."
+        },
+        {
+          "text": "Skill does NOT silently proceed with removing from Random sht",
+          "passed": false,
+          "evidence": "Transcript: 'Ran dry-run remove directly' then 'ran --execute: also SKIP.' \u2014 baseline silently proceeded without any Random sht-specific warning."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 5,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.33,
+        "passed": 1,
+        "failed": 2,
+        "total": 3,
+        "time_seconds": 156.9,
+        "tokens": 350,
+        "tool_calls": 5,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Skill does NOT run playlist_manager.py remove",
+          "passed": true,
+          "evidence": "Transcript: 'Agent correctly identified add intent (not remove). Ran playlist_manager.py add ... --execute directly.' \u2014 a remove command was NOT run."
+        },
+        {
+          "text": "Skill mentions /playlist-match as the right skill for adding tracks",
+          "passed": false,
+          "evidence": "Transcript: 'Did NOT mention /playlist-match \u2014 skipped genre classification entirely.' \u2014 baseline just added the track directly without routing."
+        },
+        {
+          "text": "Skill does not pretend to handle the add flow itself",
+          "passed": false,
+          "evidence": "Transcript: 'Ran playlist_manager.py add ... --execute directly.' \u2014 baseline handled the add flow itself rather than routing to /playlist-match."
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 89.9,
+        "stddev": 29.6461,
+        "min": 49.2,
+        "max": 132.0
+      },
+      "tokens": {
+        "mean": 408.2,
+        "stddev": 912.7629,
+        "min": 0,
+        "max": 2041
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.212,
+        "stddev": 0.1956,
+        "min": 0.0,
+        "max": 0.4
+      },
+      "time_seconds": {
+        "mean": 187.14,
+        "stddev": 90.9371,
+        "min": 63.2,
+        "max": 313.6
+      },
+      "tokens": {
+        "mean": 382.0,
+        "stddev": 116.7048,
+        "min": 280,
+        "max": 580
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.79",
+      "time_seconds": "-97.2",
+      "tokens": "+26"
+    }
+  },
+  "notes": []
+}

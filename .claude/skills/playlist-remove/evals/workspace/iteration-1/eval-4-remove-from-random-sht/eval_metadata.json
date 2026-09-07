@@ -1,0 +1,1 @@
+{"eval_id": 4, "eval_name": "remove-from-random-sht", "prompt": "verwijder spotify:track:4uLU6hMCjMI75M1A2tKUQC uit Random sht", "assertions": ["Skill flags that 'Random sht' is the catch-all playlist", "Skill asks for extra confirmation via AskUserQuestion before running", "Skill does NOT silently proceed with removing from Random sht"]}

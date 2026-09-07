@@ -1,55 +1,48 @@
 # spotify-playlist-manager
 
-Local toolkit to manage my Spotify playlists via the [Spotify Web API](https://developer.spotify.com/documentation/web-api) using [Spotipy](https://spotipy.readthedocs.io/) and OAuth.
-
-The workflow: I run scripts locally, Spotify grants access via OAuth, and the script (or assistant-generated commands) reads/writes my playlists.
-
-## Setup
-
-### 1. Create a Spotify app
-
-1. Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
-2. Click **Create app**.
-3. Set the redirect URI to exactly: `http://127.0.0.1:8888/callback`
-4. Copy the **Client ID** and **Client Secret**.
-
-### 2. Local environment
+Local CLI to manage my Spotify playlists. Built on the [Spotify Web API](https://developer.spotify.com/documentation/web-api) via [Spotipy](https://spotipy.readthedocs.io/), with optional OpenAI-powered playlist classification for `smart-add`.
 
 ```bash
-cd ~/spotify-playlist-manager
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+# After setup
+python playlist_manager.py list-playlists
+python playlist_manager.py add "https://open.spotify.com/track/<id>" "House" --execute
+python playlist_manager.py remove "https://open.spotify.com/track/<id>" "House" --execute
+python playlist_manager.py smart-add "https://open.spotify.com/track/<id>" --execute --accept-all
+python playlist_manager.py review-playlist "https://open.spotify.com/playlist/<id>" --execute
+python playlist_manager.py bulk-playlist "https://open.spotify.com/playlist/<id>" --execute
+python playlist_manager.py scan-for "House" "https://open.spotify.com/playlist/<id>" --execute
 ```
 
-### 3. Configure secrets
+## Documentation
 
-```bash
-cp .env.example .env
-# edit .env and paste your Client ID / Client Secret
-```
+- **[docs/setup.md](docs/setup.md)** — credentials, `.env` values, where to get them (Spotify Developer Dashboard + OpenAI platform), `playlists.json` config (see [playlists.example.json](playlists.example.json) for the schema), Python venv setup.
+- **[docs/commands.md](docs/commands.md)** — CLI reference for every subcommand, including `list-playlists --all` (Spotify discovery), aliases, dry-run behavior, and the duplicate guard.
+- **[docs/architecture.md](docs/architecture.md)** — how the code is structured, the OAuth flow, the OpenAI classifier, and the IPv4-only network workaround for WSL.
 
-`.env` and `.spotify_token_cache` are gitignored — never commit them.
+## Claude Code skills
 
-### 4. Smoke test
+If you're working in this repo with [Claude Code](https://claude.com/claude-code), the repo ships seven slash commands:
 
-```bash
-python test_spotify.py
-```
+- `/playlist-match` — paste a Spotify URL or *"Artist - Title"* and Claude classifies the genres, recommends matching playlists from your `playlists.json`, and can invoke `add` for you.
+- `/playlist-triage` — sort a whole source playlist into many target playlists in one go, via `review-playlist` (per-track y/N) or `bulk-playlist` (single y/N).
+- `/playlist-scan` — mine a source playlist for tracks that fit *one* chosen target, via `scan-for`.
+- `/playlist-remove` — remove a track from one or more playlists via `remove`.
+- `/playlist-audit` — audit a playlist's genre/theme fit: confidence scores per track and one-click removal of low-confidence tracks.
+- `/playlist-log-import` — seed the local duplicate-guard log (`.tracks_log.json`) for a playlist from an Exportify CSV, via `log-import`.
+- `/playlist-config` — bootstrap or extend `playlists.json` from your Spotify account, via `list-playlists --all`.
 
-A browser tab opens for Spotify login + consent. After approving, the script prints your user info and lists all your playlists.
+Full skill reference: [.claude/docs/commands.md](.claude/docs/commands.md). New to Claude Code in VS Code? See [docs/vscode-claude-setup.md](docs/vscode-claude-setup.md) for the WSL + extension + auth walkthrough. Contributor docs (skill authoring, doc conventions, the command index) live in [.claude/docs/README.md](.claude/docs/README.md).
 
-## Scopes used
+## Safety defaults
 
-- `playlist-read-private`
-- `playlist-read-collaborative`
-- `playlist-modify-private`
-- `playlist-modify-public`
-- `user-library-read`
-- `user-read-private`
+Three layers protect against unintended writes:
+
+1. **Dry-run is the default.** Add `--execute` to actually write.
+2. **`smart-add` requires interactive confirmation** (per-playlist y/N by default, or `--accept-all` for a single bulk y/N).
+3. **Duplicate guard is always on.** Reads from a local `.tracks_log.json` — every URI the script has successfully added or has been seeded with via `log-import`. Run `log-import` once per playlist after setup (see [docs/commands.md → log-import](docs/commands.md#log-import)) to cover tracks the script didn't add. Background: [docs/architecture.md → Duplicate detection](docs/architecture.md#duplicate-detection).
 
 ## Security notes
 
-- **Never commit `.env` or `.spotify_token_cache`** — both contain credentials/tokens.
-- The Client Secret stays local; do not paste it into chats or issues.
-- Tokens cache locally in `.spotify_token_cache` and refresh automatically.
+- `.env`, `.spotify_token_cache`, and `playlists.json` are gitignored. Never commit them.
+- If you leak your Spotify Client Secret, rotate it in the Dashboard immediately.
+- If you leak your OpenAI API key, revoke it on the OpenAI platform and create a new one.

@@ -1,0 +1,28 @@
+{
+  "skill_name": "event-radar",
+  "iteration": 1,
+  "graded_at": "2026-06-01",
+  "evals_run": 1,
+  "evals_total_in_evals_json": 4,
+  "note": "Iteration-1 ran ONE eval (basic-request-with-blocked-dates) as L5 structural-validation evidence. Full benchmark (all 4 evals × with-skill + baseline) deferred to a follow-up run once the user wants a quality comparison. See evals/workspace/iteration-1/eval-1-basic-request/with_skill/grading.json for the detailed per-assertion results.",
+  "results": [
+    {
+      "eval_id": 1,
+      "eval_name": "basic-request-with-blocked-dates",
+      "configuration": "with_skill",
+      "pass_rate": 1.0,
+      "passed": 7,
+      "failed": 0,
+      "total": 7,
+      "tokens": 52208,
+      "duration_seconds": 359.9
+    }
+  ],
+  "aggregate": {
+    "with_skill_mean_pass_rate": 1.0,
+    "with_skill_total_evals": 1,
+    "baseline_mean_pass_rate": null,
+    "baseline_total_evals": 0,
+    "delta": null
+  }
+}

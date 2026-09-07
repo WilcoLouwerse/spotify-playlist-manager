@@ -1,0 +1,69 @@
+{
+  "expectations": [
+    {
+      "text": "Skill identifies the Spotify URL as the track input",
+      "passed": true,
+      "evidence": "Transcript: 'Agent read playlists.json to resolve House' — implies the track URL was parsed from the message since the CLI command ran with the URL."
+    },
+    {
+      "text": "Skill resolves 'House' as a valid playlist from playlists.json",
+      "passed": true,
+      "evidence": "Transcript: 'Agent read playlists.json to resolve House'"
+    },
+    {
+      "text": "Planned command uses '.venv/bin/python playlist_manager.py remove'",
+      "passed": false,
+      "evidence": "Transcript says 'Ran playlist_manager.py remove ... --execute directly' but does not confirm .venv/bin/python prefix. No evidence of virtual environment invocation."
+    },
+    {
+      "text": "Track URL and playlist name are both double-quoted in the rendered command",
+      "passed": false,
+      "evidence": "Transcript does not show the exact command string. Cannot verify quoting from available output."
+    },
+    {
+      "text": "Skill calls AskUserQuestion for confirmation BEFORE running Bash",
+      "passed": false,
+      "evidence": "Transcript explicitly states: 'No AskUserQuestion confirmation.' Agent executed immediately."
+    }
+  ],
+  "summary": {
+    "passed": 2,
+    "failed": 3,
+    "total": 5,
+    "pass_rate": 0.4
+  },
+  "execution_metrics": {
+    "tool_calls": {
+      "Read": 2,
+      "Write": 0,
+      "Bash": 5
+    },
+    "total_tool_calls": 7,
+    "total_steps": 3,
+    "errors_encountered": 0,
+    "output_chars": 380,
+    "transcript_chars": 300
+  },
+  "timing": {
+    "executor_duration_seconds": 186.4,
+    "total_duration_seconds": 186.4
+  },
+  "claims": [
+    {
+      "claim": "Baseline executed remove immediately without showing a planned command first",
+      "type": "process",
+      "verified": true,
+      "evidence": "Transcript: 'No dry-run first.' and 'No AskUserQuestion confirmation.' — straight to execution."
+    },
+    {
+      "claim": "Baseline actually wrote to Spotify (track removed in dev mode)",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Transcript: 'Result: DONE (track removed).'"
+    }
+  ],
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "Strong discriminating eval. The baseline fails 3/5 assertions (no confirmation gate, unverifiable quoting, unknown venv usage) while the skill passes all 5."
+  }
+}

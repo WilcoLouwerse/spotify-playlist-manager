@@ -1,0 +1,95 @@
+{
+  "skill_name": "playlist-scan",
+  "version": "1.0.0",
+  "created": "2026-05-13",
+  "last_validated": "2026-05-13",
+  "baseline_score": 0.8,
+  "notes": "Iteration-1 ran 2026-05-13: eval-1 executed with_skill (5/5 = 100%) vs baseline (4/5 = 80%, +0.2 delta). Evals 2-5 are scaffolded and pending future iterations. See evals/grading.json and evals/workspace/iteration-1/.",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "welke tracks uit 'Random sht' zouden in House passen?",
+      "expected_output": "Skill resolves House (target) + Random sht → exportify-exports/Random_sht.csv (source). Defaults to dry-run. Renders the scan-for command with both arguments double-quoted.",
+      "expectations": [
+        "Skill identifies 'House' as the target and 'Random sht' as the source",
+        "Skill defaults to dry-run mode",
+        "Planned command uses '.venv/bin/python playlist_manager.py scan-for'",
+        "Both target and source are double-quoted in the rendered command",
+        "Skill does NOT include --execute in dry-run mode"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "scan deze playlist op dnb tracks: https://open.spotify.com/playlist/3aBcDeFgHiJkLmNoPqRsTu",
+      "expected_output": "Skill resolves the alias 'dnb' → 'Drum & Bass' (canonical name from playlists.json). Uses the URL verbatim as source. Defaults to dry-run.",
+      "expectations": [
+        "Skill resolves 'dnb' to the canonical playlist name 'Drum & Bass'",
+        "Rendered command uses the canonical name 'Drum & Bass' as the target (quoted)",
+        "Skill confirms the alias resolution via AskUserQuestion or surfaces it clearly in the plan",
+        "Source URL is passed verbatim and double-quoted",
+        "Default mode is dry-run"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "scan Random sht voor Random sht tracks",
+      "expected_output": "Highly unusual — the user is asking to scan a playlist for tracks fitting the catch-all. Skill confirms via AskUserQuestion before proceeding.",
+      "expectations": [
+        "Skill recognises 'Random sht' as the catch-all playlist and flags this as unusual",
+        "Skill asks for explicit confirmation via AskUserQuestion before passing 'Random sht' as target",
+        "Skill does NOT silently proceed with the scan"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "vind Techno-tracks in exportify-exports/Random_sht.csv met --min-confidence 90",
+      "expected_output": "Skill recognises the CSV path and the explicit tuning flag. Renders the command with --min-confidence 90 added.",
+      "expectations": [
+        "Skill uses the literal CSV path 'exportify-exports/Random_sht.csv' as the source",
+        "Skill identifies 'Techno' as the target",
+        "Skill includes '--min-confidence 90' in the rendered command",
+        "Default mode is dry-run unless the user said otherwise"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "sorteer mijn triage-playlist in al mijn target playlists",
+      "expected_output": "This is not a scan-for use case — the user wants source-to-many-targets, which is playlist-triage's domain. Skill politely routes to that skill.",
+      "expectations": [
+        "Skill does NOT proceed with scan-for",
+        "Skill points the user at the playlist-triage skill (or at review-playlist / bulk-playlist directly)",
+        "Skill does NOT actually run playlist_manager.py"
+      ]
+    }
+  ],
+  "trigger_tests": {
+    "should_trigger": [
+      "welke tracks uit 'Random sht' zouden in House passen?",
+      "scan deze playlist op dnb tracks: https://open.spotify.com/playlist/...",
+      "vind Techno-tracks in mijn triage",
+      "scan-for House Random_sht.csv",
+      "which tracks in my triage would fit Drum & Bass?",
+      "mine my Random sht for techno candidates",
+      "find house-fits in exportify-exports/Random_sht.csv",
+      "scan op Funny meme in mijn triage",
+      "welke nummers passen in Hardstyle in deze playlist?",
+      "scan deze CSV op Trance: exportify-exports/Random_sht.csv",
+      "haal de drum and bass uit mijn triage",
+      "scan voor Synthwave kandidaten in mijn Random sht"
+    ],
+    "should_not_trigger": [
+      "sorteer mijn triage in al mijn playlists",
+      "review-playlist exportify-exports/House.csv",
+      "voeg dit nummer toe aan House: https://open.spotify.com/track/...",
+      "Tame Impala - The Less I Know The Better",
+      "maak een nieuwe playlist 'Workouts'",
+      "wat zijn mijn beschikbare playlists?",
+      "log-import exportify-exports/House.csv naar House",
+      "geef me de Spotify Web API docs",
+      "hoe schrijf ik een test voor playlist_manager.py?",
+      "wat doet smart-add?",
+      "fix the IPv6 routing in playlist_manager.py",
+      "leeg mijn 'Random sht' helemaal"
+    ]
+  }
+}

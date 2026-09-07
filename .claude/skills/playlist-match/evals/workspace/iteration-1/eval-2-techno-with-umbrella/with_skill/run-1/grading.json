@@ -1,0 +1,42 @@
+{
+  "expectations": [
+    {
+      "text": "Playlist match includes 'Techno' with confidence >= 85%",
+      "passed": true,
+      "evidence": "Techno at 94%"
+    },
+    {
+      "text": "Playlist match also includes 'Electronic Music' alongside Techno (umbrella rule)",
+      "passed": true,
+      "evidence": "present=['Techno', 'Electronic Music']"
+    },
+    {
+      "text": "Playlist match does NOT include 'Random sht'",
+      "passed": true,
+      "evidence": "Random sht absent"
+    },
+    {
+      "text": "Genres section identifies Techno (or a Techno subgenre) as primary",
+      "passed": true,
+      "evidence": "techno-family keyword found in Genres"
+    },
+    {
+      "text": "Output does NOT print the old A-F / Z-Y-X-W letter menu",
+      "passed": true,
+      "evidence": "no letter menu detected"
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 0,
+    "total": 5,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "total_tool_calls": 7,
+    "errors_encountered": 0,
+    "output_chars": 1015,
+    "tokens": 23284
+  },
+  "timing": {}
+}

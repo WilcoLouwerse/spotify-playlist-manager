@@ -1,0 +1,98 @@
+{
+  "skill_name": "event-radar",
+  "version": "1.0.0",
+  "created": "2026-06-01",
+  "last_validated": "2026-06-01",
+  "baseline_score": null,
+  "notes": "Iteration-1 ran on 2026-06-01: eval-1 (basic-request-with-blocked-dates) executed with-skill in a contained eval workspace. 7/7 assertions passed (100%). 52k tokens, 360s. Real WebSearch hit AFAS Live / 013 / TivoliVredenburg agendas. Baseline runs + remaining 3 evals deferred to a future benchmark run. See evals/workspace/iteration-1/eval-1-basic-request/ for raw outputs and per-assertion grading.",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Welke concerten zou ik leuk vinden de komende 3 maanden?",
+      "expected_output": "Skill loads event-radar.config.json, asks blocked dates + list types via AskUserQuestion, dispatches parallel research agents, writes <YYYY-MM-DD>-favs.md (+optional discovery/edm-genres) under docs/events/ with proper metadata header (generation date + period + blocked dates + location). Updates docs/events/README.md TOC. Writes back to config (distance_cache_km, venues.known_about) if new discoveries.",
+      "files": ["event-radar.config.json", "playlists.json"],
+      "expectations": [
+        "Skill reads event-radar.config.json before asking questions",
+        "AskUserQuestion is called at least once to gather blocked dates",
+        "Output filenames follow YYYY-MM-DD-<list-type>.md format (generation date in filename)",
+        "Each output file starts with a metadata blockquote containing 'Gegenereerd op', 'Zoekperiode', 'Uitgesloten datums', 'Locatie'",
+        "At least one research Agent (general-purpose) is dispatched",
+        "Output respects user's home_city + radii from config (defaults: Houten 100/500)",
+        "User-facing text is in Dutch (the user's default language preference)",
+        "Random sht / playlist taxonomy edge cases are not exposed in event output"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Find me concerts and festivals for the rest of 2026. I cannot make these dates: 2026-06-13 to 2026-06-22, 2026-07-22 to 2026-07-27. Focus on metal and hardstyle.",
+      "expected_output": "Skill respects explicit blocked dates without asking again. Genre filter limits agent dispatch to Metal/Rock + Hardstyle agents only (not all five). Output explicitly excludes events overlapping the blocked windows. Metadata header lists the blocked dates verbatim.",
+      "files": ["event-radar.config.json", "playlists.json"],
+      "expectations": [
+        "Skill does NOT re-ask for blocked dates (user provided them)",
+        "Blocked dates 2026-06-13 to 2026-06-22 and 2026-07-22 to 2026-07-27 appear in the metadata header verbatim",
+        "No events in the output fall within the blocked windows",
+        "Agent dispatch is limited to metal + hardstyle genre clusters (not rap/jazz/indie)",
+        "Output language matches the prompt's language (English, since the user prompted in English) — overrides config default",
+        "Output file naming uses today's date as YYYY-MM-DD prefix"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Doe een discovery-run, alleen kleinere venues zoals De Helling, Doornroosje, dB's, Paard. Voor de zomer van 2026.",
+      "expected_output": "Skill restricts venue_tier to small_underground, dispatches the Discovery agent only (not the main favs agent), output mentions adjacent-unknown artists with 'waarom je dit leuk vindt' explanations linked to known favs. No Ziggo Dome / AFAS Live / Ahoy entries.",
+      "files": ["event-radar.config.json", "playlists.json"],
+      "expectations": [
+        "venue_tier is set to 'small_underground' or equivalent",
+        "Output does NOT contain Ziggo Dome, AFAS Live, Ahoy, or other arena-tier venues",
+        "Output filename includes 'discovery' in the suffix",
+        "Each entry includes a 'why match' note linking to a user-known fav artist",
+        "At least one of De Helling / Doornroosje / dB's / Paard appears as a venue",
+        "Discovery agent (not favs agent) was dispatched"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Welke concerten zou ik leuk vinden vanaf Maastricht? Concertradius 75 km, festivals 300 km, voor herfst 2026.",
+      "expected_output": "Skill respects override: home_city = Maastricht, NOT Houten. Distance-table seed is no longer authoritative — skill recomputes distances or uses WebSearch. Output venues are filtered against Maastricht-based radius (so Amsterdam ~210 km is OUTSIDE concert radius). New venues like Muziekgieterij (Maastricht) are favored.",
+      "files": ["event-radar.config.json", "playlists.json"],
+      "expectations": [
+        "Skill respects home_city override (Maastricht, NOT Houten)",
+        "Output does NOT include Houten-based venue distances (e.g., 'Amsterdam (~35km)' would be wrong from Maastricht)",
+        "Amsterdam venues (>200km from Maastricht) are excluded from the concert list (concert radius 75km)",
+        "Local Maastricht-area venues (Muziekgieterij, AINSI) are included if events match",
+        "Search period = Herfst 2026 (September–November)",
+        "Skill writes back the new Maastricht-based distances to config's distance_cache_km"
+      ]
+    }
+  ],
+  "trigger_tests": {
+    "should_trigger": [
+      "Welke concerten zou ik leuk vinden de komende maanden?",
+      "Find me festivals based on my Spotify taste for the rest of 2026.",
+      "/event-radar",
+      "Wat is er te doen aan concerten in september?",
+      "Kun je een lijst maken van shows die bij mijn smaak passen?",
+      "concert recommendations for next 3 months",
+      "Welke festivals zou ik leuk vinden binnen 500km?",
+      "Maak een lijst met events voor mij gebaseerd op mijn playlists",
+      "find events / concerts based on my music taste",
+      "Wat is er te doen de komende maanden?",
+      "Geef me een discovery-lijst van kleinere venues bij me in de buurt",
+      "Welke pure DnB-events zijn er deze zomer?"
+    ],
+    "should_not_trigger": [
+      "Daft Punk - Around the World",
+      "https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT",
+      "Welke playlist past hierbij?",
+      "Voeg dit nummer toe aan House",
+      "Sorteer mijn random-sht playlist",
+      "Verwijder X uit House playlist",
+      "Wat voor genre is deze track?",
+      "audit my House playlist",
+      "import House csv export",
+      "Maak een nieuwe playlist aan",
+      "Wat is de huidige tijd?",
+      "Schrijf een functie die playlists sorteert"
+    ]
+  }
+}

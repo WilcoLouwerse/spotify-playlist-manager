@@ -1,0 +1,1 @@
+{"eval_id": 5, "eval_name": "add-intent-routed", "prompt": "voeg dit nummer toe aan House: https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC", "assertions": ["Skill does NOT run playlist_manager.py remove", "Skill mentions /playlist-match as the right skill for adding tracks", "Skill does not pretend to handle the add flow itself"]}

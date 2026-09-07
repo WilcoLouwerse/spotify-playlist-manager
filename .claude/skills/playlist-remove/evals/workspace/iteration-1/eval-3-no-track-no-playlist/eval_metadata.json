@@ -1,0 +1,1 @@
+{"eval_id": 3, "eval_name": "no-track-no-playlist", "prompt": "verwijder dit nummer uit al mijn playlists", "assertions": ["Skill asks for the track (URL/URI/ID) via AskUserQuestion", "After track is provided, skill uses AskUserQuestion with multiSelect:true for playlist selection", "Skill does NOT run CLI commands until both track and playlist(s) are confirmed"]}

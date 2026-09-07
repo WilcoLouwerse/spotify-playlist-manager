@@ -1,0 +1,99 @@
+{
+  "skill_name": "playlist-config",
+  "version": "1.0.0",
+  "created": "2026-05-13",
+  "last_validated": "2026-05-13",
+  "baseline_score": 0.4,
+  "notes": "Iteration-1 ran 2026-05-13: eval-1 executed with_skill (5/5 = 100%) vs baseline (2/5 = 40%, +0.6 delta). Baseline missed: .venv/bin/python routing, AskUserQuestion confirmation gate, and used bare `python` in the verify step. Evals 2-5 are scaffolded and pending future iterations. See evals/grading.json and evals/workspace/iteration-1/.",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "ik heb een nieuwe playlist gemaakt op Spotify die 'Coffee Shop' heet — voeg toe aan mijn config",
+      "expected_output": "Skill picks sub-flow C (extend). Runs list-playlists --all to discover the Coffee Shop ID, surfaces the untracked entry, confirms via AskUserQuestion before editing playlists.json, and verifies with a follow-up list-playlists.",
+      "expectations": [
+        "Skill identifies this as sub-flow C (extend) — playlists.json already exists",
+        "Skill plans to run '.venv/bin/python playlist_manager.py list-playlists --all' from the repo root",
+        "Skill uses AskUserQuestion to confirm the playlists.json edit before writing",
+        "Skill preserves the existing key order in playlists.json (append, do not reorder)",
+        "Skill plans a verification step ('.venv/bin/python playlist_manager.py list-playlists' after the edit)"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "set up mijn config — ik heb nog geen playlists.json",
+      "expected_output": "Skill picks sub-flow B (bootstrap). Runs list-playlists --all, seeds from playlists.example.json, walks the user through picking targets + optional aliases/categories/catch_all, asks before writing.",
+      "expectations": [
+        "Skill identifies this as sub-flow B (bootstrap) — no playlists.json exists yet",
+        "Skill references playlists.example.json as the schema seed, not as the literal output",
+        "Skill walks the user through optional sections (aliases, categories, special_rules, catch_all)",
+        "Skill uses AskUserQuestion before creating the file",
+        "Skill omits empty optional sections rather than emitting empty objects"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "welke playlists ken ik in mijn config?",
+      "expected_output": "Skill picks sub-flow A (inspect). Runs list-playlists (no --all) and surfaces the output verbatim. No Spotify API call, no edit.",
+      "expectations": [
+        "Skill identifies this as sub-flow A (inspect) — purely informational",
+        "Skill runs '.venv/bin/python playlist_manager.py list-playlists' WITHOUT --all",
+        "Skill does NOT make a Spotify API call",
+        "Skill does NOT propose any edit to playlists.json",
+        "Skill surfaces the CLI output verbatim (or summarises it in Dutch)"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "voeg 'dnb' toe als alias voor mijn Drum & Bass playlist",
+      "expected_output": "Alias-only edit. Skill validates that 'Drum & Bass' is a key under 'playlists', then proposes adding `\"dnb\": \"Drum & Bass\"` to the aliases block. No Spotify API call needed.",
+      "expectations": [
+        "Skill validates that 'Drum & Bass' is an existing key in playlists.json before proposing the alias",
+        "Skill does NOT run list-playlists --all (no new Spotify ID needed)",
+        "Skill renders the planned diff showing the new alias entry",
+        "Skill confirms via AskUserQuestion before writing",
+        "Skill warns if the target key doesn't exist instead of writing a broken alias"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "voeg dit nummer toe aan mijn House playlist: https://open.spotify.com/track/1W5mUuAOQSSKUbLOt7cDhq",
+      "expected_output": "Not in scope for playlist-config — this is a track-add operation. Skill routes to playlist-match or the 'add' CLI command instead of editing playlists.json.",
+      "expectations": [
+        "Skill does NOT propose editing playlists.json",
+        "Skill does NOT run list-playlists",
+        "Skill routes the user to playlist-match (for classification + add) or the 'add' CLI command directly",
+        "Skill explains that playlist-config manages the registry, not track contents"
+      ]
+    }
+  ],
+  "trigger_tests": {
+    "should_trigger": [
+      "ik heb een nieuwe playlist gemaakt op Spotify — voeg toe aan mijn config",
+      "list-playlists",
+      "welke playlists ken ik in mijn config?",
+      "sync playlists.json met Spotify",
+      "set up mijn playlists.json",
+      "voeg 'dnb' toe als alias voor Drum & Bass",
+      "add my new Coffee Shop playlist to the config",
+      "bootstrap mijn config",
+      "show me all my writable Spotify playlists",
+      "welke writable playlists heb ik op Spotify?",
+      "extend playlists.json met mijn nieuwe playlist",
+      "wat zit er nu in playlists.json?"
+    ],
+    "should_not_trigger": [
+      "voeg dit nummer toe aan mijn House playlist: https://open.spotify.com/track/...",
+      "Tame Impala - The Less I Know The Better",
+      "scan mijn triage op House tracks",
+      "log-import exportify-exports/House.csv naar House",
+      "review-playlist exportify-exports/House.csv",
+      "sorteer mijn random-sht playlist in alle buckets",
+      "welke playlist past bij dit nummer?",
+      "fix the IPv6 routing in playlist_manager.py",
+      "hoe werkt smart-add?",
+      "geef me de Spotify Web API docs",
+      "schrijf een test voor list_target_playlists",
+      "ga al mijn nummers in House langs en review elk individueel"
+    ]
+  }
+}

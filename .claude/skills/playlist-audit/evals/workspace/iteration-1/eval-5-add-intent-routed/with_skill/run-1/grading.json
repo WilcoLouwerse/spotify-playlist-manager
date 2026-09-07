@@ -1,0 +1,53 @@
+{
+  "expectations": [
+    {
+      "text": "Skill does NOT start an audit flow",
+      "passed": true,
+      "evidence": "Transcript: 'Steps 2–12 — Skipped. Not executed. The message is out of scope for the audit workflow.' Audit flow never started."
+    },
+    {
+      "text": "Skill mentions /playlist-match as the right skill for adding tracks",
+      "passed": true,
+      "evidence": "Response: 'Voor het toevoegen van een nummer aan een playlist is /playlist-match de juiste skill — die classificeert het nummer, vergelijkt het met je playlists en kan het daarna toevoegen.'"
+    },
+    {
+      "text": "Skill does not run any CLI commands",
+      "passed": true,
+      "evidence": "Metrics: 'cli_commands_run: []' and transcript confirms 'CLI commands run: NONE (correct)'"
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 0,
+    "total": 3,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "tool_calls": {
+      "Read": 0,
+      "Write": 0,
+      "Bash": 0
+    },
+    "total_tool_calls": 5,
+    "total_steps": 1,
+    "errors_encountered": 0,
+    "output_chars": 0,
+    "transcript_chars": 0
+  },
+  "timing": {
+    "executor_duration_seconds": 41.8,
+    "total_duration_seconds": 41.8
+  },
+  "claims": [
+    {
+      "claim": "Skill exited at Step 1 with minimal overhead (41.8s, 1 step)",
+      "type": "process",
+      "verified": true,
+      "evidence": "Timing: 41.8 seconds. Only 5 total tool uses. Only Step 1 executed."
+    }
+  ],
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "All three assertions pass. Fast clean exit on out-of-scope intent."
+  }
+}

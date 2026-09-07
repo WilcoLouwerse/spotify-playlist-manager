@@ -1,0 +1,1 @@
+{"eval_id": 2, "eval_name": "artist-title-only", "prompt": "Verwijder Dua Lipa - Levitating uit Techno", "assertions": ["Skill does NOT run any CLI command", "Skill asks for a Spotify URL/URI/ID via AskUserQuestion", "Skill does NOT invent or guess a track ID"]}

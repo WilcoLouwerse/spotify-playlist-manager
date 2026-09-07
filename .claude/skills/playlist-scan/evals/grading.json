@@ -1,0 +1,89 @@
+{
+  "skill_name": "playlist-scan",
+  "schema_version": "1.0.0",
+  "notes": "Iteration-1 ran 2026-05-13: 1 eval (eval-1) executed with_skill + baseline via parallel subagents. Remaining evals 2-5 are scaffolded in evals.json and pending in future iterations.",
+  "runs": [
+    {
+      "date": "2026-05-13",
+      "method": "parallel subagents (with_skill vs baseline) graded against assertions in evals.json",
+      "eval_id": 1,
+      "config": "with_skill",
+      "score": 1.0,
+      "assertions": [
+        {
+          "text": "Skill identifies 'House' as the target and 'Random sht' as the source",
+          "passed": true,
+          "evidence": "Output explicitly resolves 'House' (with playlist ID) and 'Random sht' (with playlist ID) against playlists.json."
+        },
+        {
+          "text": "Skill defaults to dry-run mode",
+          "passed": true,
+          "evidence": "'Dit is een dry-run — geen y/N prompt, niets wordt geschreven.'"
+        },
+        {
+          "text": "Planned command uses '.venv/bin/python playlist_manager.py scan-for'",
+          "passed": true,
+          "evidence": "Code block: `.venv/bin/python playlist_manager.py scan-for \"House\" \"Random sht\"`"
+        },
+        {
+          "text": "Both target and source are double-quoted in the rendered command",
+          "passed": true,
+          "evidence": "Command shown with both arguments double-quoted."
+        },
+        {
+          "text": "Skill does NOT include --execute in dry-run mode",
+          "passed": true,
+          "evidence": "Rendered command has no --execute flag; --execute is described as a follow-up option only."
+        }
+      ]
+    },
+    {
+      "date": "2026-05-13",
+      "method": "parallel subagents (with_skill vs baseline) graded against assertions in evals.json",
+      "eval_id": 1,
+      "config": "without_skill",
+      "score": 0.8,
+      "assertions": [
+        {
+          "text": "Skill identifies 'House' as the target and 'Random sht' as the source",
+          "passed": true,
+          "evidence": "Baseline correctly identifies both target and source."
+        },
+        {
+          "text": "Skill defaults to dry-run mode",
+          "passed": true,
+          "evidence": "'Dry-run eerst (geen schrijfacties, alleen kandidaten zien)'."
+        },
+        {
+          "text": "Planned command uses '.venv/bin/python playlist_manager.py scan-for'",
+          "passed": false,
+          "evidence": "Baseline uses bare `python` not `.venv/bin/python` — venv routing requirement not surfaced without the skill."
+        },
+        {
+          "text": "Both target and source are double-quoted in the rendered command",
+          "passed": true,
+          "evidence": "Arguments are quoted in all rendered command variants."
+        },
+        {
+          "text": "Skill does NOT include --execute in dry-run mode",
+          "passed": true,
+          "evidence": "First (dry-run) command has no --execute; --execute is shown as a separate variant."
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "date": "2026-05-13",
+    "iteration": 1,
+    "eval_count": 1,
+    "evals_run": [1],
+    "evals_pending": [2, 3, 4, 5],
+    "pass_threshold": 0.8,
+    "with_skill_pass_rate": 1.0,
+    "without_skill_pass_rate": 0.8,
+    "delta": 0.2,
+    "passing_evals": 1,
+    "below_threshold": [],
+    "improve_cycle_next": "Baseline matched on 4/5 — the only differentiator was `.venv/bin/python`. Expand iteration-2 to cover evals 2-5 (alias resolution, catch-all guard, --min-confidence tuning, cross-skill routing) where the skill's value-add over baseline is expected to be larger."
+  }
+}

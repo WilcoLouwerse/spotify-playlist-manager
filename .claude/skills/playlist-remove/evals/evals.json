@@ -1,0 +1,92 @@
+{
+  "skill_name": "playlist-remove",
+  "version": "1.0.0",
+  "created": "2026-05-15",
+  "last_validated": "2026-05-15",
+  "baseline_score": 0.212,
+  "notes": "Iteration-1 evals run 2026-05-15. with_skill: 100% pass rate (17/17). without_skill: 21.2% pass rate (4/17). Delta: +0.79.",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Verwijder https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC uit House",
+      "expected_output": "Skill parses track URL + 'House'. Validates playlist in playlists.json. Shows remove --execute command. Asks confirmation via AskUserQuestion before running.",
+      "expectations": [
+        "Skill identifies the Spotify URL as the track input",
+        "Skill resolves 'House' as a valid playlist from playlists.json",
+        "Planned command uses '.venv/bin/python playlist_manager.py remove'",
+        "Track URL and playlist name are both double-quoted in the rendered command",
+        "Skill calls AskUserQuestion for confirmation BEFORE running Bash"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Verwijder Dua Lipa - Levitating uit Techno",
+      "expected_output": "Skill recognises only 'Artist - Title' (no Spotify URL). Asks for a URL/URI/ID via AskUserQuestion before proceeding.",
+      "expectations": [
+        "Skill does NOT run any CLI command",
+        "Skill asks for a Spotify URL/URI/ID via AskUserQuestion",
+        "Skill does NOT invent or guess a track ID"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "verwijder dit nummer uit al mijn playlists",
+      "expected_output": "No track or playlist identified. Skill asks for the track via AskUserQuestion, then asks which playlists via multiSelect AskUserQuestion.",
+      "expectations": [
+        "Skill asks for the track (URL/URI/ID) via AskUserQuestion",
+        "After track is provided, skill uses AskUserQuestion with multiSelect:true for playlist selection",
+        "Skill does NOT run CLI commands until both track and playlist(s) are confirmed"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "verwijder spotify:track:4uLU6hMCjMI75M1A2tKUQC uit Random sht",
+      "expected_output": "Skill warns that Random sht is the catch-all and asks for extra confirmation before proceeding.",
+      "expectations": [
+        "Skill flags that 'Random sht' is the catch-all playlist",
+        "Skill asks for extra confirmation via AskUserQuestion before running",
+        "Skill does NOT silently proceed with removing from Random sht"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "voeg dit nummer toe aan House: https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC",
+      "expected_output": "This is an ADD request, not a REMOVE request. Skill routes to /playlist-match.",
+      "expectations": [
+        "Skill does NOT run playlist_manager.py remove",
+        "Skill mentions /playlist-match as the right skill for adding tracks",
+        "Skill does not pretend to handle the add flow itself"
+      ]
+    }
+  ],
+  "trigger_tests": {
+    "should_trigger": [
+      "Verwijder https://open.spotify.com/track/xxx uit House",
+      "remove spotify:track:xxx from Techno",
+      "haal dit nummer uit mijn House playlist",
+      "verwijder Dua Lipa - Levitating uit al mijn playlists",
+      "verwijder spotify:track:4uLU6hMCjMI75M1A2tKUQC",
+      "remove this track from House",
+      "haal 'Blinding Lights' weg uit Synthwave",
+      "verwijder uit mijn playlists: https://open.spotify.com/track/xxx",
+      "dit nummer moet weg uit Drum & Bass",
+      "ik wil dit verwijderen: spotify:track:xxx",
+      "haal dit weg uit Jazz / Funk / Soul",
+      "remove track from playlist"
+    ],
+    "should_not_trigger": [
+      "voeg dit toe aan House: https://open.spotify.com/track/xxx",
+      "Tame Impala - The Less I Know The Better",
+      "sorteer mijn triage in al mijn playlists",
+      "welke tracks in mijn triage passen in House?",
+      "controleer of mijn House playlist klopt",
+      "log-import exportify-exports/House.csv naar House",
+      "list-playlists",
+      "welke playlists heb ik?",
+      "fix the IPv6 bug",
+      "wat doet smart-add?",
+      "audit mijn House playlist",
+      "welke nummers in House passen er niet in?"
+    ]
+  }
+}

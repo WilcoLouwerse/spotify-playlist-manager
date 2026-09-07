@@ -1,0 +1,79 @@
+{
+  "_comment": "Personal config for the event-radar skill. Copy to event-radar.config.json (which is gitignored) and edit — OR let the skill auto-fill it interactively on first run via AskUserQuestion. The skill reads this on every run; the skill writes back to it (distance_cache_km, venues.known_about, ticket_history, research_caveats) as it learns.",
+  "_schema_version": 2,
+
+  "user": {
+    "name": "",
+    "home_city": "",
+    "home_country": "",
+    "default_concert_radius_km": 100,
+    "default_festival_radius_km": 500
+  },
+
+  "preferences": {
+    "language": "nl",
+    "list_types": ["favs", "discovery", "edm-genres"],
+    "venue_tier": "mix",
+    "confidence_floor": "confirmed_only",
+    "travel_mode": "car",
+    "day_of_week_preference": "no_preference",
+    "budget_tier": "any",
+    "output_granularity": "split",
+    "recency_weighting": "all_time_equal",
+    "festival_camping_ok": true,
+    "accessibility_notes": "",
+    "include_tribute_bands": false
+  },
+
+  "favorite_genres": [
+    "metal", "rock", "hardstyle", "hardcore", "techno", "house",
+    "drum_and_bass", "dubstep", "trance", "synthwave",
+    "rap", "hip-hop", "grime",
+    "indie", "alt", "pop",
+    "jazz", "funk", "soul",
+    "reggae", "dub", "electroswing", "k-pop"
+  ],
+
+  "do_not_recommend_artists": [],
+
+  "venues": {
+    "_comment": "preferred = boost weight; avoid = exclude; known_about = auto-discovered cache populated by the skill.",
+    "preferred": [],
+    "avoid": [],
+    "known_about": []
+  },
+
+  "distance_cache_km": {
+    "_comment": "Self-populated by the skill. Keys are 'City, Country'. Values rounded km from home_city. Skill checks here before computing."
+  },
+
+  "ticket_history": {
+    "_comment": "Format: {date, event, venue, status: 'bought'|'attended'|'wishlist'}. The skill flags events here with ✅ in output instead of re-recommending them.",
+    "bought": [],
+    "attended": [],
+    "wishlist": []
+  },
+
+  "recurring_blocked_dates": [
+    {
+      "_comment_format": "Use 'YYYY-MM-DD' (one-off), 'YYYY-MM-DD/YYYY-MM-DD' (range), or 'MM-DD' / 'MM-DD/MM-DD' (yearly-recurring)."
+    }
+  ],
+
+  "research_caveats": {
+    "_comment": "Self-learned during runs. Skill appends here when it discovers fake-news / cancelled events / skip-NL artists worth remembering across runs.",
+    "fake_news": [],
+    "cancelled_events": [],
+    "skip_nl_artists": [],
+    "corrected_skip_nl": [],
+    "_corrected_comment": "Entries proven wrong on a later verify run. Do NOT re-add these to skip_nl_artists. A skip-NL entry has a shelf life of roughly one quarter — re-verify any entry older than ~3 months.",
+    "out_of_radius_high_match": [],
+    "lineup_format_notes": []
+  },
+
+  "event_series_calendar_hints": {
+    "_comment": "Recurring annual event series the user has interest in, with typical timing. Skill checks the latest official lineup each year. User-curated (not auto-populated).",
+    "spring_summer": [],
+    "autumn_winter": []
+  }
+}

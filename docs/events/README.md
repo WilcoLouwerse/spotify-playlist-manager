@@ -13,6 +13,12 @@ Wanneer je de [`event-radar`](../../.claude/skills/event-radar/SKILL.md) skill a
 - **Hoofdlijst** (`<YYYY-MM-DD>-favs.md`) — concerten/festivals met artiesten die je al luistert
 - **Discovery** (`<YYYY-MM-DD>-discovery.md`) — kleinere venues + adjacent-unknown artiesten
 - **EDM-genres** (`<YYYY-MM-DD>-edm-genres.md`) — pure subgenre-nights (DnB/Techno/Hardstyle/etc.)
+- **Tribute** (`<YYYY-MM-DD>-tribute.md`) — tribute-bands voor overleden/inactieve favs (optioneel, standaard uit)
+
+Vraag je om een **genre- of format-gefilterde run**, dan schrijft de skill een extra bestand met een
+beschrijvend suffix in plaats van de bovenstaande vaste namen — bijvoorbeeld
+`2026-06-26-metal-festivals.md` (alleen metal-festivals, aug t/m dec). Zelfde metadata-blok en
+hype-rating, alleen een smallere scope.
 
 Het `<YYYY-MM-DD>`-prefix in de filename is de **generation date** — elke run produceert nieuwe gedateerde bestanden zodat oude runs blijven bestaan als historische snapshots.
 
@@ -65,16 +71,25 @@ Wat **wel** in git staat:
 | [`.claude/skills/event-radar/references/venue-list.md`](../../.claude/skills/event-radar/references/venue-list.md) | Seed venue-catalog (config takes precedence) |
 | [`.claude/skills/event-radar/references/distance-table.md`](../../.claude/skills/event-radar/references/distance-table.md) | Seed distance-table (config takes precedence) |
 | [`.claude/skills/event-radar/references/caveats.md`](../../.claude/skills/event-radar/references/caveats.md) | Seed van fake-news / cancelled / skip-NL artiesten |
+| [`.claude/skills/event-radar/templates/`](../../.claude/skills/event-radar/templates/) | Output-scaffolds (`favs.md`, `discovery.md`, `edm-genres.md`, `index.md`) |
+| [`.claude/skills/event-radar/examples/run-2026-06.md`](../../.claude/skills/event-radar/examples/run-2026-06.md) | Voorbeeld van een volledige run incl. agent-dispatch |
+| [`.claude/skills/event-radar/learning-candidates.md`](../../.claude/skills/event-radar/learning-candidates.md) | Dated observaties die nog niet gepromoveerd zijn |
 | [`.claude/skills/event-radar/learnings.md`](../../.claude/skills/event-radar/learnings.md) | Self-improvement pipeline (L6) |
 | [`.claude/skills/event-radar/evals/evals.json`](../../.claude/skills/event-radar/evals/evals.json) | Eval-scenarios + trigger-tests |
 
 ## Algemene caveats
 
+> De **canonieke** en meest actuele lijst staat in
+> [`references/caveats.md`](../../.claude/skills/event-radar/references/caveats.md) plus
+> `research_caveats` in je config — die worden elke run bijgewerkt. Onderstaande punten zijn een
+> samenvatting, laatst geverifieerd op **2026-09-07**.
+
 - **Fake tour-news**: posters op socials zijn vaak AI-gegenereerd. Verifieer altijd op de officiële venue- of artiestenpagina.
 - **Aggregator vs primary source**: Songkick / aesplora.com / musicfestivalwizard zijn vaak speculatief. Officiële venue-agendas zijn authoritative.
-- **ADE drop (oktober)**: veel NL House/Techno/DnB datums voor herfst worden pas in **eind augustus** aangekondigd. Re-run de skill in september voor de meest complete autumn lijst.
+- **ADE drop (oktober)**: veel NL House/Techno/DnB datums voor herfst worden pas in **eind augustus** aangekondigd. Re-run de skill in september voor de meest complete autumn lijst. *(Per 2026-09-07: deze re-run staat open — de nieuwste lijsten dateren van juni 2026.)*
 - **Mysteryland 2026**: afgeblazen (pauze, terug 2027).
+- **Qlimax**: definitief gestopt sinds 2024.
 
 ## Maturity
 
-De skill staat per laatste meting op **M7** (zie [skill-level-overview.html](../../.claude/skills/skill-level-overview.html)). True L5/L6 vereist herhaald gebruik om learnings te accumuleren en de baseline-delta te meten — dat gebeurt naturally over volgende runs.
+De skill staat per laatste meting op **L6** (zie [skill-level-overview.html](../../.claude/skills/skill-level-overview.html)). L7 vereist herhaald gebruik om learnings te accumuleren en de baseline-delta te meten — dat gebeurt naturally over volgende runs.

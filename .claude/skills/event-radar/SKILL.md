@@ -49,7 +49,7 @@ If the message is **not** event-discovery, hand back to the surrounding agent. M
    - Then a second AskUserQuestion call for **taste/preferences**:
      - `favorite_genres` (multi-select from a curated list: metal, rock, hardstyle, hardcore, techno, house, drum_and_bass, dubstep, synthwave, rap, hip-hop, indie, alt, jazz, funk, soul, reggae, pop, electroswing, classical, world, other — with Other for custom additions). **Default to all** but let the user uncheck what they don't want.
      - `preferences.venue_tier` (arenas_only / mid_size / small_underground / mix)
-     - `preferences.list_types` (multi-select: favs / discovery / edm-genres)
+     - `preferences.list_types` (multi-select: favs / discovery / edm-genres / tribute — tribute off by default)
      - `preferences.travel_mode` (car / public_transport)
    - For everything not asked, keep the example defaults (confidence_floor: confirmed_only, day_of_week_preference: no_preference, budget_tier: any, output_granularity: split, recency_weighting: all_time_equal, festival_camping_ok: true, accessibility_notes: "", include_tribute_bands: false).
    - Merge the answers into the scaffold and **write `event-radar.config.json` to disk**.
@@ -89,7 +89,7 @@ Use config values as defaults for every parameter below — only ask via **AskUs
 12. **Travel mode** — `car ok` (full radius), `public transport only` (NL-rail + IC, narrower radius). Default: `car ok`.
 13. **Social filter** — should the skill ask "who do you want to go with?" so it can flag friend-friendly vs solo-friendly shows. Default: skip.
 14. **Recency weighting** — `weight recent listens more` (use Liked Songs adds in last 6 months) vs `treat all-time equally`. Default: `treat all-time equally` (current playlists already capture taste).
-15. **Output granularity** — `one file per list type` (default — favs/discovery/edm-genres split) or `single combined file`.
+15. **Output granularity** — `one file per list type` (default — one file per selected list type) or `single combined file`.
 
 **Extra refinements** (ask only if user signals interest):
 
@@ -120,7 +120,7 @@ Dispatch **parallel agents** (one per genre cluster). Each agent gets:
 - The user's top artists in that cluster (from step 3)
 - Location + radius rules
 - Date window + blocked dates
-- List type (favs vs discovery vs edm-genres)
+- List type (favs vs discovery vs edm-genres vs tribute)
 - Venue-tier preference
 - Confidence floor + other refinements
 
@@ -132,6 +132,7 @@ Default agent set (adjust based on user's actual playlists):
 - **Supplementary** — any major Liked-Songs artists missed by genre playlists
 - **Discovery** (if `discovery` list type requested) — small venues + adjacent unknown artists
 - **EDM-genres** (if `edm-genres` requested) — pure genre-night clubs
+- **Tribute / legacy** (if `tribute` requested) — tribute acts for deceased/inactive favs
 
 Use the prompts in `references/agent-prompts.md` as templates. Each agent should:
 - Use **WebSearch** + **WebFetch** aggressively (artist tour pages, venue agendas, festival lineups)
@@ -161,7 +162,7 @@ Default outputs:
 - `<YYYY-MM-DD>-favs.md` — known artists list
 - `<YYYY-MM-DD>-discovery.md` — small venues + unknown adjacent artists
 - `<YYYY-MM-DD>-edm-genres.md` — pure subgenre nights
-- `<YYYY-MM-DD>-tribute.md` — tribute bands for deceased/inactive favs (only when the `tribute` list type is selected; off by default)
+- `<YYYY-MM-DD>-tribute.md` — tribute bands for deceased/inactive favs. Written only when `tribute` is in the run's `list_types`. The `preferences.include_tribute_bands` boolean is the *default seed* for that — `true` pre-selects `tribute` in the list-type question; the per-run selection is always authoritative.
 - `INDEX.md` (gitignored, always update) — table of contents + per-run metadata. Prepend the new run's row at the top so newest runs are first.
 - `README.md` — **do not touch**. It's the tracked, generic folder-description with no per-run data.
 
@@ -317,6 +318,6 @@ Each run produces NEW dated files; old runs become historical snapshots (never o
 - `references/venue-list.md` — **seed-only** venue catalog (config takes precedence)
 - `references/distance-table.md` — **seed-only** distance table from Houten (config takes precedence)
 - `references/caveats.md` — seed of known fake-news, cancelled events, skip-NL artists (config's `research_caveats` extends this over time)
-- `templates/favs.md`, `templates/discovery.md`, `templates/edm-genres.md`, `templates/index.md` — output scaffolds
+- `templates/favs.md`, `templates/discovery.md`, `templates/edm-genres.md`, `templates/tribute.md`, `templates/index.md` — output scaffolds
 - `examples/run-2026-06.md` — example of a full run including agent dispatch
 - `learning-candidates.md` + `learnings.md` — self-improvement pipeline (L6)

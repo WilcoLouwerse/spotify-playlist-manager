@@ -149,7 +149,7 @@ INACTIVE / DECEASED FAVS (with why they're unavailable):
 {{inactive_favs_with_reason}}
 
 VENUES TO SCAN:
-{{venue_list}}
+{{tribute_venue_list}}
 
 YOUR JOB:
 1. For each inactive fav, WebFetch venue agendas + the tribute act's own site/socials.
@@ -157,7 +157,8 @@ YOUR JOB:
    tribute to a top fav is worth less than an excellent tribute to a mid fav. Rank by:
    official endorsement or ex-members in the line-up > established act with a strong live
    reputation > good reviews > local/unknown quality.
-3. Filter blocked dates.
+3. Filter blocked dates, but keep a separate "Geblokkeerd" list of the acts you dropped for
+   agenda overlap (date + act + venue) so the writer can render it for information.
 4. Report chronologically, grouped by month. Per entry give: tribute act name, which original
    artist it covers, venue + city + distance, date, source URL, and an endorsement marker
    (`officieel geëndorseerd` / `met oud-bandleden` / `-`) so the writer can render it.
@@ -174,5 +175,5 @@ YOUR JOB:
 - **Cap report length** — ~500-700 words. Force prioritization.
 - **Require sources** — every entry needs a URL, prefer official.
 - **End with caveats** — honest "skipped because" + "not yet confirmed".
-- **Group consistently** — by month for favs/discovery, by genre for EDM.
+- **Group consistently** — by month for favs/discovery/tribute, by genre for EDM.
 - **Cross-check** — if two sources conflict on a date, flag it.

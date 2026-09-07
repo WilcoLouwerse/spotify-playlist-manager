@@ -97,5 +97,5 @@ If the user's original message was `https://open.spotify.com/track/6K4t31amVTZDg
 
 User says "voeg toe aan House en Techno" instead of clicking the **Voeg toe aan playlists** button. The skill:
 1. Treats this as the add action with `House` and `Techno` pre-selected.
-2. Validates that both playlists were in the step-6 recommendations — if not, asks for confirmation via **AskUserQuestion** before adding to a playlist that wasn't on the recommended list.
+2. Validates that both playlists were in the recommendations from `SKILL.md` step 6 (*Match playlists*) — if not, asks for confirmation via **AskUserQuestion** before adding to a playlist that wasn't on the recommended list.
 3. Skips to step 3 (render the plan) and then runs the commands in step 4.

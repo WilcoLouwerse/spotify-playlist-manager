@@ -62,7 +62,7 @@ You only do this once per machine.
 
 ## 6. Use the repo's Claude skills
 
-This repo ships seven slash commands:
+This repo ships eight slash commands:
 
 - **`/playlist-match`** — paste a Spotify URL or *"Artist - Title"* in the Claude chat and Claude classifies the genres, suggests playlists from your `playlists.json`, and can run `add` for you — every track it adds to a playlist also goes into your Liked Songs via `like`.
 - **`/playlist-triage`** — sort a whole source playlist into many target playlists, via `review-playlist` (per-track y/N) or `bulk-playlist` (single y/N).
@@ -71,6 +71,7 @@ This repo ships seven slash commands:
 - **`/playlist-audit`** — audit a playlist's genre/theme fit: confidence scores per track and removal of low-confidence tracks.
 - **`/playlist-log-import`** — seed the local duplicate-guard log (`.tracks_log.json`) for a playlist from an Exportify CSV, via `log-import`.
 - **`/playlist-config`** — bootstrap or extend `playlists.json` from your Spotify account, via `list-playlists --all`.
+- **`/event-radar`** — get personalised concert and festival recommendations from the artists in your playlists, filtered on your free dates, genres and venue size; writes the lists to `docs/events/`.
 
 Full reference (triggers, guardrails, source links): [.claude/docs/commands.md](../.claude/docs/commands.md). Contributor docs (authoring new skills, writing-doc conventions) live in [.claude/docs/README.md](../.claude/docs/README.md).
 

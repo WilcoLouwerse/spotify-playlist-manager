@@ -17,8 +17,9 @@ For the end-user CLI reference (`python playlist_manager.py …`), see [docs/com
 | [`/playlist-audit`](#playlist-audit) | Workflow | Audits a playlist's genre/theme fit with confidence scores per track and offers to remove low-confidence tracks |
 | [`/playlist-log-import`](#playlist-log-import) | Workflow | Seeds the local duplicate-guard log (`.tracks_log.json`) from an Exportify CSV via `log-import` |
 | [`/playlist-config`](#playlist-config) | Workflow | Bootstraps or extends `playlists.json` from your Spotify account via `list-playlists --all` |
+| [`/event-radar`](#event-radar) | Workflow | Generates personalized concert/festival recommendations from your playlists with date-availability, genre, venue-tier and discovery filters |
 
-All seven skills produce **Dutch** user-facing prose (the user's preference); their `SKILL.md`, `references/`, `templates/`, and `examples/` stay in English so triggers and steering remain model-readable. See [writing-docs.md → Language](writing-docs.md) for the convention.
+All eight skills produce **Dutch** user-facing prose (the user's preference); their `SKILL.md`, `references/`, `templates/`, and `examples/` stay in English so triggers and steering remain model-readable. See [writing-docs.md → Language](writing-docs.md) for the convention.
 
 ---
 
@@ -263,6 +264,44 @@ sync mijn playlists.json met Spotify
 - User-facing prose is **Dutch**.
 
 **Source:** [.claude/skills/playlist-config/SKILL.md](../skills/playlist-config/SKILL.md).
+
+---
+
+### `/event-radar`
+
+**Category:** Workflow
+
+Finds concerts and festivals that fit your taste. Reads the top artists per genre from your Exportify exports in [`exportify-exports/`](../../exportify-exports/) and [`playlists.json`](../../playlists.json), researches current tour and festival dates on the web, and writes dated recommendation lists to [`docs/events/`](../../docs/events/).
+
+**Usage:**
+
+```
+# Trigger phrases (Dutch or English work)
+welke concerten zou ik leuk vinden de komende maanden?
+wat is er te doen dit najaar?
+find festivals for me
+/event-radar
+```
+
+**What it does:**
+
+1. Loads [`event-radar.config.json`](../../event-radar.config.json) (gitignored; sample in [`event-radar.config.example.json`](../../event-radar.config.example.json)). On the first run it builds that config interactively via `AskUserQuestion`.
+2. Asks via `AskUserQuestion` for the run's parameters: period, blocked dates, genres, venue tier, list types (favourites, discovery, EDM nights, tribute).
+3. Extracts top artists per genre from the playlists, Liked Songs included.
+4. Dispatches parallel research agents that look up tour and festival dates via WebSearch + WebFetch.
+5. Consolidates, deduplicates and filters the results, then writes `docs/events/<date>-<list-type>.md` files and a row in the local `docs/events/INDEX.md`.
+6. Writes what it learned (distances, venues) back to the config.
+
+**Guardrails:**
+
+- **Always** uses live web data for event dates; never training-data recall. Unconfirmed dates are marked `(unverified)` or left out.
+- **Always** asks for blocked dates, even when they were mentioned earlier.
+- **Never** overwrites existing event files; user notes marked `<!-- user-note: -->` are preserved.
+- **Never** writes run data to the tracked `docs/events/README.md`; the per-run index lives in the gitignored `INDEX.md`.
+- Spawns several research agents per run, so a run costs noticeably more tokens than the other skills.
+- User-facing prose is **Dutch**.
+
+**Source:** [.claude/skills/event-radar/SKILL.md](../skills/event-radar/SKILL.md).
 
 ---
 

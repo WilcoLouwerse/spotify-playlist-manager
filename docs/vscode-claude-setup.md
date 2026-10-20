@@ -69,7 +69,7 @@ This repo ships eight slash commands:
 - **`/playlist-scan`** — mine a source playlist for tracks that fit one chosen target, via `scan-for`.
 - **`/playlist-remove`** — remove a track from one or more playlists via `remove`.
 - **`/playlist-audit`** — audit a playlist's genre/theme fit: confidence scores per track and removal of low-confidence tracks.
-- **`/playlist-log-import`** — seed the local duplicate-guard log (`.tracks_log.json`) for a playlist from an Exportify CSV, via `log-import`.
+- **`/playlist-log-import`** — seed the local fallback duplicate log (`.tracks_log.json`) for a playlist from an Exportify CSV, via `log-import`. Only needed when Spotify hides a playlist's contents.
 - **`/playlist-config`** — bootstrap or extend `playlists.json` from your Spotify account, via `list-playlists --all`.
 - **`/event-radar`** — get personalised concert and festival recommendations from the artists in your playlists, filtered on your free dates, genres and venue size; writes the lists to `docs/events/`.
 

@@ -17,7 +17,7 @@ spotify-playlist-manager/
 │   ├── setup.md            # credentials, env vars, playlist config
 │   ├── commands.md         # CLI reference
 │   └── architecture.md     # this file
-├── exportify-exports/      # drop Exportify CSVs here for `log-import` (contents gitignored)
+├── exportify-exports/      # Exportify CSVs: sources for playlists you can't read via the API, and `log-import` input (contents gitignored)
 ├── playlist_manager.py     # the CLI
 ├── playlists.json          # local playlist config (gitignored, see playlists.example.json)
 ├── playlists.example.json  # worked example of the playlist config schema
@@ -44,7 +44,7 @@ A single-file CLI built on `argparse`:
 - `bulk-playlist` — classify every track in a source playlist, show a per-target tally, then apply everything after a single y/N. Uses the local tracks log directly for duplicate detection to keep request volume bounded.
 - `scan-for` — pick one target playlist and scan a source playlist for tracks the classifier would route to that target. Same single-y/N UX as `bulk-playlist`, but the output is one candidate list instead of a per-target tally.
 - `audit-playlist` — OpenAI-backed batch audit: classifies every track in a playlist and reports a confidence score for each against the playlist's own genre/theme. See `/playlist-audit` skill for the Claude AI + web-search version.
-- `log-import` — seeds the local `.tracks_log.json` from a file of track URIs/URLs/IDs (e.g. an Exportify CSV), to cover playlist contents the dev-tier API refuses to expose.
+- `log-import` — seeds the local `.tracks_log.json` from a file of track URIs/URLs/IDs (e.g. an Exportify CSV). The log is the duplicate guard's fallback for when Spotify hides a playlist's contents.
 
 Key data sources:
 
@@ -166,31 +166,33 @@ Three defences against unintended writes:
 
 1. **Dry-run default.** No write ever happens without `--execute`.
 2. **Interactive confirmation in `smart-add`.** Even with `--execute`, you must answer `y` for each suggested playlist. With `--accept-all`, a single bulk `y/N` covers the whole set.
-3. **Duplicate guard.** Before every add, the script checks the local adds log (`.tracks_log.json`, gitignored) — every URI the script has successfully added or has been seeded with via `log-import`, keyed by playlist ID. If present → `SKIP`, no write. No override flag. See [Duplicate detection](#duplicate-detection) below for why this log is authoritative.
+3. **Duplicate guard.** Before every add, the script checks the playlist's current contents on Spotify, falling back to the local `.tracks_log.json` when Spotify hides them. If present → `SKIP`, no write. No override flag. See [Duplicate detection](#duplicate-detection).
 
 ## Duplicate detection
 
-`.tracks_log.json` is the primary (and authoritative) source for the duplicate guard. The flow:
+Spotify's own view of a playlist is the authoritative source for the duplicate guard; the local `.tracks_log.json` is the fallback.
 
-- Every successful `add` / `smart-add` write that returns a `snapshot_id` from Spotify is appended to the log.
-- The `log-import` subcommand seeds the log from a CSV/text file containing track URIs/URLs/IDs — typically an [Exportify](https://exportify.net) export of an existing playlist, dropped into [`exportify-exports/`](../exportify-exports/) at the repo root. See [commands.md → log-import](commands.md#log-import) for the full workflow.
-- `playlist_contains_uri()` checks this log first, then makes a best-effort Spotify API call as a secondary signal. If the API does return URIs, they're consulted too.
+- `_spotify_playlist_uris()` paginates a playlist once per run and caches the URI set. `playlist_contains_uri()`, `batch-add`, `batch-remove`, `bulk-playlist` and `scan-for` all read through it, so each target playlist costs one pagination per run, not one per track.
+- When Spotify returns the contents, that set decides: tracks added or removed in the Spotify app are seen, and a stale log entry can't cause a false `SKIP`. An empty playlist counts as readable.
+- When Spotify returns entries **without** track URIs, the script prints a one-time `WARN`, stops paginating for the rest of the run, and falls back to `.tracks_log.json`.
 
-Why the log is needed:
+The log is still maintained as that fallback:
 
-The Spotify Web API in this app's tier returns playlist items with the embedded `track` object empty (`uri`, `id`, and `name` are all `null`; only `added_at` survives). That means server-side duplicate detection over the API alone cannot work — every track looks "not present". The log fills that gap. See [Spotify Web API documentation](https://developer.spotify.com/documentation/web-api) for the underlying endpoint behaviour.
+- Every successful write that returns a `snapshot_id` is appended to the log; `remove` / `batch-remove` take the URI out again.
+- `log-import` seeds it from a CSV/text file of track URIs/URLs/IDs — typically an [Exportify](https://exportify.net) export dropped into [`exportify-exports/`](../exportify-exports/). See [commands.md → log-import](commands.md#log-import).
 
-Tracks that you added through the Spotify UI (not via this script) and were never seeded via `log-import` are invisible to the guard. Either re-run `log-import` after large UI edits, or edit `.tracks_log.json` by hand.
+Why there is a fallback at all: before this script read the post-migration `item` key (see below) every entry looked empty, and the log was the only working guard. Spotify also only exposes the contents of playlists you own or collaborate on — the items endpoint answers `403` for anyone else's playlist. Every playlist in `playlists.json` is one you can write to, so the guard reads Spotify for all of them; the log matters only if Spotify changes that behaviour again.
 
 ## February 2026 Spotify API migration
 
-Spotify's [Feb 2026 Dev Mode migration guide](https://developer.spotify.com/documentation/web-api/tutorials/february-2026-migration-guide) lists changes the script will need to track:
+Spotify's [Feb 2026 Dev Mode migration guide](https://developer.spotify.com/documentation/web-api/tutorials/february-2026-migration-guide) lists these changes; the script handles all of them:
 
-- `GET/POST/DELETE/PUT /playlists/{id}/tracks` is renamed to `/playlists/{id}/items`. Spotipy's `playlist_items` and `playlist_add_items` will follow when the library is updated; if not, we'll need to call the new path directly.
-- The response shape changes: `tracks.items[].track` becomes `items.items[].item`.
+- `GET/POST/DELETE/PUT /playlists/{id}/tracks` is renamed to `/playlists/{id}/items`. Spotipy ≥ 2.26 already calls the new path.
+- The response shape changes: a playlist entry's `track` becomes `item`, and a playlist object's `tracks` (with `total`) becomes `items`. `_playlist_entry_track()` reads `item` first and `track` as fallback; the `fields=` filters request both keys.
+- Type-specific library endpoints (`/me/tracks`, …) are replaced by the generic `/me/library`. Spotipy ≥ 2.26 maps `current_user_saved_tracks_*` onto it, which `like` uses.
 - Tracks lose `available_markets`, `external_ids`, `linked_from`, and `popularity` fields. We currently send `popularity` into the OpenAI prompt; after Feb 2026 it will simply be `None`, which the classifier still handles.
 - Batch endpoints (`GET /tracks`, `/albums`, `/artists`) are removed — fetch individually.
-- Owner-only constraint: playlist `items` are only returned for playlists the user owns or collaborates on. `list-playlists --all` already filters to that set, so anything you can add to `playlists.json` is also a valid write target post-migration.
+- Owner-only constraint: playlist `items` are only returned for playlists the user owns or collaborates on; anyone else's playlist answers `403`. `list-playlists --all` already filters to that set, so every target in `playlists.json` is readable. To use someone else's playlist as a *source*, export it with Exportify and pass the CSV.
 
 App owners must also have an active Spotify Premium subscription from Feb 2026 onwards.
 

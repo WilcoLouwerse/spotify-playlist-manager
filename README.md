@@ -29,7 +29,7 @@ If you're working in this repo with [Claude Code](https://claude.com/claude-code
 - `/playlist-scan` — mine a source playlist for tracks that fit *one* chosen target, via `scan-for`.
 - `/playlist-remove` — remove a track from one or more playlists via `remove`.
 - `/playlist-audit` — audit a playlist's genre/theme fit: confidence scores per track and one-click removal of low-confidence tracks.
-- `/playlist-log-import` — seed the local duplicate-guard log (`.tracks_log.json`) for a playlist from an Exportify CSV, via `log-import`.
+- `/playlist-log-import` — seed the local fallback duplicate log (`.tracks_log.json`) for a playlist from an Exportify CSV, via `log-import`. Only needed when Spotify hides a playlist's contents.
 - `/playlist-config` — bootstrap or extend `playlists.json` from your Spotify account, via `list-playlists --all`.
 - `/event-radar` — get personalised concert and festival recommendations from the artists in your playlists, filtered on your free dates, genres and venue size; writes the lists to `docs/events/`.
 
@@ -41,7 +41,7 @@ Three layers protect against unintended writes:
 
 1. **Dry-run is the default.** Add `--execute` to actually write.
 2. **`smart-add` requires interactive confirmation** (per-playlist y/N by default, or `--accept-all` for a single bulk y/N).
-3. **Duplicate guard is always on.** Reads from a local `.tracks_log.json` — every URI the script has successfully added or has been seeded with via `log-import`. Run `log-import` once per playlist after setup (see [docs/commands.md → log-import](docs/commands.md#log-import)) to cover tracks the script didn't add. Background: [docs/architecture.md → Duplicate detection](docs/architecture.md#duplicate-detection).
+3. **Duplicate guard is always on.** Before every add the script reads the playlist's current contents from Spotify, so tracks you added in the Spotify app are caught too. If Spotify ever hides a playlist's contents, it falls back to the local `.tracks_log.json` (seeded via [`log-import`](docs/commands.md#log-import)). Background: [docs/architecture.md → Duplicate detection](docs/architecture.md#duplicate-detection).
 
 ## Security notes
 

@@ -40,7 +40,10 @@ User-facing prose is **Dutch** (consistent with the rest of this project's skill
    Follow `references/source-resolution.md`:
    - URL/URI/ID → use as-is.
    - CSV path → use as-is (verify it exists).
-   - Bare name → list `exportify-exports/*.csv` and offer matches via **AskUserQuestion**. Spotify display names map to underscored, slash-tolerant filenames; let the user pick from the actual filenames rather than guessing.
+   - Bare name that matches a key or alias in `playlists.json` → use that playlist's Spotify ID (live). If a CSV for it also exists, the prefer-live rule below applies.
+   - Other bare name → list `exportify-exports/*.csv`, offer matches via **AskUserQuestion**, and pass the chosen **CSV path** (not the bare name — the CLI's bare-name matcher fails on names containing `/` or `-`).
+
+   Pass the same resolved argument (Spotify ID or CSV path) to every command in the run, so `list-tracks` and `review-playlist` / `bulk-playlist` read the same data.
 
    **Prefer the live playlist.** If the source resolves to a CSV AND the source playlist is known in `playlists.json`, Spotify can read it live — offer that via **AskUserQuestion** instead of silently using the snapshot. See `references/source-resolution.md` → "Prefer the live playlist over a CSV".
 
@@ -112,29 +115,29 @@ User-facing prose is **Dutch** (consistent with the rest of this project's skill
    - **Run via this skill with `yes | ...` pipe** *(bulk-playlist only)* — auto-accept the single y/N. Only offer this for `bulk-playlist`, never for `review-playlist`.
    - **Cancel** — end the flow.
 
-   For dry-run mode, no confirmation needed — run directly via Bash.
+   For dry-run mode, no confirmation needed — run directly via Bash. **Dry-runs and stdin.** The Bash tool has no stdin, so every prompt reads end-of-input: `review-playlist` treats it as `q` and stops after the first track, `bulk-playlist` / `scan-for` print `Cancelled. No changes made.` right after the tally. In dry-run mode nothing is written whatever the answer, so run dry-runs as `yes | .venv/bin/python playlist_manager.py <command> "<source>"` (no `--execute`): every prompt is answered `y` and the output shows each `DRY RUN (would add …)` line. Never combine `yes |` with `--execute` for `review-playlist`.
 
    **Web-first path:** the confirmation in step 3 ("Pas alles toe") is the safety gate. Don't ask again. If the user picked "Selectief reviewen" and approved per-target, that approval is enough to fire each `batch-add` for the approved targets.
 
 8. **Run and surface output verbatim**
 
-   - **Dry-run (CLI)**: run via Bash, print the script's output verbatim, then summarise in Dutch.
+   - **Dry-run (CLI)**: run via Bash with the `yes |` pipe from step 7 (no `--execute`), print the script's output verbatim, then summarise in Dutch.
    - **Execute (terminal path)**: do NOT run. Show the user the exact command + a "run dit in je terminal vanuit de repo-root" hint.
    - **Execute (bulk + `yes |` path)**: run as `yes | .venv/bin/python playlist_manager.py bulk-playlist "<source>" --execute`, print output verbatim, then summarise.
    - **Web-first path**: run one `batch-add --execute` per target via Bash. Print each command's output verbatim — the per-batch `+ batch of {N}: snapshot ...` lines and the final `DONE: added {A}, failed {F}, skipped {S}` per target are what the user needs to see.
 
-   Don't paraphrase the script's `ADDED ...`, `SKIP: already in playlist`, `DRY RUN: would add ...`, or `DONE: added ...` messages — those come from the CLI and are the user's contract.
+   Don't paraphrase the script's `ADDED ...`, `SKIP (already in playlist)`, `DRY RUN (would add ...)`, `SKIP N URIs already in playlist (will not re-add).` or `DONE: added ...` lines — those come from the CLI and are the user's contract.
 
 9. **Summarise (one Dutch line)**
 
    - Dry-run (CLI): "Dry-run klaar — {N} kandidaten verdeeld over {M} playlists. Niets geschreven."
-   - Execute via skill: "Klaar! {A} toegevoegd, {S} overgeslagen (al in playlist)."
+   - Execute via skill (`bulk-playlist`): "Klaar! {A} toegevoegd, {F} mislukt." (`bulk-playlist` leaves tracks that are already present out of the plan, so it reports no skipped count.)
    - Execute via user's terminal: "Commando staat klaar. Draai 'm in je terminal en typ y/N als de prompts verschijnen."
    - Web-first path: "Triage klaar! {A} nummers toegevoegd aan {M} playlists, {S} overgeslagen, {K} overgeslagen door jou."
 
 10. **Capture Learnings**
 
-    If anything was non-obvious (a CSV-path edge case, an aggressive classifier output, a tracking-log gap that caused unexpected re-adds), append a dated entry to `learning-candidates.md` under the matching section. Promote to `learnings.md` after 3+ recurrences. Skip if nothing new.
+    If anything was non-obvious (a CSV-path edge case, an aggressive classifier output, a duplicate-guard miss — e.g. the one-time `WARN: Spotify returned playlist entries without track URIs…` appeared and a `.tracks_log.json` gap caused a re-add), append a dated entry to `learning-candidates.md` under the matching section. Promote to `learnings.md` after 3+ recurrences. Skip if nothing new.
 
 ---
 

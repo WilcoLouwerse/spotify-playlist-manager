@@ -22,6 +22,7 @@ Dated, atomic observations promoted from `learning-candidates.md` after they've 
 ## Open Questions
 
 - Should the skill detect "tracks already classified previously" via `.tracks_log.json` and warn the user before running execute? The CLI's duplicate guard handles it, but a heads-up might be useful.
+- 2026-10-20: The duplicate guard now reads each target's live Spotify contents; `.tracks_log.json` is only its fallback, so a log-based pre-check would be less accurate than the CLI's own guard.
 - For execute mode, should the skill open a new terminal window instead of asking the user to copy-paste the command?
 
 ## Consolidated Principles

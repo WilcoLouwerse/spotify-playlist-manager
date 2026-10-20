@@ -10,16 +10,13 @@ The user said "leeg" + "vertrouw" → route to `bulk-playlist`.
 
 ## Step 1-3 — detect, resolve, pick workflow
 
-Source: bare name "Random sht" → resolve against `exportify-exports/`. Skill lists matching files:
-- `exportify-exports/Random_sht.csv` (95-track export from 2026-05-12)
+Source: bare name "Random sht" → a key in `playlists.json` (ID `7RaNdOmShTpLaYlIsTiD01`), so Spotify can read it live. A CSV snapshot also exists: `exportify-exports/Random_sht.csv` (95-track export from 2026-05-12). Per `references/source-resolution.md` → "Prefer the live playlist over a CSV", the skill asks via **AskUserQuestion**:
 
-Skill confirms via **AskUserQuestion**:
+> "Voor Random sht staat een CSV-export klaar, maar Spotify kan deze playlist ook live uitlezen. Welke bron wil je gebruiken?"
+> - **Live via Spotify (Recommended)** — meest actueel.
+> - **Deze CSV** — momentopname van 2026-05-12.
 
-> "Gevonden CSV: `exportify-exports/Random_sht.csv` (95 tracks, geëxporteerd 2026-05-12). Gebruik die?"
-> - **Ja, gebruik die CSV**
-> - **Nee, gebruik de Spotify URL** *(handmatig plakken)*
-
-User picks **Ja**.
+User picks **Live via Spotify**. The source argument becomes the playlist ID `7RaNdOmShTpLaYlIsTiD01`.
 
 Workflow: **bulk-playlist** (user said "leeg" + "vertrouw").
 
@@ -40,11 +37,11 @@ User picks **Direct execute**.
 ## Step 6 — plan
 
 ```
-Je wilt 'Random sht' (exportify-exports/Random_sht.csv) triëren via bulk-playlist (execute).
+Je wilt 'Random sht' (live) triëren via bulk-playlist (execute).
 
 Ik ga dit commando draaien vanuit de repo-root:
 
-.venv/bin/python playlist_manager.py bulk-playlist "Random sht" --execute
+.venv/bin/python playlist_manager.py bulk-playlist "7RaNdOmShTpLaYlIsTiD01" --execute
 
 Het script vraagt één y/N voor het hele plan. Draai 'm zelf in je terminal, of laat mij 'm draaien met automatisch 'y' via een pipe.
 ```
@@ -65,13 +62,13 @@ User picks **Hier draaien met automatische 'y'**.
 Skill runs:
 
 ```bash
-yes | .venv/bin/python playlist_manager.py bulk-playlist "Random sht" --execute
+yes | .venv/bin/python playlist_manager.py bulk-playlist "7RaNdOmShTpLaYlIsTiD01" --execute
 ```
 
 Output verbatim:
 
 ```
-Reading source playlist: Random sht (from exportify-exports/Random_sht.csv)
+Reading source: Random sht (7RaNdOmShTpLaYlIsTiD01)
 Found 95 tracks. Classifying...
 
   [1/95] Bakermat - Walk That Walk
@@ -87,29 +84,29 @@ Recommendations:
 - 11 → Funny meme
 - 7 → Ket420
 
-Proceed? [y/N]: y
+Proceed? [y/N]: 
 
 - House: ADDED Bakermat - Walk That Walk (snapshot AbCdEfGhIj…)
 ...
 
 ============================================================
-Bulk add complete (EXECUTED): 59 added, 0 failed.
+Bulk add complete (EXECUTED): 73 added, 0 failed.
 ```
 
 ## Step 9 — summary
 
 ```
-Klaar! 59 toegevoegd, 0 overgeslagen (al in playlist).
+Klaar! 73 toegevoegd, 0 mislukt.
 ```
 
 ---
 
 ## Variant — user wants dry-run first
 
-After step 5 the user picked **Dry-run eerst**. Skill runs the dry-run via Bash (no `yes |` needed — dry-run skips the prompt). Then offers in step 9:
+After step 5 the user picked **Dry-run eerst**. Skill runs the dry-run via Bash as `yes | .venv/bin/python playlist_manager.py bulk-playlist "7RaNdOmShTpLaYlIsTiD01"` — without `--execute` the pipe only makes the script print each `DRY RUN (would add …)` line instead of stopping at `Proceed? [y/N]:` (the Bash tool has no stdin). Then offers in step 9:
 
 ```
-Dry-run klaar — 59 kandidaten verdeeld over 5 playlists. Niets geschreven.
+Dry-run klaar — 73 kandidaten verdeeld over 5 playlists. Niets geschreven.
 ```
 
 Then **AskUserQuestion** to chain: "Nu echt executen, of stoppen?"

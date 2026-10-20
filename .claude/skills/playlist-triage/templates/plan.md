@@ -20,14 +20,14 @@ Ik ga dit commando draaien vanuit de repo-root:
 - `{CODE_BLOCK_WITH_COMMAND}` — fenced bash block with **one** command. Quote the source verbatim. Append `--execute` only in execute mode. Append `--max-playlists N --min-confidence X` only when the user asked to deviate from defaults.
 
   ```bash
-  .venv/bin/python playlist_manager.py review-playlist "<source>"            # dry-run
+  yes | .venv/bin/python playlist_manager.py review-playlist "<source>"      # dry-run (pipe is harmless without --execute)
   .venv/bin/python playlist_manager.py review-playlist "<source>" --execute  # execute
   .venv/bin/python playlist_manager.py bulk-playlist "<source>" --execute    # execute, single y/N
   yes | .venv/bin/python playlist_manager.py bulk-playlist "<source>" --execute   # execute + auto-accept (bulk only)
   ```
 
 - `{INTERACTIVE_HINT}` — one Dutch sentence telling the user what to expect:
-  - Dry-run: `"Dit is een dry-run — geen y/N prompts, niets wordt geschreven."`
+  - Dry-run: `"Dit is een dry-run — ik beantwoord de prompts automatisch met y, maar zonder --execute wordt er niets geschreven."`
   - `review-playlist` execute (terminal path): `"Het script vraagt per nummer y/N/s/q in je terminal. Draai 'm zelf, ik kan die prompts niet via chat beantwoorden."`
   - `bulk-playlist` execute (terminal path): `"Het script vraagt één y/N voor het hele plan. Draai 'm zelf in je terminal, of laat mij 'm draaien met automatisch 'y' via een pipe."`
   - `bulk-playlist` execute (`yes |` path): `"Ik draai 'm voor je met automatisch 'y' — geen handmatige prompt."`
@@ -36,7 +36,7 @@ Ik ga dit commando draaien vanuit de repo-root:
 
 ## After the user confirms
 
-Run via Bash. Print the script's output verbatim, then a Dutch summary line (per `SKILL.md` step 9). Don't paraphrase `ADDED`, `SKIP`, `DRY RUN: would add`, or the final `... complete (EXECUTED): N added, M failed` line.
+Run via Bash. Print the script's output verbatim, then a Dutch summary line (per `SKILL.md` step 9). Don't paraphrase `ADDED`, `SKIP (already in playlist)`, `DRY RUN (would add …)`, or the final `Review complete (…): accepted …` / `Bulk add complete (…): N added, M failed.` line.
 
 ---
 

@@ -15,19 +15,20 @@
         "Default mode is dry-run, with execute offered as an explicit second choice",
         "Planned command uses '.venv/bin/python playlist_manager.py review-playlist'",
         "Source URL is double-quoted in the rendered command",
-        "Skill explicitly explains that --execute requires per-track y/N from the user's terminal"
+        "Skill explicitly explains that --execute requires per-track y/N from the user's terminal",
+        "If the dry-run is run via Bash, it is piped through 'yes |' without --execute; 'yes |' is never combined with 'review-playlist --execute'"
       ]
     },
     {
       "id": 2,
       "prompt": "leeg mijn 'Random sht' helemaal — ik vertrouw de classifier",
-      "expected_output": "Skill picks bulk-playlist (user said 'leeg' + 'vertrouw'), resolves 'Random sht' against exportify-exports/, offers the 'yes |' auto-accept path for execute mode.",
+      "expected_output": "Skill picks bulk-playlist (user said 'leeg' + 'vertrouw'), recognises 'Random sht' from playlists.json and, since exportify-exports/Random_sht.csv also exists, asks via AskUserQuestion whether to use the live playlist (Recommended) or the CSV, offers the 'yes |' auto-accept path for execute mode.",
       "expectations": [
         "Skill picks the bulk-playlist command (not review-playlist)",
-        "Skill resolves the bare name 'Random sht' against exportify-exports/ rather than guessing a URL",
+        "Skill offers the live playlist (Spotify ID from playlists.json) vs the CSV via AskUserQuestion instead of silently using the CSV, and never invents a URL",
         "Skill offers the 'yes | ...' auto-accept option for the single y/N (bulk-only)",
         "Planned command uses '.venv/bin/python playlist_manager.py bulk-playlist'",
-        "Skill does NOT pipe yes into review-playlist anywhere in the response"
+        "Skill does NOT pipe yes into 'review-playlist --execute' anywhere in the response"
       ]
     },
     {
@@ -46,7 +47,7 @@
       "prompt": "review-playlist exportify-exports/House.csv met --min-confidence 90",
       "expected_output": "Skill recognises the CSV path and the explicit tuning flag, renders the command with --min-confidence 90 added.",
       "expectations": [
-        "Skill uses the literal CSV path 'exportify-exports/House.csv' as the source argument",
+        "Skill asks via AskUserQuestion whether to use the live House playlist or the CSV; if the user keeps the CSV, the literal path 'exportify-exports/House.csv' is the source argument",
         "Skill includes '--min-confidence 90' in the rendered command",
         "Skill does NOT silently change other defaults the user didn't mention",
         "Default mode is dry-run unless the user said otherwise"

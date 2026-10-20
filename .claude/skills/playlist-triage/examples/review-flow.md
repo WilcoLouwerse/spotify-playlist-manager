@@ -35,9 +35,9 @@ Je wilt https://open.spotify.com/playlist/3aBcDeFgHiJkLmNoPqRsTu triëren via re
 
 Ik ga dit commando draaien vanuit de repo-root:
 
-.venv/bin/python playlist_manager.py review-playlist "https://open.spotify.com/playlist/3aBcDeFgHiJkLmNoPqRsTu"
+yes | .venv/bin/python playlist_manager.py review-playlist "https://open.spotify.com/playlist/3aBcDeFgHiJkLmNoPqRsTu"
 
-Dit is een dry-run — geen y/N prompts, niets wordt geschreven.
+Dit is een dry-run — ik beantwoord de prompts automatisch met y, maar zonder --execute wordt er niets geschreven.
 ```
 
 ## Step 8 — run
@@ -45,21 +45,27 @@ Dit is een dry-run — geen y/N prompts, niets wordt geschreven.
 Skill runs the command. Output (script's own format, verbatim):
 
 ```
-Reading source playlist: To triage (3aBcDeFgHiJkLmNoPqRsTu)
-Found 22 tracks. Classifying...
+Reviewing source: To triage (3aBcDeFgHiJkLmNoPqRsTu)
 
-  [1/22] Bakermat - Walk That Walk
+============================================================
+Track 1/22: Bakermat - Walk That Walk
+============================================================
+
 Suggested playlists:
-  - House — 92% — uplifting deep-house with vocals
-  - Party — 84% — high-energy festival vibe
+- House — 92% — uplifting deep-house with vocals
+- Party — 84% — high-energy festival vibe
 
-DRY RUN: would prompt for [y/N/s/q]
-DRY RUN: would add (on y) to: House, Party
+Add this track to these playlists? [y/N/s/q]:
+- House: DRY RUN (would add)
+- Party: DRY RUN (would add)
 
-  [2/22] ...
+...
 
-Review complete (DRY RUN): 0 added, 0 prompted.
+============================================================
+Review complete (DRY RUN): accepted 22, skipped 0, reviewed 22/22.
 ```
+
+The `yes |` pipe answered every prompt with `y`; without `--execute` nothing was written.
 
 ## Step 9 — summary
 

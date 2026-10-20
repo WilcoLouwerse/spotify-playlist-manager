@@ -61,12 +61,12 @@ User-facing prose is **Dutch**. Keep SKILL.md, references, templates, and exampl
 
    Parse the output: skip the first line (`Playlist: … (N tracks)`), then for each remaining line split on the first tab → `(uri, label)`.
 
-   **If the output is empty (Spotify dev-tier returns no tracks):**
+   **If the output is empty (the playlist is empty, or Spotify hides its contents):**
    - Ask the user via **AskUserQuestion** if they have an exportify CSV export:
      - **Ja, ik heb een CSV** — ask for the path and re-run `list-tracks "<csv-path>"`
      - **Nee** — suggest exporting via https://exportify.net and stop.
 
-   **Cross-check with `.tracks_log.json` for freshness.** Whenever the track list came from a CSV (the fallback above) — not when the Spotify API returned tracks directly — also consult `.tracks_log.json[<playlist-id>]`. The log is updated by every `add`, `bulk-playlist`, `review-playlist`, and `scan-for --execute` run, so it can hold URIs that the CSV snapshot missed. See `references/audit-command.md` → "Freshness check via .tracks_log.json" for the rules. If the log has URIs not present in the CSV, surface this via **AskUserQuestion** before continuing — the audit's accuracy depends on completeness.
+   **Cross-check with `.tracks_log.json` for freshness.** Only when the track list came from a CSV (the fallback above) — never when the Spotify API returned tracks, because then Spotify is authoritative — also consult `.tracks_log.json[<playlist-id>]`. The log is updated by every `add`, `bulk-playlist`, `review-playlist`, and `scan-for --execute` run, so it can hold URIs that the CSV snapshot missed. See `references/audit-command.md` → "Freshness check via .tracks_log.json" for the rules. If the log has URIs not present in the CSV, surface this via **AskUserQuestion** before continuing — the audit's accuracy depends on completeness.
 
 4. **Choose audit mode**
 

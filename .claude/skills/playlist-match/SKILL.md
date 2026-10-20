@@ -35,7 +35,7 @@ User-facing prose is **Dutch** (the user authored the format spec in Dutch). Kee
      - User wants to **remove a track** from a playlist → `/playlist-remove`
      - User wants to **audit a playlist** (check if existing tracks match its genre/theme) → `/playlist-audit`
      - User wants to **add or sync playlists in the config** (`playlists.json`) → `/playlist-config`
-     - User wants to **seed the duplicate guard** from an Exportify export → `/playlist-log-import`
+     - User wants to **seed the fallback duplicate log** from an Exportify export → `/playlist-log-import`
 
    For follow-ups jump to step 9.
 

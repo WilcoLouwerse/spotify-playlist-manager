@@ -48,7 +48,7 @@ User-facing prose is **Dutch**. Keep SKILL.md, references, templates, and exampl
 
    Follow `references/source-resolution.md` (same rules as playlist-triage). Accept Spotify URL/URI/ID, CSV path, or bare name (resolved against `exportify-exports/`). Quote the source verbatim.
 
-   **Cross-check with `.tracks_log.json` for freshness.** If the source resolves to a CSV under `exportify-exports/` AND the source playlist is known in `playlists.json` (look up its Spotify ID), compare the CSV's URI set against `.tracks_log.json[<source-id>]`. CSVs are point-in-time snapshots; the log is updated by every `add`, `bulk-playlist`, `review-playlist`, and `scan-for --execute` run, so it can be more recent. See `references/source-resolution.md` → "Freshness check via .tracks_log.json" for the exact rules and how to surface a stale CSV via **AskUserQuestion**.
+   **Prefer the live playlist.** If the source resolves to a CSV under `exportify-exports/` AND the source playlist is known in `playlists.json`, Spotify can read it live — offer that via **AskUserQuestion** instead of silently using the snapshot. See `references/source-resolution.md` → "Prefer the live playlist over a CSV".
 
 4. **Choose scan mode**
 

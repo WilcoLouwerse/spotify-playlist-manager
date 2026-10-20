@@ -147,7 +147,7 @@ User-facing prose is **Dutch**. Keep SKILL.md, references, templates, and exampl
 - **Never** strip or reorder the existing `"playlists"` block — only append. Renaming a key or removing one orphans every entry in `aliases` / `categories` / `special_rules` / `catch_all` that referenced it.
 - **Never** auto-categorise a new playlist. The user picks `genre` / `mood` / `theme` or skips. Wrong categorisation degrades the `smart-add` classifier's accuracy.
 - **Never** set `catch_all.playlist` to a key that isn't in `"playlists"`. Same validation rule as aliases.
-- **Never** run `list-playlists --all` more than once per turn. The output is stable across the flow; re-fetching wastes a Spotify API call (the dev-tier quota is tight).
+- **Never** run `list-playlists --all` more than once per turn. The output is stable across the flow; re-fetching wastes a Spotify API call (Development Mode rate limits are tight).
 - **Never** print the live `playlists.json` contents to chat in full unless the user asks. Names and counts are fine; pasting the whole file is noise.
 - Always invoke the venv python (`.venv/bin/python`) from the repo root — venv state and IPv4 routing both depend on it (IPv4 is required for the `--all` Spotify API call).
 - Always quote playlist names in commands and JSON keys verbatim — they contain spaces, `/`, `&`, `'`, and accented characters.

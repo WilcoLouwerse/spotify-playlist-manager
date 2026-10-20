@@ -42,7 +42,7 @@ User-facing prose is **Dutch** (consistent with the rest of this project's skill
    - CSV path → use as-is (verify it exists).
    - Bare name → list `exportify-exports/*.csv` and offer matches via **AskUserQuestion**. Spotify display names map to underscored, slash-tolerant filenames; let the user pick from the actual filenames rather than guessing.
 
-   **Cross-check with `.tracks_log.json` for freshness.** If the source resolves to a CSV AND the source playlist is known in `playlists.json` (look up its Spotify ID), compare the CSV's URI set against `.tracks_log.json[<source-id>]`. CSVs are point-in-time snapshots; the log is updated by every `add`, `bulk-playlist`, `review-playlist`, and `scan-for --execute` run, so it can be more recent. See `references/source-resolution.md` → "Freshness check via .tracks_log.json" for the exact rules and how to surface a stale CSV via **AskUserQuestion**.
+   **Prefer the live playlist.** If the source resolves to a CSV AND the source playlist is known in `playlists.json`, Spotify can read it live — offer that via **AskUserQuestion** instead of silently using the snapshot. See `references/source-resolution.md` → "Prefer the live playlist over a CSV".
 
 3. **Pick the workflow**
 
@@ -145,8 +145,8 @@ User-facing prose is **Dutch** (consistent with the rest of this project's skill
 - **Never** ask the user "batch or per-track?" when the answer is obviously batch. Default to `batch-add` for any target with ≥ 2 accepted URIs. Only ask if there's a structural reason (e.g. the user explicitly wants to inspect each before adding).
 - **Never** drive `review-playlist`'s per-track stdin from chat — recommend the terminal path instead. `bulk-playlist`'s single y/N may be piped with `yes |` only after the user opts in.
 - **Never** invent a Spotify playlist URL or a CSV filename. If the source doesn't match anything, ask.
-- **Never** seed `.tracks_log.json` from this skill — that is the `log-import` command's job. If the user mentions "duplicate guard", point them at [`docs/commands.md`](../../../docs/commands.md#log-import).
+- **Never** seed `.tracks_log.json` from this skill — that is the `log-import` command's job. The duplicate guard reads Spotify directly; the log is only its fallback. If the user mentions "duplicate guard", point them at [`docs/architecture.md → Duplicate detection`](../../../docs/architecture.md#duplicate-detection).
 - Always invoke the venv python (`.venv/bin/python`) from the repo root — IPv4 routing and venv state both depend on it.
 - Always quote source arguments to survive playlist names with spaces, `/`, or `'`.
-- If `playlist_items` returns stripped data (Spotify Developer Mode), the CLI itself offers a CSV fallback — let it. Don't pre-empt that path.
+- If Spotify returns no readable tracks for the source (e.g. a playlist owned by someone else), the CLI itself offers a CSV fallback — let it. Don't pre-empt that path.
 - User-facing prose is **Dutch**. CLI commands and playlist names stay verbatim.

@@ -1,6 +1,6 @@
 ---
 name: playlist-log-import
-description: Seeds the local duplicate-guard log (.tracks_log.json) with a playlist's exportify CSV via the project's log-import CLI command — fires on 'seed mijn log voor House', 'import House export', 'log-import', or 'House CSV importeren'.
+description: Seeds the local fallback duplicate log (.tracks_log.json) with a playlist's exportify CSV via the project's log-import CLI command — fires on 'seed mijn log voor House', 'import House export', 'log-import', or 'House CSV importeren'.
 metadata:
   category: Workflow
   tags: [spotify, log-import, duplicate-guard, exportify, dutch]
@@ -8,7 +8,9 @@ metadata:
 
 # Playlist Log-Import
 
-Wraps the project's local-log seeding workflow: parse a Spotify export file (Exportify CSV, text, or JSON), pull every track URI/URL/ID out of it, and record those URIs against one target playlist in `.tracks_log.json`. The duplicate guard (used by `add`, `smart-add`, `review-playlist`, `bulk-playlist`, `scan-for`) then knows those tracks are "already in" that playlist and won't try to re-add them.
+Wraps the project's local-log seeding workflow: parse a Spotify export file (Exportify CSV, text, or JSON), pull every track URI/URL/ID out of it, and record those URIs against one target playlist in `.tracks_log.json`.
+
+The duplicate guard (used by `add`, `smart-add`, `review-playlist`, `bulk-playlist`, `scan-for`) reads each playlist's live contents from Spotify. `.tracks_log.json` is only its **fallback**, consulted when Spotify hides a playlist's contents (the CLI then prints `WARN: Spotify returned playlist entries without track URIs`). So this skill is rarely needed: when the user asks for it, run it, but mention in Dutch that the guard already sees tracks added in the Spotify app and that seeding only completes the fallback. See [`docs/architecture.md → Duplicate detection`](../../../docs/architecture.md#duplicate-detection).
 
 This is a **local-only** operation — no Spotify API call is made, no `--execute` flag exists, and the command always runs to completion the moment it's invoked. The skill's safety gate is the AskUserQuestion confirmation **before** running, not after.
 
@@ -20,7 +22,7 @@ Different shape from [playlist-scan](../playlist-scan/SKILL.md) and [playlist-tr
 | Dry-run | Yes (default) | N/A — no Spotify side-effect |
 | y/N prompt | Yes (per-track or single) | None — runs to completion |
 | Source | Spotify URL/URI/ID or CSV | File path only (CSV/text/JSON) |
-| Use case | Sort tracks into playlists | Teach the duplicate guard about existing playlists |
+| Use case | Sort tracks into playlists | Complete the duplicate guard's fallback log |
 
 User-facing prose is **Dutch**. Keep SKILL.md, references, templates, and examples in English.
 

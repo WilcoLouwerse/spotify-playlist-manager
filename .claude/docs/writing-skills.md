@@ -116,7 +116,7 @@ The skill contains domain-specific knowledge that makes it uniquely effective fo
 
 **In this repository**, L4 personalization includes:
 - The [playlists.json](../../playlists.json) taxonomy — categories, aliases, special rules, catch-all guard
-- The Spotify Web API contract (track URI/URL/ID parsing, playlist write scopes, dev-tier API restrictions)
+- The Spotify Web API contract (track URI/URL/ID parsing, playlist write scopes, Development Mode restrictions such as owner-only playlist contents)
 - The project's CLI surface — [`playlist_manager.py`](../../playlist_manager.py) subcommands (`add`, `smart-add`, `review-playlist`, `bulk-playlist`, `scan-for`, `analyze-only`, `list-playlists`, `log-import`), the dry-run-by-default safety pattern, and the `.tracks_log.json` duplicate guard
 - Dutch user-facing prose (the author's preferred output language), with English internals so triggers and steering stay model-readable
 - The OpenAI classifier's role in `smart-add` and the genre-source-verification rules documented in the skill's `references/`

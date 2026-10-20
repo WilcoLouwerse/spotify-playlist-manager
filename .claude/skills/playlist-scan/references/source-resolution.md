@@ -11,7 +11,7 @@ How to turn the user's source input into a single positional argument for `scan-
 | Spotify URL | `https://open.spotify.com/playlist/3aBcDeFgHiJkLmNoPqRsTu` | Direct. |
 | Spotify URI | `spotify:playlist:3aBcDeFgHiJkLmNoPqRsTu` | Alternate format. |
 | Bare 22-char ID | `3aBcDeFgHiJkLmNoPqRsTu` | Quote so a leading hyphen isn't parsed as a flag. |
-| CSV path | `exportify-exports/Random_sht.csv` | Use when Developer-Mode strips track URIs or when the export is fresher than the Spotify state. |
+| CSV path | `exportify-exports/Random_sht.csv` | Use for a playlist owned by someone else (Spotify won't expose its contents), or to deliberately process a snapshot. |
 | Bare name | `"Random sht"`, `Random_sht`, `random-sht` | Resolves against `exportify-exports/`. Case-insensitive, slash/underscore/space tolerant. |
 
 ---
@@ -36,43 +36,27 @@ The skill should validate the target name *before* invoking the command — read
 
 ---
 
-## Freshness check via .tracks_log.json
+## Prefer the live playlist over a CSV
 
-CSVs in `exportify-exports/` are point-in-time exports — `.tracks_log.json` is updated live by every successful `add`, `bulk-playlist`, `review-playlist`, and `scan-for --execute` run. When the resolved source is a CSV, the skill should compare the two before scanning.
+Spotify returns the live contents of every playlist you own or collaborate on; a CSV in `exportify-exports/` is a point-in-time snapshot. So when the source resolves to a CSV, check whether the live playlist is available.
 
-**When to run the check**:
-- The source resolved to a CSV path (explicit or bare-name match under `exportify-exports/`).
-- AND the source playlist's name is present in `playlists.json -> playlists` (so we can look up its Spotify ID).
+**When to run the check**: the source resolved to a CSV path (explicit or bare-name match) AND the CSV's playlist name is present in `playlists.json -> playlists`. Every playlist in that file is readable via the API. If the name isn't there, skip the check — the CSV is likely the only way to read that playlist (e.g. one owned by someone else).
 
-If either condition fails, skip the check.
+**How**: use **AskUserQuestion** in Dutch:
 
-**How**:
-1. Look up the source's Spotify ID via `playlists.json -> playlists[<source-name>]`.
-2. Read `.tracks_log.json` and grab the array at `[<source-id>]` (empty array if the key is missing).
-3. Parse the CSV — collect the URI set from the `Track URI` column (Exportify's first column). Normalize URLs to `spotify:track:<id>` form so the sets are comparable.
-4. Compute `log_only = log_uris - csv_uris` (tracks the log has that the CSV doesn't).
-
-**Surfacing a stale CSV** — if `len(log_only) > 0`, the CSV is likely stale. Use **AskUserQuestion**:
-
-> "De CSV `<file>` mist {N} tracks die wel in `.tracks_log.json` voor {source} staan — de CSV is mogelijk verouderd. Hoe wil je verder?"
-> - **Gebruik Spotify URL/URI** *(meest actueel)* — vraag om de URL/URI van de source en gebruik die in plaats van de CSV.
-> - **Ga door met deze CSV** — accepteer dat recente toevoegingen worden gemist.
-> - **Exporteer eerst opnieuw via Exportify** — stop de scan; user re-exports and re-runs.
-
-If `log_only` is empty, proceed silently — the CSV is in sync (or newer, which is fine).
-
-**Cases where the log is *less* complete than the CSV** (`len(csv_uris - log_uris) > 0`): do not warn. The log only records adds made via the CLI; tracks added through Spotify's UI are in the CSV but not the log. That's expected, not stale.
+> "Voor {source} staat een CSV-export klaar, maar Spotify kan deze playlist ook live uitlezen. Welke bron wil je gebruiken?"
+> - **Live via Spotify (Recommended)** — meest actueel; geef de Spotify-ID uit `playlists.json -> playlists[<source-name>]` door in plaats van de CSV.
+> - **Deze CSV** — bijvoorbeeld om bewust een momentopname te verwerken.
 
 ---
 
-## Stripped-data CSV fallback
+## CSV fallback for unreadable playlists
 
-If a Spotify URL is given but the API returns no readable tracks (Developer Mode strips `track` URIs from `playlist_items`), `scan-for` prints:
+Spotify only exposes the contents of playlists you own or collaborate on; for anyone else's playlist the items endpoint answers `403`. If a Spotify URL is given but no readable tracks come back, `scan-for` prints:
 
 ```
-Source playlist returned no readable tracks.
-Found a matching CSV: exportify-exports/<file>.csv
-Use it as the source instead? [y/N]:
+Spotify returned no readable tracks for '<name>' (<id>). Spotify only exposes the contents of playlists you own or collaborate on, so a playlist owned by someone else can't be read directly.
+Found local export at exportify-exports/<file>.csv — use that instead? [y/N]:
 ```
 
 Let the CLI handle that prompt — don't pre-empt it.

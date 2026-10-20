@@ -31,13 +31,13 @@ spotify:track:def456	Dua Lipa - Levitating
 2. For each remaining line: split on the first `\t` → `[uri, label]`
 3. Keep `{uri, label}` pairs in memory for the audit loop
 
-**Empty output:** Spotify dev-tier may return no tracks (stripped playlist contents). In that case use an exportify CSV path as the input instead.
+**Empty output:** the playlist is empty, or Spotify hides its contents. In the second case use an exportify CSV path as the input instead.
 
 ---
 
 ## Freshness check via .tracks_log.json
 
-Only relevant when the track list came from a CSV under `exportify-exports/` (the dev-tier fallback). When the Spotify API returned tracks directly, skip this check — the API is authoritative.
+Only relevant when the track list came from a CSV under `exportify-exports/` (the fallback for when Spotify returns no tracks). When the Spotify API returned tracks directly, skip this check — the API is authoritative.
 
 CSVs are point-in-time exports; `.tracks_log.json` is updated live by every `add`, `bulk-playlist`, `review-playlist`, and `scan-for --execute` run. So the log can hold URIs that the CSV snapshot missed.
 
@@ -72,7 +72,7 @@ Classifies every track using OpenAI and prints:
 - A "Tracks below X%" block with URIs for removal candidates
 
 **Flags:**
-- `--csv <path>` — Use an exportify CSV instead of the Spotify API for the track list (required in dev-tier)
+- `--csv <path>` — Use an exportify CSV instead of the Spotify API for the track list (only needed when Spotify returns no tracks)
 - `--min-confidence <int>` — Default 60. Tracks below this threshold are listed as removal candidates with their URIs
 
 **Parsing in the skill (quick mode):**

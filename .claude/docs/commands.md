@@ -15,7 +15,7 @@ For the end-user CLI reference (`python playlist_manager.py …`), see [docs/com
 | [`/playlist-scan`](#playlist-scan) | Workflow | Scans a source playlist for tracks that fit a chosen target playlist via `scan-for` |
 | [`/playlist-remove`](#playlist-remove) | Workflow | Removes a track from one or more playlists via `remove` |
 | [`/playlist-audit`](#playlist-audit) | Workflow | Audits a playlist's genre/theme fit with confidence scores per track and offers to remove low-confidence tracks |
-| [`/playlist-log-import`](#playlist-log-import) | Workflow | Seeds the local duplicate-guard log (`.tracks_log.json`) from an Exportify CSV via `log-import` |
+| [`/playlist-log-import`](#playlist-log-import) | Workflow | Seeds the local fallback duplicate log (`.tracks_log.json`) from an Exportify CSV via `log-import` |
 | [`/playlist-config`](#playlist-config) | Workflow | Bootstraps or extends `playlists.json` from your Spotify account via `list-playlists --all` |
 | [`/event-radar`](#event-radar) | Workflow | Generates personalized concert/festival recommendations from your playlists with date-availability, genre, venue-tier and discovery filters |
 
@@ -184,7 +184,7 @@ audit House, gebruik de snelle mode
 **What it does:**
 
 1. Resolves the playlist from `playlists.json`. Refuses to audit `Random sht` (it's the catch-all by design).
-2. Runs `list-tracks "<playlist>"` to get the track list. Falls back to an exportify CSV when the API returns empty (Spotify Dev Mode).
+2. Runs `list-tracks "<playlist>"` to get the live track list from Spotify. Falls back to an exportify CSV only when the API returns nothing.
 3. Offers two audit modes via `AskUserQuestion`: **web-first** (Claude + WebSearch per track, default for ≤20 tracks) or **quick** (OpenAI `audit-playlist` CLI, faster for larger playlists).
 4. Produces a Dutch audit report with ✅/⚠️/❌ per track and a score distribution summary.
 5. Asks for a removal threshold via `AskUserQuestion`, presents low-confidence candidates via `multiSelect`, confirms, then runs `remove --execute` for each accepted track.
@@ -204,7 +204,7 @@ audit House, gebruik de snelle mode
 
 **Category:** Workflow
 
-Seeds the local duplicate-guard log (`.tracks_log.json`) for one playlist from an Exportify CSV (or any file containing Spotify track URIs/URLs/IDs). Wraps the project's [`log-import`](../../docs/commands.md#log-import) CLI subcommand.
+Seeds the local fallback duplicate log (`.tracks_log.json`) for one playlist from an Exportify CSV (or any file containing Spotify track URIs/URLs/IDs). The duplicate guard reads Spotify directly; this log is only consulted when Spotify hides a playlist's contents. Wraps the project's [`log-import`](../../docs/commands.md#log-import) CLI subcommand.
 
 **Usage:**
 

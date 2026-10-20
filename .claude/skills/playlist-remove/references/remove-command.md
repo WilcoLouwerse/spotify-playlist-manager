@@ -28,7 +28,7 @@ Special characters to handle:
 From [`docs/commands.md`](../../../../docs/commands.md):
 
 - **Dry-run by default** — Without `--execute` the script prints what it *would* do and exits. The skill always passes `--execute` because it confirmed with the user.
-- **`SKIP: track not found in playlist. No changes made.`** — The track was not found via the local `.tracks_log.json` log or the Spotify API. Most likely it was added to the playlist through the Spotify UI (not via this tool). In Development Mode, the Spotify API also returns empty track lists from `playlist_items`, so this SKIP can fire even when the track is truly in the playlist. Tip: run `log-import` to seed the log from an Exportify CSV, or switch to production Spotify access.
+- **`SKIP: track not found in playlist. No changes made.`** — Spotify's live playlist contents don't include this URI. Most likely the playlist name or the track version is off (a remaster or single has a different URI). If the output also contains `WARN: Spotify returned playlist entries without track URIs`, Spotify hid the contents and the check fell back to `.tracks_log.json`; then a track added through the Spotify app can be missing from that log — `log-import` completes it.
 - **`DONE: track removed (snapshot …)`** — The track was found and removed. The snapshot confirms the change was written to Spotify.
 - **`FAILED: Spotify returned …`** — API error. Surface verbatim; the user may need to re-authenticate or check their Spotify app settings.
 - **IPv4 only** — Spotify's IPv6 route is broken on WSL; the script forces IPv4. No skill action needed; the first call may take a moment.
@@ -39,7 +39,7 @@ From [`docs/commands.md`](../../../../docs/commands.md):
 
 When a removal succeeds, the script removes the track URI from `.tracks_log.json` for that playlist. This means a future `add` call for the same track will no longer see it as a duplicate and can add it back cleanly.
 
-If the track was added outside this tool (Spotify UI) and is not in `.tracks_log.json`, the removal still succeeds on the Spotify side but there is nothing to remove from the local log — that's expected.
+If the track was added outside this tool (Spotify app) and is not in `.tracks_log.json`, the removal still succeeds — the presence check reads Spotify — and there is simply nothing to remove from the local log.
 
 ---
 

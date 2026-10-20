@@ -62,7 +62,7 @@ SKIP: track not found in playlist. No changes made.
 ```
 
 The skill surfaces this verbatim and explains in Dutch:
-> "Het nummer staat niet in de lokale log voor Techno. Dit kan betekenen dat het via de Spotify-app is toegevoegd (niet via dit script). In Development Mode kan de Spotify API ook geen bevestiging geven. Gebruik `/playlist-log-import` om de log te seeden vanuit een Exportify CSV als je dat wil corrigeren."
+> "Het nummer staat volgens Spotify niet in Techno. Controleer of je de juiste playlist bedoelt, of dat het om een andere versie van het nummer gaat (een remaster of single heeft een andere track-ID)."
 
 ---
 

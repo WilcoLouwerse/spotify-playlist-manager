@@ -45,13 +45,14 @@ Artist - Title
 4. Determines genres via live web lookup (AllMusic, Wikipedia, RYM, Discogs, Last.fm) as the primary source; training-data recall is the last resort only.
 5. Matches 1–5 playlists from `playlists.json` categories, each scored with a confidence percentage and a short reason.
 6. Renders a Dutch analysis (artist info, song description, genres, playlist matches), then calls `AskUserQuestion` with a standard follow-up menu.
-7. On "Voeg toe aan playlists", uses `AskUserQuestion` with `multiSelect: true` to pick playlists from the recommended set — that selection is the confirmation gate — then shows the exact `playlist_manager.py add` commands and runs them via Bash.
+7. On "Voeg toe aan playlists", uses `AskUserQuestion` with `multiSelect: true` to pick playlists from the recommended set — that selection is the confirmation gate — then shows the exact `playlist_manager.py add` commands plus one `like` command and runs them via Bash, so every added track also lands in Liked Songs.
 
 **Guardrails:**
 
 - **Never** recommends `Random sht` — it is the script-side catch-all under `playlists.json -> catch_all` and must not appear in user-facing output.
 - **Never** recommends a playlist that is not currently present in `playlists.json -> categories` (the file is read each run).
 - **Never** invokes `add` with `--execute` without explicit confirmation in the same turn.
+- **Always** follows the `add` commands with `like --execute`; skipped only when no playlist was selected.
 - **Never** invents or guesses a Spotify track ID. If only `Artist - Title` was given, asks the user to paste a URL before invoking `add`.
 - **Never** uses old letter-shortcut menus (`A`–`F` etc.) — all follow-ups go through `AskUserQuestion`.
 - User-facing prose is **Dutch**; playlist names stay verbatim from `playlists.json` (no translation).

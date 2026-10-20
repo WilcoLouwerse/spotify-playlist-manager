@@ -35,6 +35,7 @@ A single-file CLI built on `argparse`:
 
 - `list-playlists` — prints the playlists in `playlists.json`, or with `--all` lists every writable playlist on the Spotify account.
 - `add` — direct, single-target add with duplicate guard.
+- `like` — adds a track to the user's Liked Songs (the Spotify library, not a playlist). Dry-run by default; the duplicate check asks Spotify via `current_user_saved_tracks_contains` instead of `.tracks_log.json`.
 - `remove` — direct, single-target removal; mirrors `add` — dry-run by default, `--execute` to write. Updates `.tracks_log.json` on success.
 - `smart-add` — OpenAI classifier + confirmation prompt + duplicate guard.
 - `analyze-only` — same classification pipeline as `smart-add`, no prompts, no writes.

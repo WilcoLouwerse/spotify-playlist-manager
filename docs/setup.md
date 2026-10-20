@@ -44,6 +44,8 @@ The OAuth flow asks for the following scopes (defined in [playlist_manager.py](.
 
 You only consent once. The token is cached in `.spotify_token_cache` (also gitignored) and refreshes automatically.
 
+When a new version adds a scope to this list, the cached token does not pick it up and commands that need it fail with `403`. Delete `.spotify_token_cache` and run any command to consent again.
+
 ## OpenAI credential
 
 Only required for `smart-add`. The plain `add` and `list-playlists` commands work without it.

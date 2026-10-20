@@ -7,6 +7,7 @@ Local CLI to manage my Spotify playlists. Built on the [Spotify Web API](https:/
 python playlist_manager.py list-playlists
 python playlist_manager.py add "https://open.spotify.com/track/<id>" "House" --execute
 python playlist_manager.py remove "https://open.spotify.com/track/<id>" "House" --execute
+python playlist_manager.py like "https://open.spotify.com/track/<id>" --execute
 python playlist_manager.py smart-add "https://open.spotify.com/track/<id>" --execute --accept-all
 python playlist_manager.py review-playlist "https://open.spotify.com/playlist/<id>" --execute
 python playlist_manager.py bulk-playlist "https://open.spotify.com/playlist/<id>" --execute
@@ -23,7 +24,7 @@ python playlist_manager.py scan-for "House" "https://open.spotify.com/playlist/<
 
 If you're working in this repo with [Claude Code](https://claude.com/claude-code), the repo ships seven slash commands:
 
-- `/playlist-match` — paste a Spotify URL or *"Artist - Title"* and Claude classifies the genres, recommends matching playlists from your `playlists.json`, and can invoke `add` for you.
+- `/playlist-match` — paste a Spotify URL or *"Artist - Title"* and Claude classifies the genres, recommends matching playlists from your `playlists.json`, and can invoke `add` for you — every track it adds to a playlist also goes into your Liked Songs via `like`.
 - `/playlist-triage` — sort a whole source playlist into many target playlists in one go, via `review-playlist` (per-track y/N) or `bulk-playlist` (single y/N).
 - `/playlist-scan` — mine a source playlist for tracks that fit *one* chosen target, via `scan-for`.
 - `/playlist-remove` — remove a track from one or more playlists via `remove`.

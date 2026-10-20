@@ -4,8 +4,8 @@ CLI reference for [playlist_manager.py](../playlist_manager.py). Run every comma
 
 ## Global behavior
 
-- **Dry-run by default.** Commands that write to Spotify (`add`, `remove`, `smart-add`, `review-playlist`, `bulk-playlist`, `scan-for`) print what they *would* do and exit. Add `--execute` to actually write.
-- **Duplicate guard is always on.** Before writing, the script consults the local log (`.tracks_log.json`) of every URI it has successfully added or that has been seeded via `log-import`. If the URI is found, it exits with `SKIP`. There is no override flag. See [architecture.md → Duplicate detection](architecture.md#duplicate-detection) for why the local log is authoritative and how to seed it.
+- **Dry-run by default.** Commands that write to Spotify (`add`, `like`, `remove`, `smart-add`, `review-playlist`, `bulk-playlist`, `scan-for`) print what they *would* do and exit. Add `--execute` to actually write.
+- **Duplicate guard is always on.** Before writing, the script consults the local log (`.tracks_log.json`) of every URI it has successfully added or that has been seeded via `log-import`. If the URI is found, it exits with `SKIP`. There is no override flag. `like` is the exception: Liked Songs is not a playlist, so it asks Spotify directly instead of the log. See [architecture.md → Duplicate detection](architecture.md#duplicate-detection) for why the local log is authoritative and how to seed it.
 - **IPv4 only.** The script forces IPv4 resolution because WSL's IPv6 route to `api.spotify.com` is broken. See [architecture.md](architecture.md) for the why.
 
 ## `list-playlists`

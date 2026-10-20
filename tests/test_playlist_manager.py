@@ -669,6 +669,19 @@ class TestResolveSource:
         assert any("Found local export" in p for p in prompts)
         assert "Export the playlist" in capsys.readouterr().out  # the standard pointer message
 
+    def test_url_forbidden_is_treated_as_unreadable(self, exportify_dir, capsys):
+        # Playlists owned by someone else return 403 on the items endpoint.
+        import spotipy
+
+        class _ForbiddenSpotify(_StubSpotify):
+            def playlist_items(self, *a, **k):
+                raise spotipy.SpotifyException(403, -1, "Forbidden")
+
+        sp = _ForbiddenSpotify(playlist_info={"name": "Someone Elses", "id": "z" * 22})
+        name, locator, items = pm._resolve_source(sp, "z" * 22)
+        assert items is None
+        assert "own or collaborate on" in capsys.readouterr().out
+
     def test_url_stripped_no_matching_csv(self, exportify_dir, capsys):
         sp = _StubSpotify(
             playlist_info={"name": "Some Unmatched Name", "id": VALID_ID},

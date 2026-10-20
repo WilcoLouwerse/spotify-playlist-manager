@@ -1102,8 +1102,9 @@ def _resolve_source(sp, source_input):
 
     `source_input` may be a Spotify playlist URL/URI/ID, a path to an exportify
     CSV file, or a bare name matching `exportify-exports/<name>.csv`. If a Spotify
-    URL returns no readable tracks (dev-tier strips playlist contents), look for
-    a matching CSV and prompt the user to use it instead.
+    URL returns no readable tracks (Spotify only exposes the contents of playlists
+    the user owns or collaborates on), look for a matching CSV and prompt the
+    user to use it instead.
 
     Returns (source_name, source_locator, items) on success, (None, None, None)
     on failure. `source_locator` is the playlist ID or CSV path for display.
@@ -1129,16 +1130,22 @@ def _resolve_source(sp, source_input):
         return None, None, None
 
     source_name = info.get("name") or playlist_id
-    items = _iter_playlist_tracks(sp, playlist_id)
+    try:
+        items = _iter_playlist_tracks(sp, playlist_id)
+    except spotipy.SpotifyException as exc:
+        if exc.http_status != 403:
+            raise
+        items = []
     if items:
         return source_name, playlist_id, items
 
+    reason = (
+        "Spotify only exposes the contents of playlists you own or collaborate on, "
+        "so a playlist owned by someone else can't be read directly."
+    )
     csv_path = _csv_path_for_name(source_name)
     if csv_path:
-        print(
-            f"\nSpotify returned no readable tracks for '{source_name}' ({playlist_id}). "
-            "The app is likely in Development Mode where playlist contents are stripped."
-        )
+        print(f"\nSpotify returned no readable tracks for '{source_name}' ({playlist_id}). {reason}")
         if _prompt_yes(f"Found local export at {csv_path} — use that instead? [y/N]: "):
             items = _load_tracks_from_csv(csv_path)
             if items:
@@ -1146,10 +1153,9 @@ def _resolve_source(sp, source_input):
             print("Local export has no readable tracks.")
 
     print(
-        "Spotify returned no readable tracks from this playlist. The app is likely "
-        "in Development Mode where playlist contents are stripped. Export the playlist "
-        "via https://exportify.net and use `smart-add` per track, or `log-import` to seed "
-        "the duplicate log. See docs/architecture.md → Duplicate detection."
+        f"Spotify returned no readable tracks from this playlist: it is empty, or hidden. {reason} "
+        "Export the playlist via https://exportify.net into exportify-exports/ and pass "
+        "the CSV as the source. See docs/commands.md → review-playlist."
     )
     return None, None, None
 
@@ -1636,9 +1642,9 @@ def list_tracks(sp, playlist_input):
 
     if not items:
         print(
-            f"No readable tracks returned for '{playlist_input}'. "
-            "The app may be in Development Mode where Spotify strips playlist contents. "
-            "Export the playlist via https://exportify.net and pass the CSV path instead."
+            f"No readable tracks returned for '{playlist_input}': the playlist is empty, "
+            "or Spotify hides its contents. Export the playlist via https://exportify.net "
+            "and pass the CSV path instead."
         )
         return
 
@@ -1672,9 +1678,9 @@ def audit_playlist(sp, playlist_name, csv_path, min_confidence):
     if not items:
         if not csv_path:
             print(
-                f"No readable tracks returned for '{canonical_name}' ({playlist_id}). "
-                "The app may be in Development Mode where Spotify strips playlist contents. "
-                "Export the playlist via https://exportify.net and use --csv <path> to pass the file."
+                f"No readable tracks returned for '{canonical_name}' ({playlist_id}): the "
+                "playlist is empty, or Spotify hides its contents. Export the playlist via "
+                "https://exportify.net and use --csv <path> to pass the file."
             )
         else:
             print(f"No readable tracks in {csv_path}.")
@@ -1791,7 +1797,7 @@ def main():
         help="Source to read tracks from: a Spotify playlist URL/URI/ID, a path to an "
         "exportify CSV (e.g. exportify-exports/House.csv), or a bare name matching "
         "a file in exportify-exports/ (e.g. House). When a URL returns no readable "
-        "tracks (dev-tier strips contents), the script offers a matching CSV as fallback.",
+        "tracks (e.g. a playlist owned by someone else), the script offers a matching CSV as fallback.",
     )
     review_parser.add_argument("--execute", action="store_true", help="Actually write accepted additions to Spotify")
     review_parser.add_argument(
@@ -1826,7 +1832,7 @@ def main():
         help="Source to scan for candidates: a Spotify playlist URL/URI/ID, a path to an "
         "exportify CSV (e.g. exportify-exports/House.csv), or a bare name matching "
         "a file in exportify-exports/ (e.g. House). When a URL returns no readable "
-        "tracks (dev-tier strips contents), the script offers a matching CSV as fallback.",
+        "tracks (e.g. a playlist owned by someone else), the script offers a matching CSV as fallback.",
     )
     scan_parser.add_argument("--execute", action="store_true", help="Actually add the accepted tracks to the target playlist")
     scan_parser.add_argument(
@@ -1845,7 +1851,7 @@ def main():
         help="Source to read tracks from: a Spotify playlist URL/URI/ID, a path to an "
         "exportify CSV (e.g. exportify-exports/House.csv), or a bare name matching "
         "a file in exportify-exports/ (e.g. House). When a URL returns no readable "
-        "tracks (dev-tier strips contents), the script offers a matching CSV as fallback.",
+        "tracks (e.g. a playlist owned by someone else), the script offers a matching CSV as fallback.",
     )
     bulk_parser.add_argument("--execute", action="store_true", help="Actually write accepted additions to Spotify")
     bulk_parser.add_argument(
@@ -1908,7 +1914,7 @@ def main():
     import_parser = subparsers.add_parser(
         "log-import",
         help="Import Spotify track URIs/URLs/IDs from a file into the local adds log "
-        "for a playlist (workaround for Spotify dev-tier API restrictions)",
+        "for a playlist (fallback duplicate guard when Spotify hides playlist contents)",
     )
     import_parser.add_argument("playlist", help="Target playlist name")
     import_parser.add_argument(
@@ -1973,7 +1979,7 @@ def main():
     audit_parser.add_argument(
         "--csv",
         metavar="PATH",
-        help="Path to an exportify CSV export — workaround when Spotify dev-tier strips playlist contents",
+        help="Path to an exportify CSV export — for when Spotify returns no readable tracks",
     )
     audit_parser.add_argument(
         "--min-confidence",

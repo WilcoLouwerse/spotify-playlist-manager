@@ -17,6 +17,7 @@ Dated, atomic observations promoted from `learning-candidates.md` after they've 
 ## Domain Knowledge
 
 - 2026-05-15: `list-tracks` returns an empty result in Spotify Developer Mode. This is the most common failure point — always check the output for emptiness and offer the exportify CSV fallback before proceeding.
+- ⚠️ contradicted 2026-10-20: the empty result came from Spotify's Feb 2026 `track`→`item` rename, now handled by the CLI. `list-tracks` reads every playlist in `playlists.json` live; the CSV fallback is only for playlists Spotify can't read (owned by someone else).
 - 2026-05-15: `audit-playlist` (OpenAI quick mode) classifies against ALL playlists and then shows the score for the target. When the target doesn't appear in the top-10 results, the score is 0%. This is a real signal — but set `max_playlists=10` to give the target the best chance.
 - 2026-05-15: The `Electronic Music` playlist is an umbrella — tracks should score high there if they score high on any electronic subgenre. Don't penalise a House track for also matching Electronic Music.
 - 2026-05-15: Theme playlists (Funny meme, Ket420, Hooyah) have `special_rules` in `playlists.json`. These rules override generic genre matching — a track doesn't need to match a genre, it needs to match the theme context. Always read `special_rules` before scoring theme playlists.

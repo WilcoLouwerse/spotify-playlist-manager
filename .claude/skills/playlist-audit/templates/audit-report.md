@@ -14,7 +14,7 @@ Use this format when rendering the audit results in step 6 of the skill. All pro
 ❌ {low}   nummers  <60% match (past slecht)
 {skipped}  nummers  geen data (niet gevonden)   ← omit line if 0
 
-**Nummers met lage match (❌ en ⚠️ — kandidaten voor verwijdering):**
+**Nummers met lage match (kandidaten voor verwijdering):**
 — {confidence}% — {Artist} - {Title}
        Reden: {one-line reason in Dutch}
        URI: {uri}                               ← show URI so skill can build the remove command
@@ -26,7 +26,7 @@ Use this format when rendering the audit results in step 6 of the skill. All pro
 **Notes:**
 - Omit the "geen data" line when `skipped` is 0.
 - Order low-confidence tracks by ascending confidence (lowest first).
-- Include the ⚠️ tracks in the candidate list only if the user picks ≥60% as the threshold — by default show ❌ only.
+- Include ⚠️ tracks in the candidate list only if the user picks a threshold above 60% (70% or 80%) — by default show ❌ only.
 - For the quick mode (OpenAI CLI), map the CLI output directly into this format rather than re-formatting from scratch.
 - Never show the `Random sht` playlist in reasons or comparisons.
 

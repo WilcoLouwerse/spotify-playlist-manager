@@ -11,7 +11,7 @@ metadata:
 Audits one of your playlists by classifying every track against the playlist's own genre or theme, reports a confidence score for each track, and offers to remove tracks below a threshold the user chooses. Two audit modes are available:
 
 - **Web-first (recommended for ≤ 20 tracks)** — Claude AI + live web search (AllMusic, RYM, Wikipedia, Discogs, Last.fm) per track. Same multi-source methodology as [`/playlist-match`](../playlist-match/SKILL.md). Higher accuracy; slower.
-- **Quick (OpenAI CLI, default for > 20 tracks)** — Runs `audit-playlist` CLI which classifies all tracks in one batch via OpenAI. Faster; relies on training-data recall rather than live web sources.
+- **Quick (OpenAI CLI, default for > 20 tracks)** — Runs the `audit-playlist` CLI, which classifies every track via OpenAI in a single run (one call per track). Faster; relies on training-data recall rather than live web sources.
 
 The user can always override the default mode choice.
 
@@ -61,12 +61,11 @@ User-facing prose is **Dutch**. Keep SKILL.md, references, templates, and exampl
 
    Parse the output: skip the first line (`Playlist: … (N tracks)`), then for each remaining line split on the first tab → `(uri, label)`.
 
-   **If the output is empty (the playlist is empty, or Spotify hides its contents):**
-   - Ask the user via **AskUserQuestion** if they have an exportify CSV export:
+   **If `list-tracks` prints `No readable tracks returned for …` instead of a `Playlist:` header:** every playlist in `playlists.json` is readable via Spotify, so this usually means the playlist is empty — tell the user and stop. Only if they know it isn't empty (Spotify hides its contents), ask via **AskUserQuestion** whether they have an exportify CSV export:
      - **Ja, ik heb een CSV** — ask for the path and re-run `list-tracks "<csv-path>"`
      - **Nee** — suggest exporting via https://exportify.net and stop.
 
-   **Cross-check with `.tracks_log.json` for freshness.** Only when the track list came from a CSV (the fallback above) — never when the Spotify API returned tracks, because then Spotify is authoritative — also consult `.tracks_log.json[<playlist-id>]`. The log is updated by every `add`, `bulk-playlist`, `review-playlist`, and `scan-for --execute` run, so it can hold URIs that the CSV snapshot missed. See `references/audit-command.md` → "Freshness check via .tracks_log.json" for the rules. If the log has URIs not present in the CSV, surface this via **AskUserQuestion** before continuing — the audit's accuracy depends on completeness.
+   **Cross-check with `.tracks_log.json` for freshness.** Only when the track list came from a CSV (the fallback above) — never when the Spotify API returned tracks, because then Spotify is authoritative — also consult `.tracks_log.json[<playlist-id>]`. The log is appended by every successful `--execute` write (`add`, `batch-add`, `smart-add`, `review-playlist`, `bulk-playlist`, `scan-for`) and pruned by `remove` / `batch-remove`, so it can hold URIs that the CSV snapshot missed. See `references/audit-command.md` → "Freshness check via .tracks_log.json" for the rules. If the log has URIs not present in the CSV, surface this via **AskUserQuestion** before continuing — the audit's accuracy depends on completeness.
 
 4. **Choose audit mode**
 
@@ -201,7 +200,7 @@ User-facing prose is **Dutch**. Keep SKILL.md, references, templates, and exampl
 
 11. **Summarise (Dutch)**
 
-    > "Audit klaar! {N} verwijderd, {M} overgeslagen (niet in log), {K} bewaard door jou. {playlist} heeft nu {remaining} nummers."
+    > "Audit klaar! {N} verwijderd, {M} overgeslagen (niet in playlist), {K} bewaard door jou. {playlist} heeft nu {remaining} nummers."
 
 12. **Capture Learnings**
 

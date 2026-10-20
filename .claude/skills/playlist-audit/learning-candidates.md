@@ -20,7 +20,9 @@ Each entry is dated. One insight per bullet. Include source (which user message 
 
 - **2026-05-15**: Ambiguous short artist names (e.g. "ASM") risk a false-match against the wrong genre. ASM in this Techno playlist turned out to be the French hip-hop group "A State of Mind" on Chinese Man Records, not a techno producer. Always verify the *album/label* context (Chinese Man Records, sample sources like Black Moon) before assigning a genre — don't trust the artist-name-on-techno-playlist signal alone.
 - **2026-05-16**: When the empty-CSV branch is hit and `.tracks_log.json` has URIs for the playlist, the workflow "resolve URIs via `sp.track()` → synthetic exportify-style CSV → audit-playlist --csv" works cleanly. Worth surfacing as a documented fallback in SKILL.md step 3 (in addition to "ask for CSV path").
+  - superseded 2026-10-20: `list-tracks` / `audit-playlist` read playlists in `playlists.json` live, so the empty-CSV branch no longer arises for them.
 - **2026-05-16**: Heavy `sp.track()` lookups (107 + 96 = 203 single-track calls in one run) can exhaust the Spotify app's daily quota and trigger a ~22h Retry-After. Both `audit-playlist` (label fetches) and the `remove` CLI's pretty-print `get_track()` were affected. Workarounds: (a) skip `get_track()` in the audit CSV-build path when the resolved URI is enough, (b) make `remove` graceful when `get_track()` fails (continue with URI-only label), (c) a `remove --batch` that takes a list of URIs and skips label lookups.
+  - resolved 2026-10-20: (b) `get_track()` now continues with a URI-only label on lookup failure; (c) shipped as `batch-remove`.
 
 ## Domain Knowledge
 

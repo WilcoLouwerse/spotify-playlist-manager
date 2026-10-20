@@ -43,8 +43,8 @@ After sourcing genres from the web, compare them to what the playlist expects:
 | 90–100% | Multiple strong sources agree the track is squarely in this playlist's genre |
 | 75–89% | Strong sources mostly agree; one minor disagreement |
 | 60–74% | Mixed signals; some stylistic overlap but not a strong fit |
-| 40–59% | Plausible but contested; likely a secondary genre |
-| < 40% | Weak or no match — recommend for removal candidates |
+| 40–59% | Contested; likely a secondary genre — removal candidate at the default 60% threshold |
+| < 40% | Weak or no match — strong removal candidate |
 
 ---
 

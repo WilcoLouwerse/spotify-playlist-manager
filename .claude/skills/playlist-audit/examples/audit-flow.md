@@ -77,7 +77,7 @@ User picks **Web-first**.
 ```
 House — 8 nummers geauditeerd
 
-✅ 4 nummers  ≥80% match (past goed)
+✅ 3 nummers  ≥80% match (past goed)
 ⚠️ 3 nummers  60–79% match (twijfelachtig)
 ❌ 2 nummers  <60% match (past slecht)
 
@@ -100,26 +100,23 @@ User picks **Verwijder alles onder 60%**.
 
 User selects both.
 
-**Step 9** — Show planned commands + confirm:
+**Step 9** — Two tracks selected, so `batch-remove`. The skill writes both URIs to `.scratch/audit-house-remove.txt`, then shows the planned command + confirms:
 ```bash
-.venv/bin/python playlist_manager.py remove "spotify:track:abc7" "House" --execute
-.venv/bin/python playlist_manager.py remove "spotify:track:abc2" "House" --execute
+.venv/bin/python playlist_manager.py batch-remove "House" .scratch/audit-house-remove.txt --execute
 ```
 
 AskUserQuestion: "Klaar om deze nummers te verwijderen?" → **Ja, verwijder**.
 
 **Step 10** — Bash output:
 ```
-Track: The Weeknd - Blinding Lights
 Target playlist: House
 Playlist ID: 0BEX4bI5xtkEVA4BfYTKg2
-DONE: track removed (snapshot 4kqBJD…)
+Input URIs: 2
+To remove: 2 URIs in 1 batch(es) of up to 100.
+  - batch of 2: snapshot 4kqBJDxYz1…
 
-Track: Dua Lipa - Levitating
-Target playlist: House
-Playlist ID: 0BEX4bI5xtkEVA4BfYTKg2
-DONE: track removed (snapshot 7mxQPR…)
+DONE: removed 2, failed 0, skipped 0 (not in playlist).
 ```
 
 **Step 11** — Summary:
-> "Audit klaar! 2 verwijderd, 0 overgeslagen. House heeft nu 6 nummers."
+> "Audit klaar! 2 verwijderd, 0 overgeslagen (niet in playlist), 0 bewaard door jou. House heeft nu 6 nummers."

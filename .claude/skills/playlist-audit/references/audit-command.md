@@ -1,6 +1,6 @@
-# CLI Reference — `list-tracks` and `audit-playlist`
+# CLI Reference — `list-tracks`, `audit-playlist`, `remove` and `batch-remove`
 
-Quick reference for the two CLI commands the audit skill uses. For the authoritative reference, see [`docs/commands.md`](../../../../docs/commands.md).
+Quick reference for the CLI commands the audit skill uses. For the authoritative reference, see [`docs/commands.md`](../../../../docs/commands.md).
 
 ---
 
@@ -31,7 +31,7 @@ spotify:track:def456	Dua Lipa - Levitating
 2. For each remaining line: split on the first `\t` → `[uri, label]`
 3. Keep `{uri, label}` pairs in memory for the audit loop
 
-**Empty output:** the playlist is empty, or Spotify hides its contents. In the second case use an exportify CSV path as the input instead.
+**No tracks:** instead of a `Playlist:` header the command prints `No readable tracks returned for '<name>': the playlist is empty, or Spotify hides its contents. …`. For a playlist in `playlists.json` that almost always means it is empty; pass an exportify CSV path only for a playlist Spotify can't read.
 
 ---
 
@@ -39,7 +39,7 @@ spotify:track:def456	Dua Lipa - Levitating
 
 Only relevant when the track list came from a CSV under `exportify-exports/` (the fallback for when Spotify returns no tracks). When the Spotify API returned tracks directly, skip this check — the API is authoritative.
 
-CSVs are point-in-time exports; `.tracks_log.json` is updated live by every `add`, `bulk-playlist`, `review-playlist`, and `scan-for --execute` run. So the log can hold URIs that the CSV snapshot missed.
+CSVs are point-in-time exports. The log is appended by every successful `--execute` write (`add`, `batch-add`, `smart-add`, `review-playlist`, `bulk-playlist`, `scan-for`) and pruned by `remove` / `batch-remove`, so it can hold URIs that the CSV snapshot missed.
 
 **How**:
 1. Look up the audited playlist's Spotify ID via `playlists.json -> playlists[<playlist-name>]`.
@@ -52,7 +52,7 @@ CSVs are point-in-time exports; `.tracks_log.json` is updated live by every `add
 > "De CSV `<file>` mist {N} tracks die wel in `.tracks_log.json` voor {playlist} staan — de CSV is mogelijk verouderd. Hoe wil je verder?"
 > - **Audit alleen de CSV-tracks** — accepteer dat recente toevoegingen niet worden gecontroleerd.
 > - **Vraag een verse CSV-export aan** *(via [exportify.net](https://exportify.net))* — stop de audit; user re-exports.
-> - **Audit de extra URIs ook** — voor elke URI in `log_only` haal het label op via `list-tracks "<uri>"` of via Spotify; voeg ze toe aan de auditlijst.
+> - **Audit de extra URIs ook** — voor elke URI in `log_only` haal het label op via een dry-run `add "<uri>" "<playlist>"` (zonder `--execute`; print `Track: Artist - Title` en schrijft niets) of via WebSearch; voeg ze toe aan de auditlijst.
 
 If `log_only` is empty, proceed silently.
 
@@ -90,6 +90,16 @@ For web-first mode, the skill does NOT call `audit-playlist` — it uses `list-t
 .venv/bin/python playlist_manager.py remove "<track-uri>" "<Playlist Name>" --execute
 ```
 
-Same command as [`/playlist-remove`](../../playlist-remove/references/remove-command.md). Used in the audit skill's step 10 to remove confirmed low-confidence tracks. Loop once per track per playlist.
+Same command as [`/playlist-remove`](../../playlist-remove/references/remove-command.md). Used in the audit skill's step 10 only when exactly one track is selected; for two or more use `batch-remove` (below).
+
+---
+
+## `batch-remove` — remove several confirmed tracks
+
+```bash
+.venv/bin/python playlist_manager.py batch-remove "<Playlist Name>" .scratch/audit-<playlist>-remove.txt --execute
+```
+
+The file holds one URI per line. Output: `Target playlist:` / `Playlist ID:` / `Input URIs:` headers, an optional `SKIP N URIs not in playlist.`, `To remove: N URIs in B batch(es) of up to 100.`, one `  - batch of N: snapshot …` line per batch, and finally `DONE: removed R, failed F, skipped S (not in playlist).`
 
 Always double-quote both arguments. Always pass `--execute` (the AskUserQuestion confirmation in step 9 is the safety gate).

@@ -8,11 +8,11 @@ How to turn the user's source input into a single positional argument for `scan-
 
 | Form | Example | Notes |
 |------|---------|-------|
-| Spotify URL | `https://open.spotify.com/playlist/3aBcDeFgHiJkLmNoPqRsTu` | Direct. |
+| Spotify URL | `https://open.spotify.com/playlist/3aBcDeFgHiJkLmNoPqRsTu` | Live; works for playlists you own or collaborate on (`403` + CSV offer for anyone else's). |
 | Spotify URI | `spotify:playlist:3aBcDeFgHiJkLmNoPqRsTu` | Alternate format. |
 | Bare 22-char ID | `3aBcDeFgHiJkLmNoPqRsTu` | Quote so a leading hyphen isn't parsed as a flag. |
 | CSV path | `exportify-exports/Random_sht.csv` | Use for a playlist owned by someone else (Spotify won't expose its contents), or to deliberately process a snapshot. |
-| Bare name | `"Random sht"`, `Random_sht`, `random-sht` | Resolves against `exportify-exports/`. Case-insensitive, slash/underscore/space tolerant. |
+| Bare name | `"Random sht"`, `Random_sht` | Resolves against `exportify-exports/`. Case-insensitive; spaces and underscores equivalent. Names containing `/` are treated as a path and `-` is not normalised — pass the CSV path or the Spotify ID instead. A name that is in `playlists.json` but has no CSV does not resolve at all; pass its Spotify ID. |
 
 ---
 
@@ -40,7 +40,7 @@ The skill should validate the target name *before* invoking the command — read
 
 Spotify returns the live contents of every playlist you own or collaborate on; a CSV in `exportify-exports/` is a point-in-time snapshot. So when the source resolves to a CSV, check whether the live playlist is available.
 
-**When to run the check**: the source resolved to a CSV path (explicit or bare-name match) AND the CSV's playlist name is present in `playlists.json -> playlists`. Every playlist in that file is readable via the API. If the name isn't there, skip the check — the CSV is likely the only way to read that playlist (e.g. one owned by someone else).
+**When to run the check**: the source resolved to a CSV path (explicit or bare-name match) AND the CSV's playlist name is present in `playlists.json -> playlists`. Every playlist in that file is readable via the API. Match the CSV stem to `playlists.json` keys the way the CLI does: case-insensitive, `_` equals a space, `/` dropped (`Random_sht` ↔ `Random sht`, `Jazz_Funk_Soul` ↔ `Jazz / Funk / Soul`). If the name isn't there, skip the check — the CSV is likely the only way to read that playlist (e.g. one owned by someone else).
 
 **How**: use **AskUserQuestion** in Dutch:
 

@@ -20,7 +20,7 @@ Ik ga dit commando draaien vanuit de repo-root:
 - `{CODE_BLOCK_WITH_COMMAND}` — fenced bash block with **one** command. Both `<TARGET>` and `<SOURCE>` quoted with double quotes.
 
   ```bash
-  .venv/bin/python playlist_manager.py scan-for "<TARGET>" "<SOURCE>"            # dry-run
+  yes | .venv/bin/python playlist_manager.py scan-for "<TARGET>" "<SOURCE>"   # dry-run (pipe is harmless without --execute)
   .venv/bin/python playlist_manager.py scan-for "<TARGET>" "<SOURCE>" --execute  # execute, single y/N
   yes | .venv/bin/python playlist_manager.py scan-for "<TARGET>" "<SOURCE>" --execute   # execute + auto-accept
   ```
@@ -28,7 +28,7 @@ Ik ga dit commando draaien vanuit de repo-root:
   Append `--min-confidence N` only when the user asked to deviate from the default of `80`.
 
 - `{INTERACTIVE_HINT}` — one Dutch sentence:
-  - Dry-run: `"Dit is een dry-run — geen y/N prompt, niets wordt geschreven."`
+  - Dry-run: `"Dit is een dry-run — ik beantwoord de y/N-prompt automatisch, maar zonder --execute wordt er niets geschreven."`
   - Execute (terminal path): `"Het script toont een kandidatenlijst en vraagt één y/N in je terminal. Draai 'm zelf en typ y om alles aan {TARGET} toe te voegen."`
   - Execute (`yes |` path): `"Ik draai 'm voor je met automatisch 'y' — alle kandidaten worden toegevoegd aan {TARGET}."`
 
@@ -36,7 +36,7 @@ Ik ga dit commando draaien vanuit de repo-root:
 
 ## After the user confirms
 
-Run via Bash. Print the script's output verbatim, then a Dutch summary line (per SKILL.md step 9). Don't paraphrase the candidate list, `ADDED ...`, `SKIP ...`, or `Scan complete (EXECUTED): N added, M failed`.
+Run via Bash. Print the script's output verbatim, then a Dutch summary line (per SKILL.md step 10). Don't paraphrase the candidate list, the `Already in …` / `Not a fit for …` counts, `ADDED ...`, `DRY RUN (would add ...)`, or `Scan complete (…): N added, M failed.`
 
 ---
 

@@ -46,7 +46,7 @@ User-facing prose is **Dutch**. Keep SKILL.md, references, templates, and exampl
 
 3. **Resolve the source**
 
-   Follow `references/source-resolution.md` (same rules as playlist-triage). Accept Spotify URL/URI/ID, CSV path, or bare name (resolved against `exportify-exports/`). Quote the source verbatim.
+   Follow `references/source-resolution.md` (same rules as playlist-triage). Accept Spotify URL/URI/ID, CSV path, or bare name. A bare name that matches a key or alias in `playlists.json` → pass its Spotify ID (live); otherwise resolve it against `exportify-exports/` and pass the CSV path. Quote the source.
 
    **Prefer the live playlist.** If the source resolves to a CSV under `exportify-exports/` AND the source playlist is known in `playlists.json`, Spotify can read it live — offer that via **AskUserQuestion** instead of silently using the snapshot. See `references/source-resolution.md` → "Prefer the live playlist over a CSV".
 
@@ -59,7 +59,7 @@ User-facing prose is **Dutch**. Keep SKILL.md, references, templates, and exampl
    | ≤ 20 tracks | **Claude + web** | Claude AI + live WebSearch per track (AllMusic, Wikipedia, RYM, Discogs, Last.fm). Same methodology as `/playlist-match`. Produces the candidate list in-chat; adds via `batch-add` (or `add` for single candidates). |
    | > 20 tracks | **scan-for CLI** | OpenAI-backed `scan-for` CLI. Faster batch classification. Requires terminal for `--execute` or `yes |` pipe. The CLI does its own bulk-add internally — no extra `batch-add` step needed. |
 
-   The user can always override the default. If the source count is unknown (Spotify URL, dev-mode), default to the CLI path and note that the count was not available.
+   The user can always override the default. If the source count isn't known yet, run `list-tracks "<source>"` first (read-only; it reads every playlist you own or collaborate on live). Only if Spotify can't read the source (a playlist owned by someone else, no CSV yet), default to the CLI path and note that the count was not available.
 
    **Web-first path (Claude + web):**
    - Run `list-tracks "<source>"` via Bash. Parse the tab-separated output.
@@ -120,17 +120,17 @@ User-facing prose is **Dutch**. Keep SKILL.md, references, templates, and exampl
 
    For the **web-first batch-add** path, the user already confirmed in step 4 by approving the candidate list. Skip a second confirmation unless the candidate count is large enough to warrant one (default: confirm again only if > 50 candidates).
 
-   For dry-run, no confirmation needed — run directly via Bash.
+   For dry-run, no confirmation needed — run directly via Bash. `scan-for` asks `Add all N to '<TARGET>'? [y/N]:` in dry-run too, and the Bash tool has no stdin, so without a pipe the run ends with `Cancelled. No changes made.` after the candidate list. Run dry-runs as `yes | .venv/bin/python playlist_manager.py scan-for "<TARGET>" "<SOURCE>"` (no `--execute`): nothing is written, and the output shows each `DRY RUN (would add …)` line.
 
 9. **Run and surface output verbatim**
 
-   - **Dry-run (CLI)**: run via Bash, print the script's output (the candidate list) verbatim.
+   - **Dry-run (CLI)**: run via Bash with the `yes |` pipe from step 8 (no `--execute`), print the script's output (the candidate list) verbatim.
    - **Execute (terminal path)**: do NOT run — show the user the command and an interactive hint.
    - **Execute (`yes |` path)**: run as `yes | .venv/bin/python playlist_manager.py scan-for "<TARGET>" "<SOURCE>" --execute`, print output verbatim.
    - **Web-first batch path**: write the URIs to `.scratch/<target>-candidates.txt`, then run `batch-add "<TARGET>" .scratch/<target>-candidates.txt --execute` via Bash. Print output verbatim — the final `DONE: added {A}, failed {F}, skipped {S}` line is the user's signal that everything went through.
    - **Web-first single candidate**: run `add --execute` once. Print output verbatim.
 
-   Don't paraphrase the candidate list, the `ADDED ...` / `SKIP ...` lines, the per-batch snapshot lines, or the final tally.
+   Don't paraphrase the candidate list, the `Already in …` / `Not a fit for …` counts, the `ADDED ...` / `DRY RUN (would add ...)` lines, `batch-add`'s `SKIP N URIs already in playlist` and per-batch snapshot lines, or the final tally.
 
 10. **Summarise (one Dutch line)**
 

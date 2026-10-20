@@ -24,6 +24,7 @@ Each entry is dated. One insight per bullet. Include source (which user message 
 ## Domain Knowledge
 
 - **2026-05-18**: When a Spotify playlist is shown in Development Mode (Spotify API returns no track URIs), `list-tracks` errors with "No readable tracks returned". Always retry with the CSV path under `exportify-exports/` (e.g. `exportify-exports/Random_sht.csv`). The skill should detect dev-mode error and auto-suggest the CSV fallback rather than failing.
+  - ⚠️ superseded 2026-10-20: the empty result came from Spotify's Feb 2026 rename of the playlist entry's `track` key to `item`, which the CLI now reads. `list-tracks` returns live contents for every playlist you own or collaborate on; a CSV is only needed for a playlist owned by someone else (403), and `_resolve_source` offers the matching CSV itself.
 
 ## Open Questions
 

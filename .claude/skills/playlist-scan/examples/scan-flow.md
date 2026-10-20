@@ -9,25 +9,29 @@ User message:
 ## Step 1-3 — detect, resolve target, resolve source
 
 - Target: "House" → matches `playlists.json -> playlists.House` directly. Use canonical name `House`.
-- Source: bare name "Random sht" → resolve against `exportify-exports/`. Skill finds `exportify-exports/Random_sht.csv`.
+- Source: bare name "Random sht" → a key in `playlists.json` (ID `7RaNdOmShTpLaYlIsTiD01`), so Spotify can read it live. A CSV snapshot `exportify-exports/Random_sht.csv` also exists, so the skill asks per `references/source-resolution.md` → "Prefer the live playlist over a CSV":
 
-Skill confirms via **AskUserQuestion**:
+> "Voor Random sht staat een CSV-export klaar, maar Spotify kan deze playlist ook live uitlezen. Welke bron wil je gebruiken?"
+> - **Live via Spotify (Recommended)** — meest actueel.
+> - **Deze CSV** — momentopname.
 
-> "Bevestig:"
-> - Target: **House**
-> - Source: `exportify-exports/Random_sht.csv` (95 tracks)
->
-> Klopt dit?
-> - **Ja, ga door**
-> - **Nee, andere source/target** *(handmatig)*
+User picks **Live via Spotify**. The skill runs `list-tracks "7RaNdOmShTpLaYlIsTiD01"` to get the count: 95 tracks.
 
-User picks **Ja**.
+## Step 4 — scan mode
 
-## Step 4 — tuning
+95 tracks is more than 20, so the CLI is the default. **AskUserQuestion**:
+
+> "Random sht heeft 95 nummers. Hoe wil je scannen?"
+> - **scan-for CLI** *(aanbevolen)* — OpenAI-classificatie in één run.
+> - **Claude + web** — per nummer opzoeken; nauwkeuriger maar veel trager.
+
+User picks **scan-for CLI**.
+
+## Step 5 — tuning
 
 No tuning hint. Use default `--min-confidence 80`. Don't show flags unless deviating.
 
-## Step 5 — mode
+## Step 6 — mode
 
 **AskUserQuestion**:
 
@@ -37,25 +41,25 @@ No tuning hint. Use default `--min-confidence 80`. Don't show flags unless devia
 
 User picks **Dry-run**.
 
-## Step 6 — plan
+## Step 7 — plan
 
 ```
-Je wilt House kandidaten zoeken in 'Random sht' (exportify-exports/Random_sht.csv) (dry-run).
+Je wilt House kandidaten zoeken in 'Random sht' (live) (dry-run).
 
 Ik ga dit commando draaien vanuit de repo-root:
 
-.venv/bin/python playlist_manager.py scan-for "House" "Random sht"
+yes | .venv/bin/python playlist_manager.py scan-for "House" "7RaNdOmShTpLaYlIsTiD01"
 
-Dit is een dry-run — geen y/N prompt, niets wordt geschreven.
+Dit is een dry-run — ik beantwoord de y/N-prompt automatisch, maar zonder --execute wordt er niets geschreven.
 ```
 
-## Step 8 — run
+## Step 9 — run
 
 Skill runs the command. Output verbatim:
 
 ```
 Target playlist: House (0BEX4bI5xtkEVA4BfYTKg2)
-Scanning source:  Random sht (from exportify-exports/Random_sht.csv)
+Scanning source:  Random sht (7RaNdOmShTpLaYlIsTiD01)
 Found 95 tracks. Classifying...
 
   [1/95] Bakermat - Walk That Walk
@@ -76,10 +80,17 @@ Found 95 tracks.
 - 81% — Kerri Chandler - Bar A Thym
     classic NY garage house
 
-DRY RUN: would prompt [y/N] to add all 23 to 'House'
+Add all 23 to 'House'? [y/N]: 
+
+- DRY RUN (would add Bakermat - Walk That Walk)
+- DRY RUN (would add Honey Dijon - Show Me Some Love)
+...
+
+============================================================
+Scan complete (DRY RUN): 0 added, 0 failed.
 ```
 
-## Step 9 — summary
+## Step 10 — summary
 
 ```
 Dry-run klaar — 23 kandidaten voor House. Niets geschreven.
@@ -87,7 +98,7 @@ Dry-run klaar — 23 kandidaten voor House. Niets geschreven.
 
 ## Variant — user wants to execute after seeing the list
 
-User says "ja prima, voeg ze allemaal toe". Skill goes back to step 5 (mode = execute), step 6 (plan with `--execute`), step 7:
+User says "ja prima, voeg ze allemaal toe". Skill goes back to step 6 (mode = execute), step 7 (plan with `--execute`), step 8:
 
 **AskUserQuestion**:
 
@@ -101,7 +112,7 @@ User picks **Hier draaien met automatische 'y'**.
 Skill runs:
 
 ```bash
-yes | .venv/bin/python playlist_manager.py scan-for "House" "Random sht" --execute
+yes | .venv/bin/python playlist_manager.py scan-for "House" "7RaNdOmShTpLaYlIsTiD01" --execute
 ```
 
 Output:
@@ -109,7 +120,7 @@ Output:
 ```
 ... (same scan output as dry-run) ...
 
-Add all 23 to 'House'? [y/N]: y
+Add all 23 to 'House'? [y/N]: 
 
 - ADDED Bakermat - Walk That Walk (snapshot AbCdEfGhIj…)
 - ADDED Honey Dijon - Show Me Some Love (snapshot ...)
@@ -119,10 +130,10 @@ Add all 23 to 'House'? [y/N]: y
 Scan complete (EXECUTED): 23 added, 0 failed.
 ```
 
-## Step 9 — summary (execute path)
+## Step 10 — summary (execute path)
 
 ```
-Klaar! 23 toegevoegd aan House, 0 overgeslagen (al in playlist).
+Klaar! 23 toegevoegd aan House, 4 overgeslagen (al in playlist).
 ```
 
 ---

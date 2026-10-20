@@ -9,13 +9,14 @@
     {
       "id": 1,
       "prompt": "welke tracks uit 'Random sht' zouden in House passen?",
-      "expected_output": "Skill resolves House (target) + Random sht → exportify-exports/Random_sht.csv (source). Defaults to dry-run. Renders the scan-for command with both arguments double-quoted.",
+      "expected_output": "Skill resolves House (target) + Random sht (source). Random sht is in playlists.json and a CSV also exists, so the skill asks via AskUserQuestion: live playlist (Recommended) vs CSV. Defaults to dry-run. Renders the scan-for command with both arguments double-quoted.",
       "expectations": [
         "Skill identifies 'House' as the target and 'Random sht' as the source",
         "Skill defaults to dry-run mode",
         "Planned command uses '.venv/bin/python playlist_manager.py scan-for'",
         "Both target and source are double-quoted in the rendered command",
-        "Skill does NOT include --execute in dry-run mode"
+        "Skill does NOT include --execute in dry-run mode",
+        "Skill offers the live playlist vs the CSV via AskUserQuestion instead of silently using exportify-exports/Random_sht.csv"
       ]
     },
     {
@@ -45,7 +46,7 @@
       "prompt": "vind Techno-tracks in exportify-exports/Random_sht.csv met --min-confidence 90",
       "expected_output": "Skill recognises the CSV path and the explicit tuning flag. Renders the command with --min-confidence 90 added.",
       "expectations": [
-        "Skill uses the literal CSV path 'exportify-exports/Random_sht.csv' as the source",
+        "Skill asks via AskUserQuestion whether to use the live Random sht playlist or the CSV; if the user keeps the CSV, the literal path 'exportify-exports/Random_sht.csv' is the source",
         "Skill identifies 'Techno' as the target",
         "Skill includes '--min-confidence 90' in the rendered command",
         "Default mode is dry-run unless the user said otherwise"

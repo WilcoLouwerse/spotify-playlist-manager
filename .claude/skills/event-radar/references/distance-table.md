@@ -1,6 +1,6 @@
 # Distance table — SEED ONLY (Houten home base)
 
-**⚠️ This file is a seed/fallback. The skill's authoritative distance data lives in [`event-radar.config.json`](../../../event-radar.config.json) under `distance_cache_km`.** Read the config first; only fall back to this seed when the config is missing or has no entry for the city in question.
+**⚠️ This file is a seed/fallback. The skill's authoritative distance data lives in [`event-radar.config.json`](../../../../event-radar.config.json) under `distance_cache_km`.** Read the config first; only fall back to this seed when the config is missing or has no entry for the city in question.
 
 This table assumes a Houten-based user. **If the config's `user.home_city` differs, this table is no longer authoritative**.
 

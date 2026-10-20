@@ -1,6 +1,6 @@
 # Venue catalog — SEED ONLY
 
-**⚠️ This file is a seed/fallback. The skill's authoritative venue data lives in [`event-radar.config.json`](../../../event-radar.config.json) under `venues.preferred` / `venues.avoid` / `venues.known_about`.** Read the config first; only fall back to this seed when the config is missing or empty.
+**⚠️ This file is a seed/fallback. The skill's authoritative venue data lives in [`event-radar.config.json`](../../../../event-radar.config.json) under `venues.preferred` / `venues.avoid` / `venues.known_about`.** Read the config first; only fall back to this seed when the config is missing or empty.
 
 This catalog assumes a Houten-based user. **If the config's `user.home_city` differs, this list is no longer authoritative** — use it as inspiration and rebuild a local catalog via WebSearch + WebFetch for the new home city.
 

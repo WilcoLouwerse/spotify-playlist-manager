@@ -16,12 +16,18 @@ This document walks through every credential the project needs, where to get it,
 
 ## Spotify credentials
 
+Before you start, check two account rules that apply to every app in Spotify's Development Mode since February 2026 (see the [Feb 2026 migration guide](https://developer.spotify.com/documentation/web-api/tutorials/february-2026-migration-guide)):
+
+- **The app owner needs an active Spotify Premium subscription.** Create the app with the same Spotify account whose playlists you manage. If the owner's Premium lapses, every API call fails until it is renewed.
+- **At most 5 users per app.** The owner can always log in. Anyone else has to be added under the app's **User Management** tab (name + the e-mail address of their Spotify account) before they can grant consent.
+
 1. Open https://developer.spotify.com/dashboard and log in with your Spotify account.
 2. Click **Create app**.
 3. Fill in:
    - **App name**: anything (e.g. `Wilco Playlist Manager`).
    - **App description**: anything (e.g. `Personal CLI to manage my playlists`).
-   - **Redirect URI**: exactly `http://127.0.0.1:8888/callback` — case- and path-sensitive. Click **Add**.
+   - **Redirect URI**: exactly `http://127.0.0.1:8888/callback` — case- and path-sensitive. Click **Add**. Spotify refuses `localhost` as a redirect URI; it has to be the loopback IP ([Spotify: Redirect URIs](https://developer.spotify.com/documentation/web-api/concepts/redirect_uri)).
+   - **Which API/SDKs are you planning to use?**: tick **Web API**.
    - Tick the Spotify Developer Terms of Service.
 4. Click **Save**.
 5. On the app page click **Settings**. You will see:
@@ -81,6 +87,49 @@ OPENAI_API_KEY=sk-...
 
 After editing `.env`, the next time you run any command the new values are picked up automatically — no restart needed.
 
+## Local Python environment
+
+> Developing this repo from VS Code + Claude Code on Windows? Run through [vscode-claude-setup.md](vscode-claude-setup.md) first (WSL, the Claude Code extension, auth), then come back here for the Python venv.
+
+Once `.env` is filled in, set up the runtime once:
+
+```bash
+cd ~/spotify-playlist-manager
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+On Ubuntu/WSL you may need `sudo apt install python3.12-venv` before `python3 -m venv .venv` will work.
+
+Run every command from the repo root with the venv activated (`source .venv/bin/activate`), or call `.venv/bin/python` directly.
+
+
+## Connect to Spotify
+
+Log in once and check the connection before you configure playlists. The smoke test only reads, so it is safe to run at any time:
+
+```bash
+python tests/test_spotify.py
+```
+
+1. The script opens the Spotify consent page in your browser. On WSL it opens in the Windows browser; if no browser appears, copy the URL the terminal prints into one.
+2. Log in with the app owner's account (or a user added under **User Management**) and click **Agree**.
+3. Spotify redirects to `http://127.0.0.1:8888/callback`. The script catches that callback itself, stores the token in `.spotify_token_cache` and prints `Connected as: <your name>` followed by your playlists.
+
+From then on every command reuses the cached token and refreshes it silently. Background on the flow: [architecture.md → Authentication](architecture.md#authentication).
+
+### When the connection fails
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Browser shows `INVALID_CLIENT: Invalid redirect URI` | `SPOTIPY_REDIRECT_URI` in `.env` differs from the dashboard entry | Make both exactly `http://127.0.0.1:8888/callback` |
+| Browser shows `INVALID_CLIENT: Invalid client` | Wrong `SPOTIPY_CLIENT_ID` | Copy it again from the app's **Settings** page |
+| Token exchange fails with `invalid_client` after login | Wrong or rotated `SPOTIPY_CLIENT_SECRET` | Copy the current secret into `.env` |
+| `403` on every call, also right after login | The account is not the app owner and not listed under **User Management**, or the owner's Premium has lapsed | Add the user, or renew Premium |
+| `403` only on one command (e.g. `like`) | The cached token predates a scope that command needs | Delete `.spotify_token_cache` and run the smoke test again |
+| Commands hang until a timeout | WSL's broken IPv6 route | The script forces IPv4 on WSL automatically; set `SPOTIFY_FORCE_IPV4=1` if auto-detection misses your setup ([architecture.md → Network quirks](architecture.md#network-quirks)) |
+
 ## Configure your playlists
 
 The script needs to know **which playlists** to write to and **how to talk about them**. That config lives in `playlists.json` at the repo root, next to `.env`. It is **gitignored** — never commit it. A complete worked example lives at [playlists.example.json](../playlists.example.json).
@@ -91,7 +140,7 @@ The fastest path to a working config:
    ```bash
    cp playlists.example.json playlists.json
    ```
-2. **Discover your Spotify playlists** (after you've finished the Spotify credentials section above and run any command once to grant OAuth consent):
+2. **Discover your Spotify playlists** (after [Connect to Spotify](#connect-to-spotify) printed `Connected as: …`):
    ```bash
    python playlist_manager.py list-playlists --all
    ```
@@ -164,31 +213,6 @@ Two paths:
 
 - **From the script** (recommended): `python playlist_manager.py list-playlists --all`. Lists every writable playlist on your account in paste-ready format.
 - **From the Spotify UI**: open a playlist, click "…" → Share → Copy link to playlist. The ID is the 22-char path segment after `/playlist/`. Example: `https://open.spotify.com/playlist/0BEX4bI5xtkEVA4BfYTKg2` → `0BEX4bI5xtkEVA4BfYTKg2`.
-
-## Local Python environment
-
-> Developing this repo from VS Code + Claude Code on Windows? Run through [vscode-claude-setup.md](vscode-claude-setup.md) first (WSL, the Claude Code extension, auth), then come back here for the Python venv.
-
-Once `.env` is filled in, set up the runtime once:
-
-```bash
-cd ~/spotify-playlist-manager
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-On Ubuntu/WSL you may need `sudo apt install python3.12-venv` before `python3 -m venv .venv` will work.
-
-After that, run any command with the activated venv:
-
-```bash
-python playlist_manager.py list-playlists
-```
-
-If you skipped the playlist config step, this command exits with a pointer to `playlists.example.json`. Go back to [Configure your playlists](#configure-your-playlists).
-
-See [commands.md](commands.md) for the full CLI reference.
 
 ## Useful Spotify links
 

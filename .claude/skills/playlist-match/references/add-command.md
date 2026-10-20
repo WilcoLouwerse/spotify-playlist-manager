@@ -86,7 +86,7 @@ From [`docs/commands.md`](../../../../docs/commands.md):
 
 5. **Summarise** with one Dutch sentence at the end, plus the Liked Songs result:
 
-   > "Klaar! N toegevoegd, M overgeslagen (al in playlist). Liked Songs: toegevoegd / stond er al."
+   > "Klaar! N toegevoegd, M overgeslagen (al in playlist). Liked Songs: toegevoegd / stond er al / mislukt."
 
    Then call **AskUserQuestion** again (per `templates/followup.md`) so the user can chain another action or pick "Klaar".
 
@@ -116,4 +116,4 @@ Do **not** invoke `smart-add`. `analyze-only` is used **only** in the "Inschatte
 
 ## What about the bulk commands?
 
-`review-playlist`, `bulk-playlist`, and `scan-for` operate on a *source playlist*, not a single song. They're out of scope for this skill — when the user wants to triage a whole playlist, they should run those commands directly per [`docs/commands.md`](../../../../docs/commands.md).
+`review-playlist`, `bulk-playlist`, and `scan-for` operate on a *source playlist*, not a single song. They're out of scope for this skill — route the user to `/playlist-triage` (`review-playlist` / `bulk-playlist`) or `/playlist-scan` (`scan-for`).

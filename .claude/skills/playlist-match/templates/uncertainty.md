@@ -17,7 +17,7 @@ Sorry, ik heb moeite om de genres voor dit nummer te vinden. {REASON}
 
 ## Step 2 — call AskUserQuestion with the uncertainty options
 
-The options are ordered by accuracy. The first three still use **WebFetch/WebSearch** — they just broaden or weaken the source. **"Laat Claude inschatten zonder internet" is the last resort** (training-only recall, capped at 70%). Never substitute OpenAI / `smart-add` for any of these.
+The options are ordered by accuracy. The first three still use **WebFetch/WebSearch** — they just broaden or weaken the source. **"Inschatten zonder internet (Claude + OpenAI)" is the last resort** (Claude training recall plus the read-only `analyze-only` second opinion; confidence caps in the flow below). Never substitute `smart-add` for any of these.
 
 ```
 question: "Web-lookups gaven geen duidelijk antwoord. Hoe wil je dat ik hiermee verder ga?"
@@ -73,7 +73,7 @@ Run from the repo root.
 
 On failure → **fall back to Claude-only output shape** (below), prepend the failure notification.
 
-**Step E — combine on success.** Parse OpenAI's genre and playlist rows from stdout. Merge with Claude's results:
+**Step E — combine on success.** Parse OpenAI's genre and playlist rows from stdout. Drop any `Random sht` / catch-all row first: `analyze-only` appends it when no match reaches the catch-all threshold, and it is the script's fallback, not a classification. Merge with Claude's results:
 
 - **Both agree on a genre/playlist (within ±15 pp)** → publish one row, average the confidences, cap at **75%**, label `bron: Claude + OpenAI (interne kennis), betrouwbaarheid: middel`.
 - **One source has it, the other doesn't** → publish it with the single source's confidence, cap at **65%**, label `bron: Claude (interne kennis)` or `bron: OpenAI (interne kennis)` as appropriate, note the other source didn't mention it.

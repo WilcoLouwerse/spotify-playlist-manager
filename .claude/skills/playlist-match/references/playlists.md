@@ -6,7 +6,7 @@ The single source of truth is [`playlists.json`](../../../../playlists.json) at 
 
 ## Genre playlists
 
-`categories.genre` (15 entries at time of writing):
+`categories.genre` (see `playlists.json` for the current list):
 
 | Playlist | When it fits |
 |----------|--------------|
@@ -73,7 +73,7 @@ In practice: whenever you recommend any of House / Techno / Trance / Drum & Bass
 }
 ```
 
-`Random sht` is the script's safety net for `smart-add`/`bulk-playlist`. **The skill must never recommend it.** If nothing else fits, the correct user-facing answer is "geen van de playlists past hier echt" — not a `Random sht` suggestion.
+`Random sht` is the script's safety net for every OpenAI-classified command (`smart-add`, `analyze-only`, `review-playlist`, `bulk-playlist`). **The skill must never recommend it.** If nothing else fits, the correct user-facing answer is "geen van de playlists past hier echt" — not a `Random sht` suggestion.
 
 ---
 

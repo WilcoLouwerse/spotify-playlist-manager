@@ -11,14 +11,14 @@ User message:
 - Target: "House" → matches `playlists.json -> playlists.House` directly. Use canonical name `House`.
 - File: bare playlist name "House" → resolve against `exportify-exports/`. Skill finds `exportify-exports/House.csv` (143 lines).
 
-## Step 4 — confirmation
+## Step 4-5 — plan and confirmation
 
 Plan rendered (per `templates/plan.md`):
 
 ```
 Je wilt de log voor House seeden met exportify-exports/House.csv (143 regels).
 
-Dit is een lokale operatie — er wordt niets naar Spotify geschreven. Alleen `.tracks_log.json` wordt bijgewerkt.
+Dit is een lokale operatie — er wordt niets naar Spotify geschreven. Alleen `.tracks_log.json` wordt bijgewerkt. De duplicate-guard leest je playlists live uit Spotify; deze log is alleen de fallback voor als Spotify de inhoud verbergt.
 
 Ik ga dit commando draaien vanuit de repo-root:
 
@@ -97,7 +97,7 @@ User picks the first option. Skill loops back to step 4 with the corrected file.
 
 ## Variant — re-seed (file already imported)
 
-User runs the same House CSV again a week later, after adding a few more tracks manually.
+User runs the same House CSV again a week later, after a fresh Exportify export (only useful if the guard had printed the `WARN … falls back to .tracks_log.json` line).
 
 Output:
 

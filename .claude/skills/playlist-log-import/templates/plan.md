@@ -1,11 +1,11 @@
 # Plan template
 
-Render after the user has resolved a target + file (steps 2-3 of SKILL.md). Show **before** running any Bash, and **before** the AskUserQuestion confirmation in step 4.
+Render after the user has resolved a target + file (steps 2-3 of SKILL.md). This is step 4 of SKILL.md: show it **before** running any Bash, and **before** the AskUserQuestion confirmation in step 5.
 
 ```
 Je wilt de log voor {TARGET} seeden met {FILE_LABEL} ({LINE_COUNT} regels).
 
-Dit is een lokale operatie — er wordt niets naar Spotify geschreven. Alleen `.tracks_log.json` wordt bijgewerkt.
+Dit is een lokale operatie — er wordt niets naar Spotify geschreven. Alleen `.tracks_log.json` wordt bijgewerkt. De duplicate-guard leest je playlists live uit Spotify; deze log is alleen de fallback voor als Spotify de inhoud verbergt.
 
 Ik ga dit commando draaien vanuit de repo-root:
 
@@ -29,7 +29,7 @@ Ik ga dit commando draaien vanuit de repo-root:
 
 ## After the plan is shown — AskUserQuestion
 
-Step 4 of SKILL.md. Use exactly these options (translate-friendly):
+Step 5 of SKILL.md. Use exactly these options (translate-friendly):
 
 - **Ja, importeer** — proceed.
 - **Nee, andere target/file** — re-resolve (loop back to step 2 or 3).

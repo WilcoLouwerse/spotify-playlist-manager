@@ -12,9 +12,9 @@ Canonical reference: [`playlists.example.json`](../../../../playlists.example.js
 | `aliases` | No | `{ "<shorthand>": "<canonical key in playlists>", ... }` | Case-insensitive shorthand lookup for CLI commands. The **value** must be an exact key under `playlists`. |
 | `categories` | No | `{ "genre": [...], "mood": [...], "theme": [...] }` | Buckets shown to the OpenAI classifier in `smart-add`. Each list entry must be an exact key under `playlists`. |
 | `special_rules` | No | `{ "<playlist key>": "<rule prose>", ... }` | Per-playlist semantics injected into the classifier prompt. Keys must exist under `playlists`. |
-| `catch_all` | No | `{ "playlist": "<key>", "threshold": <int 1-100>, "rule": "<prose>" }` | Programmatic fallback. `playlist` value must be a key under `playlists`. Default threshold: 85. |
+| `catch_all` | No | `{ "playlist": "<key>", "threshold": <int 0-100>, "rule": "<prose>" }` | Programmatic fallback. `playlist` value must be a key under `playlists`. Default threshold: 85. |
 
-If `playlists` is missing or empty, every CLI command fails at startup.
+If `playlists` is missing or empty, every CLI command except `like` fails at startup.
 
 ---
 
@@ -26,8 +26,8 @@ These are the only rules the skill needs to pre-check before writing — anythin
 2. **`categories` entries point to existing playlists.** Same rule, per list under `genre` / `mood` / `theme`.
 3. **`special_rules` keys point to existing playlists.** Same rule.
 4. **`catch_all.playlist` points to an existing playlist.** Same rule.
-5. **No duplicate IDs across `playlists`.** Two keys can point to the same ID, but it's almost always a copy-paste mistake — flag it via **AskUserQuestion** rather than silently accepting.
-6. **IDs are 22 characters, base62-ish (alphanumeric).** Anything else is suspect; flag via **AskUserQuestion**.
+5. **No duplicate IDs across `playlists`** *(skill check — `load_config` does not enforce this)*. Two keys can point to the same ID, but it's almost always a copy-paste mistake — flag it via **AskUserQuestion** rather than silently accepting.
+6. **IDs are exactly 22 alphanumeric characters.** `load_config` rejects anything else and every command except `like` refuses to run.
 7. **JSON is well-formed.** Trailing commas, smart quotes, or unquoted keys break the parser.
 
 ---

@@ -4,7 +4,9 @@ When the user confirms a removal, the skill invokes the project's `remove` CLI c
 
 ---
 
-## Command — only `remove`
+## Commands — `remove` and `batch-remove`
+
+One track → `remove` (below). Two or more tracks on one playlist → `batch-remove` (see the Command picker in `SKILL.md`); it prints `SKIP {N} URIs not in playlist.` and ends with `DONE: removed {R}, failed {F}, skipped {S} (not in playlist).`
 
 ```bash
 .venv/bin/python playlist_manager.py remove "<track>" "<Playlist Name>" --execute

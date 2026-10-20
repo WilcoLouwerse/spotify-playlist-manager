@@ -61,8 +61,16 @@ Immediately after rendering the plan — no extra confirmation prompt — the sk
 command via Bash. The script output, verbatim:
 
 ```
-Tame Impala - The Less I Know The Better -> Alternative / Indie: ADDED
-Tame Impala - The Less I Know The Better -> Pop / Mainstream: SKIP: track already in playlist
+Track: Tame Impala - The Less I Know The Better
+Target playlist: Alternative / Indie
+Playlist ID: <playlist-id>
+
+DONE: track added (snapshot 5vQ8bX2kLm…)
+Track: Tame Impala - The Less I Know The Better
+Target playlist: Pop / Mainstream
+Playlist ID: <playlist-id>
+
+SKIP: track already in playlist. No changes made.
 Track: Tame Impala - The Less I Know The Better
 Target: Liked Songs
 

@@ -10,7 +10,7 @@ metadata:
 
 Wraps the project's local-log seeding workflow: parse a Spotify export file (Exportify CSV, text, or JSON), pull every track URI/URL/ID out of it, and record those URIs against one target playlist in `.tracks_log.json`.
 
-The duplicate guard (used by `add`, `smart-add`, `review-playlist`, `bulk-playlist`, `scan-for`) reads each playlist's live contents from Spotify. `.tracks_log.json` is only its **fallback**, consulted when Spotify hides a playlist's contents (the CLI then prints `WARN: Spotify returned playlist entries without track URIs`). So this skill is rarely needed: when the user asks for it, run it, but mention in Dutch that the guard already sees tracks added in the Spotify app and that seeding only completes the fallback. See [`docs/architecture.md → Duplicate detection`](../../../docs/architecture.md#duplicate-detection).
+The duplicate guard (used by `add`, `remove`, `batch-add`, `batch-remove`, `smart-add`, `review-playlist`, `bulk-playlist`, `scan-for`) reads each playlist's live contents from Spotify. `.tracks_log.json` is only its **fallback**, consulted when Spotify hides a playlist's contents (the CLI then prints `WARN: Spotify returned playlist entries without track URIs`). So this skill is rarely needed: when the user asks for it, run it, but mention in Dutch that the guard already sees tracks added in the Spotify app and that seeding only completes the fallback. See [`docs/architecture.md → Duplicate detection`](../../../docs/architecture.md#duplicate-detection).
 
 This is a **local-only** operation — no Spotify API call is made, no `--execute` flag exists, and the command always runs to completion the moment it's invoked. The skill's safety gate is the AskUserQuestion confirmation **before** running, not after.
 
@@ -55,15 +55,7 @@ User-facing prose is **Dutch**. Keep SKILL.md, references, templates, and exampl
 
    Follow `references/file-resolution.md`. Accept absolute paths, relative paths, and bare names that should resolve against `exportify-exports/`. Verify the file exists before invoking the CLI — if it doesn't, ask via **AskUserQuestion** to correct the path. Never invent a filename.
 
-4. **Confirm target + file**
-
-   This is the **only** safety gate. Use **AskUserQuestion** with the resolved target + file path + (if cheap to read) the line count, so the user can sanity-check before the local log is mutated.
-
-   - **Ja, importeer** — proceed to step 5.
-   - **Nee, andere target/file** — re-resolve.
-   - **Annuleren** — end the flow.
-
-5. **Render the planned command**
+4. **Render the planned command**
 
    Use `templates/plan.md`. One command, from the repo root:
 
@@ -72,6 +64,14 @@ User-facing prose is **Dutch**. Keep SKILL.md, references, templates, and exampl
    ```
 
    Quote both `<TARGET>` (canonical name from `playlists.json`) and `<FILE>` (full resolved path). There are no flags — no `--execute`, no `--min-confidence`, no `--max-playlists`. If the user proposes any flag, refuse and explain that `log-import` takes only two positionals.
+
+5. **Confirm target + file**
+
+   This is the **only** safety gate. Use **AskUserQuestion** with the resolved target + file path + (if cheap to read) the line count, so the user can sanity-check before the local log is mutated.
+
+   - **Ja, importeer** — proceed to step 6.
+   - **Nee, andere target/file** — re-resolve.
+   - **Annuleren** — end the flow.
 
 6. **Run and surface output verbatim**
 

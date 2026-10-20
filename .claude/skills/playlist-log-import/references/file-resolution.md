@@ -56,6 +56,6 @@ The skill does not need to validate the file format itself — the CLI's counter
 ## Edge cases
 
 - **File doesn't exist**: ask via **AskUserQuestion** for the correct path. List the `exportify-exports/` directory contents in the question's description so the user can see what's available.
-- **File is empty or 0 bytes**: still pass it to `log-import` — the output will show all-zero counts, which is informative. Don't try to short-circuit.
+- **File is empty or 0 bytes**: still pass it to `log-import` — the four per-file counts will be zero (`Total URIs logged` still shows the existing log size), which is informative. Don't try to short-circuit.
 - **File is a JSON export from another tool** (e.g. Spotify's "Download your data"): pass it through — the line-by-line URI extractor will catch any URIs that happen to be on their own line. Warn the user that JSON exports often pack many URIs on one line and may not parse well; suggest re-exporting via Exportify if the count is suspiciously low.
-- **File is binary** (e.g. `.xlsx`): reject before invoking — `log-import` will report all lines as unparseable but the user wastes a confirmation cycle. Ask via **AskUserQuestion** for a CSV/text version.
+- **File is binary** (e.g. `.xlsx`): reject before invoking — `log-import` reads the file as UTF-8 text and will likely crash with a `UnicodeDecodeError`, after the user already spent a confirmation cycle. Ask via **AskUserQuestion** for a CSV/text version.

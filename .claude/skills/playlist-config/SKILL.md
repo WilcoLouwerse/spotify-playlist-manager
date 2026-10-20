@@ -18,7 +18,7 @@ Different shape from the other `playlist-*` skills:
 | Spotify API | Yes (reads + writes) | No | Yes (reads only, via `list-playlists --all`) |
 | Dry-run | `--execute` flag | N/A (local only) | The CLI is read-only — the edit step is what to confirm |
 | y/N prompt | Yes | None | **AskUserQuestion** before editing `playlists.json` |
-| Use case | Sort / match tracks | Seed the duplicate guard | Bootstrap or extend the target-playlist registry |
+| Use case | Sort / match tracks | Complete the duplicate guard's fallback log | Bootstrap or extend the target-playlist registry |
 
 User-facing prose is **Dutch**. Keep SKILL.md, references, templates, and examples in English.
 
@@ -49,9 +49,9 @@ User-facing prose is **Dutch**. Keep SKILL.md, references, templates, and exampl
    .venv/bin/python playlist_manager.py list-playlists --all    # sub-flows B and C
    ```
 
-   `--all` makes one Spotify API call. The script auto-filters to playlists the user **owns or collaborates on** (the only ones writable via the API). Print the output verbatim — it's the user's signal that the API call worked.
+   `--all` makes a few Spotify API calls (your profile, plus one per 50 playlists). The script auto-filters to playlists the user **owns or collaborates on** (the only ones writable via the API). Print the output verbatim — it's the user's signal that the API call worked.
 
-   If `--all` fails because OAuth is missing or the user's token is stale, the venv python prints a clear error — surface it and stop. Don't try to fall back to anything else; the user has to fix Spotify auth first.
+   If `--all` fails because OAuth is missing or the user's token is stale, the venv python prints a clear error — surface it and stop. Don't try to fall back to anything else; the user has to fix Spotify auth first. Point them to [`docs/setup.md → When the connection fails`](../../../docs/setup.md#when-the-connection-fails).
 
 3. **Parse the output (sub-flows B and C)**
 
@@ -141,7 +141,7 @@ User-facing prose is **Dutch**. Keep SKILL.md, references, templates, and exampl
 
 ## Guardrails
 
-- **Never** edit `playlists.json` without showing the planned diff via step 6 and getting explicit `Ja, schrijf naar playlists.json` via **AskUserQuestion**. The file is the source of truth for every other skill in this repo; a stealth edit breaks `add`, `smart-add`, `review-playlist`, `bulk-playlist`, and `scan-for` at once.
+- **Never** edit `playlists.json` without showing the planned diff via step 6 and getting explicit `Ja, schrijf naar playlists.json` via **AskUserQuestion**. The file is the source of truth for every other skill in this repo; a stealth edit breaks every CLI command except `like` at once.
 - **Never** add a playlist to `"aliases"` whose value isn't a key under `"playlists"` — `load_config` rejects the file at startup and every CLI command then refuses to run. Validate alias targets in step 5 before showing the diff.
 - **Never** invent a Spotify playlist ID. IDs come from `list-playlists --all` only. If the user pastes one by hand, accept it but warn that it isn't being verified against the Spotify API in this flow.
 - **Never** strip or reorder the existing `"playlists"` block — only append. Renaming a key or removing one orphans every entry in `aliases` / `categories` / `special_rules` / `catch_all` that referenced it.

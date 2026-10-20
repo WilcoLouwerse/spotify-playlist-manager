@@ -71,7 +71,9 @@
         "Skill does NOT treat 'F https://...' as the literal letter 'F' alone — the URL is acted on",
         "If add commands are rendered, each uses '.venv/bin/python playlist_manager.py add'",
         "If add commands are rendered, each quotes the playlist name with double quotes",
-        "Response is in Dutch"
+        "Response is in Dutch",
+        "If add commands are rendered, they are followed by exactly one '.venv/bin/python playlist_manager.py like \"<url>\" --execute' line",
+        "Liked Songs does not appear in the playlist match or as a multi-select option"
       ]
     },
     {

@@ -26,6 +26,7 @@ See [writing-skills.md → Level 6](../../docs/writing-skills.md#level-6-self-im
 
 - Does `add` accept playlist *aliases* in the same way `smart-add` does? Spec says yes ("must match a key under `"playlists"` or an alias under `"aliases"`"), but we render canonical names in output — should we also accept user-typed aliases in step-2 of the F flow without normalizing?
 - For the Spotify Developer-Mode CSV fallback in `bulk-playlist` / `review-playlist`, is there a useful analog for the per-track skill? Probably not — we're operating on one track at a time.
+- 2026-10-20: Resolved — the CSV fallback only applies to source playlists owned by someone else (the items endpoint answers 403); a single-track add never needs it.
 
 ## Consolidated Principles
 

@@ -31,7 +31,7 @@ Ik draai deze commando's vanuit de repo-root:
 
 ## Execute the commands
 
-Immediately after rendering the plan, run each command via Bash sequentially. No extra confirmation prompt — the multi-select in step 10.b already authorized the write. Print the script's output verbatim, in order. Don't paraphrase the duplicate-guard messages — `SKIP: track already in playlist` and `ADDED ...` come from the script and should appear as-is.
+Immediately after rendering the plan, run each command via Bash sequentially. No extra confirmation prompt — the multi-select in step 10.b already authorized the write. Print the script's output verbatim, in order. Don't paraphrase the script's messages — `DONE: track added (snapshot …)`, `SKIP: track already in playlist. No changes made.` and, for the like line, `DONE: track added to Liked Songs` / `SKIP: track already in Liked Songs. No changes made.` come from the script and should appear as-is.
 
 End with one Dutch summary line:
 

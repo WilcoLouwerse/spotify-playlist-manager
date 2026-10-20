@@ -43,6 +43,9 @@ User-facing prose is **Dutch**. Keep SKILL.md, references, templates, and exampl
    - **Auditing whether playlist tracks match the genre** → `/playlist-audit`
    - **Sorting a whole source playlist into target playlists** → `/playlist-triage`
    - **Finding tracks in a source that fit one target** → `/playlist-scan`
+   - **Adding or syncing playlists in `playlists.json`** → `/playlist-config`
+   - **Seeding the fallback duplicate log from an Exportify export** → `/playlist-log-import`
+   - **Concert/festival recommendations** → `/event-radar`
 
 2. **Resolve the track to a Spotify URL/URI/ID**
 
@@ -114,7 +117,7 @@ User-facing prose is **Dutch**. Keep SKILL.md, references, templates, and exampl
 
    - **`remove --execute`**: run each command via **Bash** sequentially. Print output as-is.
      - `DONE: track removed (snapshot …)` — success
-     - `SKIP: track not found in playlist. No changes made.` — track wasn't in the playlist (may have been added outside this tool; see guardrails below)
+     - `SKIP: track not found in playlist. No changes made.` — track isn't in the playlist on Spotify (check the playlist name or the track version; see guardrails below)
      - `FAILED: Spotify returned …` — API error; surface verbatim
    - **`batch-remove --execute`**: write the URI file under `.scratch/`, run the command via **Bash**, print output as-is. The per-batch snapshot lines and final `DONE: removed {R}, failed {F}, skipped {S} (not in playlist)` are what the user needs to see.
 
@@ -130,7 +133,7 @@ User-facing prose is **Dutch**. Keep SKILL.md, references, templates, and exampl
 
 9. **Capture Learnings**
 
-   If anything was non-obvious (track not found because it was added outside this tool, a playlist-name edge case, an unexpected SKIP), append a dated entry to `learning-candidates.md`. Promote to `learnings.md` after 3+ recurrences. Skip if nothing new.
+   If anything was non-obvious (a SKIP that turned out to be a different track version, a `WARN` fallback to `.tracks_log.json`, a playlist-name edge case), append a dated entry to `learning-candidates.md`. Promote to `learnings.md` after 3+ recurrences. Skip if nothing new.
 
 ---
 

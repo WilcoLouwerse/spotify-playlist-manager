@@ -70,5 +70,5 @@ $ .venv/bin/python playlist_manager.py list-playlists --all
 spotipy.exceptions.SpotifyOauthError: ...
 
 Don't try to recover automatically. Surface the error, tell the user to re-auth
-(typically `rm -f .cache && .venv/bin/python tests/test_spotify.py` to trigger
-the browser flow), and stop.
+(typically `rm -f .spotify_token_cache && .venv/bin/python tests/test_spotify.py`
+to trigger the browser flow; see docs/setup.md -> When the connection fails), and stop.

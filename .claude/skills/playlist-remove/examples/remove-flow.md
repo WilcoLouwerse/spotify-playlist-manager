@@ -35,11 +35,11 @@ Track: Nelly Furtado - Say It Right
 Target playlist: House
 Playlist ID: 0BEX4bI5xtkEVA4BfYTKg2
 
-DONE: track removed (snapshot 3oqAUMV…)
+DONE: track removed (snapshot 3oqAUMVxY2…)
 ```
 
 **Step 8** — Summary:
-> "Klaar! 1 verwijderd, 0 overgeslagen."
+> "Klaar! 1 verwijderd, 0 overgeslagen (niet in playlist)."
 
 AskUserQuestion: "Wil je nog iets anders doen?"
 - Voeg toe aan andere playlist → handoff to `/playlist-match`

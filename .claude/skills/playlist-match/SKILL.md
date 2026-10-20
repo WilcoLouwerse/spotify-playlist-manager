@@ -36,6 +36,7 @@ User-facing prose is **Dutch** (the user authored the format spec in Dutch). Kee
      - User wants to **audit a playlist** (check if existing tracks match its genre/theme) → `/playlist-audit`
      - User wants to **add or sync playlists in the config** (`playlists.json`) → `/playlist-config`
      - User wants to **seed the fallback duplicate log** from an Exportify export → `/playlist-log-import`
+     - User wants **concert/festival recommendations** based on their playlists → `/event-radar`
 
    For follow-ups jump to step 9.
 
@@ -129,7 +130,7 @@ User-facing prose is **Dutch** (the user authored the format spec in Dutch). Kee
        .venv/bin/python playlist_manager.py add "<url>" "<Playlist Name>" --execute
        ```
 
-       Run from the repo root. Quote playlist names verbatim from `playlists.json` (the script accepts aliases too, but exact names are unambiguous). Report the script's output back to the user verbatim — it tells them `ADD` or `SKIP (already in playlist)`. Do not paraphrase the script's own messages.
+       Run from the repo root. Quote playlist names verbatim from `playlists.json` (the script accepts aliases too, but exact names are unambiguous). Report the script's output back to the user verbatim — it ends with `DONE: track added (snapshot …)` or `SKIP: track already in playlist. No changes made.` Do not paraphrase the script's own messages.
 
        **Always also like the track.** After the last `add`, run one `like` command in the same plan, so the track also lands in the user's **Liked Songs**:
 

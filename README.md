@@ -1,6 +1,6 @@
 # spotify-playlist-manager
 
-Local CLI to manage my Spotify playlists. Built on the [Spotify Web API](https://developer.spotify.com/documentation/web-api) via [Spotipy](https://spotipy.readthedocs.io/), with optional OpenAI-powered playlist classification for `smart-add`.
+Local CLI to manage my Spotify playlists. Built on the [Spotify Web API](https://developer.spotify.com/documentation/web-api) via [Spotipy](https://spotipy.readthedocs.io/), with optional OpenAI-powered playlist classification for `smart-add`, `analyze-only`, `review-playlist`, `bulk-playlist`, `scan-for` and `audit-playlist`.
 
 ```bash
 # After setup
@@ -16,7 +16,7 @@ python playlist_manager.py scan-for "House" "https://open.spotify.com/playlist/<
 
 ## Documentation
 
-- **[docs/setup.md](docs/setup.md)** — credentials, `.env` values, where to get them (Spotify Developer Dashboard + OpenAI platform), `playlists.json` config (see [playlists.example.json](playlists.example.json) for the schema), Python venv setup.
+- **[docs/setup.md](docs/setup.md)** — credentials and `.env` values (Spotify Developer Dashboard + OpenAI platform), Python venv setup, connecting to Spotify (smoke test + troubleshooting), and `playlists.json` config (see [playlists.example.json](playlists.example.json) for the schema).
 - **[docs/commands.md](docs/commands.md)** — CLI reference for every subcommand, including `list-playlists --all` (Spotify discovery), aliases, dry-run behavior, and the duplicate guard.
 - **[docs/architecture.md](docs/architecture.md)** — how the code is structured, the OAuth flow, the OpenAI classifier, and the IPv4-only network workaround for WSL.
 
@@ -45,6 +45,6 @@ Three layers protect against unintended writes:
 
 ## Security notes
 
-- `.env`, `.spotify_token_cache`, and `playlists.json` are gitignored. Never commit them.
+- `.env`, `.spotify_token_cache`, `playlists.json`, `event-radar.config.json`, `.tracks_log.json` and the contents of `exportify-exports/` are gitignored. Never commit them.
 - If you leak your Spotify Client Secret, rotate it in the Dashboard immediately.
 - If you leak your OpenAI API key, revoke it on the OpenAI platform and create a new one.

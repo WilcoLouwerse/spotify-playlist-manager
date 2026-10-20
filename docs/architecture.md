@@ -6,24 +6,36 @@ How the code is organised and why certain decisions exist.
 
 ```
 spotify-playlist-manager/
-├── .tracks_log.json          # local duplicate-guard log (gitignored, auto-managed)
-├── .env                    # secrets (gitignored)
-├── .env.example            # template
-├── .gitignore              # excludes .env, .venv, token cache, adds log, playlists.json
-├── .spotify_token_cache    # OAuth token cache (gitignored, auto-managed by Spotipy)
-├── .venv/                  # local virtualenv (gitignored)
-├── README.md               # short overview, points into docs/
+├── .claude/
+│   ├── docs/                     # contributor docs: skill reference, doc + skill conventions
+│   ├── settings.json             # shared Claude Code settings
+│   └── skills/                   # the /playlist-* and /event-radar skills
+├── .github/                      # CI workflows (tests, ruff, shellcheck, gitleaks) + Dependabot
+├── .env                          # secrets (gitignored)
+├── .env.example                  # template
+├── .gitignore                    # excludes secrets, token cache, local logs/config, personal exports
+├── .spotify_token_cache          # OAuth token cache (gitignored, auto-managed by Spotipy)
+├── .tracks_log.json              # fallback duplicate-guard log (gitignored, auto-managed)
+├── .venv/                        # local virtualenv (gitignored)
+├── README.md                     # short overview, points into docs/
 ├── docs/
-│   ├── setup.md            # credentials, env vars, playlist config
-│   ├── commands.md         # CLI reference
-│   └── architecture.md     # this file
-├── exportify-exports/      # Exportify CSVs: sources for playlists you can't read via the API, and `log-import` input (contents gitignored)
-├── playlist_manager.py     # the CLI
-├── playlists.json          # local playlist config (gitignored, see playlists.example.json)
-├── playlists.example.json  # worked example of the playlist config schema
-├── requirements.txt        # pinned dependencies
+│   ├── setup.md                  # credentials, venv, connecting to Spotify, playlist config
+│   ├── commands.md               # CLI reference
+│   ├── architecture.md           # this file
+│   ├── vscode-claude-setup.md    # WSL + VS Code + Claude Code walkthrough
+│   └── events/                   # /event-radar output (README tracked, generated lists gitignored)
+├── event-radar.config.json       # local /event-radar config (gitignored)
+├── event-radar.config.example.json  # worked example of the event-radar config
+├── exportify-exports/            # Exportify CSVs: sources the API can't read, `log-import` input (contents gitignored)
+├── playlist_manager.py           # the CLI
+├── playlists.json                # local playlist config (gitignored, see playlists.example.json)
+├── playlists.example.json        # worked example of the playlist config schema
+├── pyproject.toml                # ruff + pytest config
+├── requirements.txt              # runtime dependency ranges
+├── requirements-dev.txt          # pytest + ruff
 └── tests/
-    ├── test_playlist_manager.py  # pytest unit tests (pure functions)
+    ├── conftest.py               # puts the repo root on sys.path
+    ├── test_playlist_manager.py  # pytest unit tests (helpers + command logic against stub clients)
     └── test_spotify.py           # OAuth smoke test (run as a script)
 ```
 
@@ -37,11 +49,12 @@ A single-file CLI built on `argparse`:
 - `add` — direct, single-target add with duplicate guard.
 - `like` — adds a track to the user's Liked Songs (the Spotify library, not a playlist). Dry-run by default; the duplicate check asks Spotify via `current_user_saved_tracks_contains` instead of `.tracks_log.json`.
 - `remove` — direct, single-target removal; mirrors `add` — dry-run by default, `--execute` to write. Updates `.tracks_log.json` on success.
+- `batch-add` / `batch-remove` — add or remove many URIs (from a file or stdin) to/from one playlist in chunks of 100, with one live read of the playlist for the duplicate check.
 - `smart-add` — OpenAI classifier + confirmation prompt + duplicate guard.
 - `analyze-only` — same classification pipeline as `smart-add`, no prompts, no writes.
 - `list-tracks` — prints every track in a playlist as tab-separated `URI<TAB>Artist - Title`. Read-only; used by skills (`/playlist-audit`, `/playlist-triage`, `/playlist-scan`) to get a track list without a full classification round-trip.
 - `review-playlist` — walk a source playlist track-by-track with per-track y/N/s/q.
-- `bulk-playlist` — classify every track in a source playlist, show a per-target tally, then apply everything after a single y/N. Uses the local tracks log directly for duplicate detection to keep request volume bounded.
+- `bulk-playlist` — classify every track in a source playlist, show a per-target tally, then apply everything after a single y/N. Reads each target playlist from Spotify once (lazily, on first match) for duplicate detection, so request volume grows with the number of targets, not tracks × suggestions.
 - `scan-for` — pick one target playlist and scan a source playlist for tracks the classifier would route to that target. Same single-y/N UX as `bulk-playlist`, but the output is one candidate list instead of a per-target tally.
 - `audit-playlist` — OpenAI-backed batch audit: classifies every track in a playlist and reports a confidence score for each against the playlist's own genre/theme. See `/playlist-audit` skill for the Claude AI + web-search version.
 - `log-import` — seeds the local `.tracks_log.json` from a file of track URIs/URLs/IDs (e.g. an Exportify CSV). The log is the duplicate guard's fallback for when Spotify hides a playlist's contents.
@@ -68,20 +81,22 @@ Validation failures exit cleanly with a pointer to the offending field — no st
 
 ### `tests/`
 
-- `tests/test_playlist_manager.py` — pytest unit tests covering the pure helpers (URI/ID parsing, config validation, catch-all logic, adds-log I/O, classification validation). Run with `pytest` from the repo root.
+- `tests/test_playlist_manager.py` — pytest unit tests: URI/ID parsing, config validation, catch-all logic, the duplicate guard (Spotify-authoritative with log fallback), `add` / `like` / `remove` against a stub Spotify client, source resolution including the CSV fallback, rate-limit retries, and the OpenAI classifier (mocked). Run with `pytest` from the repo root.
 - `tests/test_spotify.py` — standalone smoke test, run as a script. Uses the same OAuth machinery as `playlist_manager.py` but only reads — useful for verifying `.env` is correct before trying to write anything.
 
 ## Authentication
 
 Spotify's Authorization Code Flow, via [Spotipy](https://spotipy.readthedocs.io/):
 
-1. First run prints a URL and opens the browser.
+1. First run opens the Spotify consent page in the browser.
 2. User logs in to Spotify and approves the scopes.
 3. Spotify redirects to `http://127.0.0.1:8888/callback` with a code.
 4. Spotipy's local HTTP server catches the callback, exchanges the code for an access + refresh token, and writes both to `.spotify_token_cache`.
 5. Future runs read the cache; if the access token has expired, Spotipy uses the refresh token to renew it silently.
 
-The redirect URI must match exactly what's configured in the Spotify Developer Dashboard. `127.0.0.1` and `localhost` are *not* interchangeable — Spotify rejects mismatches.
+The redirect URI must match exactly what's configured in the Spotify Developer Dashboard. Spotify refuses `localhost` as a redirect URI; use the loopback IP `127.0.0.1` in both the dashboard and `.env` ([Spotify: Redirect URIs](https://developer.spotify.com/documentation/web-api/concepts/redirect_uri)).
+
+The cached token records its scopes. When `SCOPE` gains a scope, Spotipy discards the cached token on the next call and asks for consent again.
 
 ## Network quirks
 
@@ -89,20 +104,22 @@ The redirect URI must match exactly what's configured in the Spotify Developer D
 
 WSL2's IPv6 route to `api.spotify.com` is broken — the TCP connect silently hangs until the read timeout fires. Python's `getaddrinfo` returns IPv6 addresses first by default, so requests intermittently failed.
 
-The fix lives at the top of `playlist_manager.py` and `tests/test_spotify.py`:
+The fix is `_force_ipv4_if_needed()` in `playlist_manager.py` (called from `get_spotify_client()`), mirrored in `tests/test_spotify.py`:
 
 ```python
-import socket
-
-_orig_getaddrinfo = socket.getaddrinfo
-
-
-def _ipv4_only_getaddrinfo(*args, **kwargs):
-    return [info for info in _orig_getaddrinfo(*args, **kwargs) if info[0] == socket.AF_INET]
-
-
-socket.getaddrinfo = _ipv4_only_getaddrinfo
+def _force_ipv4_if_needed():
+    global _ipv4_patch_applied
+    if _ipv4_patch_applied:
+        return
+    env = os.getenv("SPOTIFY_FORCE_IPV4", "").lower()
+    if env in ("0", "false", "no"):
+        return
+    if env in ("1", "true", "yes") or "microsoft" in platform.release().lower():
+        socket.getaddrinfo = _ipv4_only_getaddrinfo
+        _ipv4_patch_applied = True
 ```
+
+It swaps `socket.getaddrinfo` for an IPv4-only filter when running on WSL or when `SPOTIFY_FORCE_IPV4=1`; `SPOTIFY_FORCE_IPV4=0` disables it. The patch is applied lazily, so importing the module has no global network side effects.
 
 This filters out AAAA records before any HTTPS connection is opened. No system change required.
 
@@ -136,15 +153,15 @@ The Spotipy client is constructed with `requests_timeout=30, retries=5`. The def
      "short_summary": "..."
    }
    ```
-4. Hands the parsed object to `validate_classification`, which enforces: non-empty `playlist_matches`, every `playlist` must exist in `playlists.json -> "playlists"`, every `confidence` must be an integer 0–100. A validation failure aborts the run cleanly.
+4. Hands the parsed object to `validate_classification`, which enforces: `playlist_matches` is a list (an empty list is allowed — the catch-all handles "nothing fits"), every `playlist` must exist in `playlists.json -> "playlists"`, every `confidence` must be an integer 0–100. A validation failure aborts the run cleanly.
 
 The model is locked into JSON mode (`response_format={"type": "json_object"}`), and `temperature=0.2` keeps results stable across runs.
 
 ### Catch-all and confidence filtering
 
-After classification returns, `smart_add` post-processes the matches:
+After classification returns, `_classify_and_filter()` (shared by every classifying subcommand) post-processes the matches:
 
-1. Sort by confidence descending and truncate to `--max-playlists` (default 5 for `smart-add`; other subcommands use 3).
+1. Sort by confidence descending and truncate to `--max-playlists` (default 5 for `smart-add`, 3 for `review-playlist` / `bulk-playlist`, 10 for `analyze-only`; `scan-for` and `audit-playlist` use a fixed 5 and 10).
 2. If `playlists.json -> "catch_all"` is configured and no remaining match has confidence >= `catch_all.threshold` (default 85), append `{"playlist": catch_all.playlist, "confidence": 100, "reason": "..."}`. This step can push the total to `max-playlists + 1` — the catch-all is intentional overflow. If the catch-all playlist is already in the matches (shouldn't happen since it's hidden from the model, but defensive), nothing is appended.
 3. Drop any match with confidence < `--min-confidence` (default 0). The catch-all entry is always confidence 100 so it survives any filter < 100.
 
@@ -190,7 +207,7 @@ Spotify's [Feb 2026 Dev Mode migration guide](https://developer.spotify.com/docu
 - `GET/POST/DELETE/PUT /playlists/{id}/tracks` is renamed to `/playlists/{id}/items`. Spotipy ≥ 2.26 already calls the new path.
 - The response shape changes: a playlist entry's `track` becomes `item`, and a playlist object's `tracks` (with `total`) becomes `items`. `_playlist_entry_track()` reads `item` first and `track` as fallback; the `fields=` filters request both keys.
 - Type-specific library endpoints (`/me/tracks`, …) are replaced by the generic `/me/library`. Spotipy ≥ 2.26 maps `current_user_saved_tracks_*` onto it, which `like` uses.
-- Tracks lose `available_markets`, `external_ids`, `linked_from`, and `popularity` fields. We currently send `popularity` into the OpenAI prompt; after Feb 2026 it will simply be `None`, which the classifier still handles.
+- Tracks lose `available_markets`, `external_ids`, `linked_from`, and `popularity` fields. `popularity` is still sent into the OpenAI prompt but is now `None`; the classifier handles that.
 - Batch endpoints (`GET /tracks`, `/albums`, `/artists`) are removed — fetch individually.
 - Owner-only constraint: playlist `items` are only returned for playlists the user owns or collaborates on; anyone else's playlist answers `403`. `list-playlists --all` already filters to that set, so every target in `playlists.json` is readable. To use someone else's playlist as a *source*, export it with Exportify and pass the CSV.
 

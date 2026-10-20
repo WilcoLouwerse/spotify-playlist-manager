@@ -32,8 +32,9 @@ Index of slash commands (skills) available in this repo. Each row links to the s
 |------|---------|
 | [playlist_manager.py](../../playlist_manager.py) | The single-file CLI — argparse subcommands, OAuth, OpenAI classifier, duplicate guard |
 | [playlists.json](../../playlists.json) | Local playlist taxonomy (gitignored). Schema in [playlists.example.json](../../playlists.example.json) |
-| [requirements.txt](../../requirements.txt) | Pinned Python dependencies |
-| [docs/setup.md](../../docs/setup.md) | Credentials, `.env`, venv setup |
+| [requirements.txt](../../requirements.txt) | Python dependency ranges |
+| [docs/setup.md](../../docs/setup.md) | Credentials, `.env`, venv, connecting to Spotify, `playlists.json` config |
+| [docs/vscode-claude-setup.md](../../docs/vscode-claude-setup.md) | WSL + VS Code + Claude Code walkthrough |
 | [docs/commands.md](../../docs/commands.md) | End-user CLI reference (every subcommand, dry-run behavior, duplicate guard) |
 | [docs/architecture.md](../../docs/architecture.md) | Code structure, OAuth flow, OpenAI classifier, IPv4-only WSL workaround |
 | [tests/](../../tests/) | `pytest` unit tests + OAuth smoke test |

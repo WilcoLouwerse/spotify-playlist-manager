@@ -77,4 +77,4 @@ Full reference (triggers, guardrails, source links): [.claude/docs/commands.md](
 
 ## Next
 
-Continue with [setup.md → Local Python environment](setup.md#local-python-environment) to install the Python venv inside WSL, then run any command from the VS Code terminal.
+Continue with [setup.md](setup.md) from the top — Spotify and OpenAI credentials, the Python venv inside WSL, [Connect to Spotify](setup.md#connect-to-spotify) and [Configure your playlists](setup.md#configure-your-playlists) — then run commands from the VS Code terminal.

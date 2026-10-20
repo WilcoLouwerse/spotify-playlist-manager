@@ -8,7 +8,7 @@ metadata:
 
 # Event Radar
 
-Reads the user's playlists (via Exportify CSVs in [`exportify-exports/`](../../../exportify-exports/) + [`playlists.json`](../../../playlists.json)), extracts top artists per genre, then dispatches specialist research agents to find concerts and festivals matching the user's taste, location, availability, and other preferences. Outputs structured markdown files under [`docs/events/`](../../../docs/events/).
+Reads the user's playlists (live from Spotify via the project's `list-tracks` command, with Exportify CSVs in [`exportify-exports/`](../../../exportify-exports/) only for what the API can't read), extracts top artists per genre, then dispatches specialist research agents to find concerts and festivals matching the user's taste, location, availability, and other preferences. Outputs structured markdown files under [`docs/events/`](../../../docs/events/).
 
 User-facing prose is **Dutch**. Skill internals (this file, references, templates) stay in English.
 
@@ -103,9 +103,30 @@ Use config values as defaults for every parameter below — only ask via **AskUs
 
 ### 3. Read taxonomy + playlists
 
-Read:
-- [`playlists.json`](../../../playlists.json) — for the user's genre taxonomy and known playlist names
-- All CSV files in [`exportify-exports/`](../../../exportify-exports/) — for the actual track + artist data
+Read [`playlists.json`](../../../playlists.json) for the user's genre taxonomy and known playlist names. Then collect the track + artist data, **live first**:
+
+1. **List the user's own playlists once** (read-only):
+
+   ```bash
+   .venv/bin/python playlist_manager.py list-playlists --all
+   ```
+
+   It prints every playlist the user owns or collaborates on as `"Name": "<id>"`, split into tracked (in `playlists.json`) and untracked. Both groups are readable via the API — untracked ones like *Favorieten* or *fire-water* included.
+
+2. **Read each of those playlists live** (read-only), by name for tracked playlists and by ID for untracked ones:
+
+   ```bash
+   .venv/bin/python playlist_manager.py list-tracks "<name or id>"
+   ```
+
+   Output: a `Playlist: <name> (<N> tracks)` header, then one `URI<TAB>Artist - Title` line per track. Run the calls sequentially — each one costs about one API call per 100 tracks, and Development Mode rate limits are tight.
+
+3. **Use Exportify CSVs only for what the API can't read**:
+   - **Liked Songs** — the Spotify library, not a playlist; no CLI command lists it. Read `exportify-exports/Liked_Songs.csv`.
+   - Playlists Spotify generated (e.g. *Your All-Time Top Songs*) or owned by someone else — the API answers `403` for those. Read their CSV.
+   - A playlist whose `list-tracks` call printed `No readable tracks returned` — fall back to its CSV if one exists.
+
+   Never use a CSV for a playlist that `list-tracks` just read live; the CSV is an older snapshot. When the run used a CSV, mention in the summary (step 8) which sources came from a CSV and the file's modification date, so the user knows how fresh they are. If `Liked_Songs.csv` is missing, say so in Dutch and suggest exporting it via [Exportify](https://exportify.net) before the next run.
 
 Build an in-memory map of top artists per playlist (Counter of artist appearances). Pay special attention to:
 - **Liked Songs** — often biggest, may contain favs not in genre-specific playlists

@@ -2,11 +2,30 @@
 
 CLI reference for [playlist_manager.py](../playlist_manager.py). Run every command from the repo root with the venv active.
 
+## Contents
+
+- [Global behavior](#global-behavior)
+- [`list-playlists`](#list-playlists)
+- [`log-import`](#log-import)
+- [`add`](#add)
+- [`like`](#like)
+- [`remove`](#remove)
+- [`batch-add`](#batch-add)
+- [`batch-remove`](#batch-remove)
+- [`smart-add`](#smart-add)
+- [`analyze-only`](#analyze-only)
+- [`review-playlist`](#review-playlist)
+- [`bulk-playlist`](#bulk-playlist)
+- [`scan-for`](#scan-for)
+- [`list-tracks`](#list-tracks)
+- [`audit-playlist`](#audit-playlist)
+- [`tests/test_spotify.py`](#teststest_spotifypy)
+
 ## Global behavior
 
-- **Dry-run by default.** Commands that write to Spotify (`add`, `like`, `remove`, `smart-add`, `review-playlist`, `bulk-playlist`, `scan-for`) print what they *would* do and exit. Add `--execute` to actually write.
+- **Dry-run by default.** Commands that write to Spotify (`add`, `like`, `remove`, `batch-add`, `batch-remove`, `smart-add`, `review-playlist`, `bulk-playlist`, `scan-for`) print what they *would* do and exit. Add `--execute` to actually write.
 - **Duplicate guard is always on.** Before writing, the script reads the target playlist's current contents from Spotify (once per playlist per run). If the URI is there, it exits with `SKIP`. There is no override flag. When Spotify hides a playlist's contents, the guard falls back to the local log (`.tracks_log.json`) of every URI the script added or that was seeded via `log-import`. `like` checks Liked Songs on Spotify the same way. See [architecture.md → Duplicate detection](architecture.md#duplicate-detection).
-- **IPv4 only.** The script forces IPv4 resolution because WSL's IPv6 route to `api.spotify.com` is broken. See [architecture.md](architecture.md) for the why.
+- **IPv4 on WSL.** On WSL (or with `SPOTIFY_FORCE_IPV4=1`) the script forces IPv4 resolution because WSL's IPv6 route to `api.spotify.com` is broken; `SPOTIFY_FORCE_IPV4=0` turns it off. See [architecture.md → IPv4-only resolution](architecture.md#ipv4-only-resolution).
 
 ## `list-playlists`
 
@@ -81,7 +100,7 @@ Spotify itself doesn't ship a built-in "export playlist to CSV." [Exportify](htt
 python playlist_manager.py log-import "House" exportify-exports/house.csv
 ```
 
-After that, future `add` and `smart-add` runs will recognise everything in the imported playlist as a duplicate.
+After that, if Spotify ever hides that playlist's contents, the duplicate guard's fallback recognises everything in the imported playlist as a duplicate.
 
 ### Example output
 
@@ -169,7 +188,7 @@ Liked Songs is your Spotify library, not a playlist, so it has no playlist ID an
 
 - Track already liked → prints `SKIP: track already in Liked Songs. No changes made.` and exits.
 - Track liked successfully → prints `DONE: track added to Liked Songs`.
-- Spotify API error → prints `FAILED: Spotify returned <status> <msg>`. A `403` usually means the cached token predates the `user-library-modify` scope; delete `.spotify_token_cache` and run any command to consent again.
+- Spotify API error → prints `FAILED: Spotify returned <status> <msg>`. A `403` usually means the cached token lacks the `user-library-modify` scope; delete `.spotify_token_cache` and run `python tests/test_spotify.py` to consent again.
 
 ## `remove`
 
@@ -201,7 +220,7 @@ On a successful removal, the script removes the track URI from `.tracks_log.json
 
 ### Exit behavior
 
-- Track not found in playlist (not in log, not confirmed by API) → prints `SKIP: track not found in playlist. No changes made.` and exits.
+- Track not in the playlist on Spotify (or, when Spotify hides the contents, not in `.tracks_log.json`) → prints `SKIP: track not found in playlist. No changes made.` and exits.
 - Track removed successfully → prints `DONE: track removed (snapshot …)`.
 - Playlist name not recognised → raises `ValueError: Unknown playlist: ...`.
 - Spotify API error → prints `FAILED: Spotify returned <status> <msg>`.
@@ -433,7 +452,7 @@ The `playlist` argument accepts any of:
 
 - A Spotify playlist URL, URI, or 22-char ID.
 - A path to an [Exportify](https://exportify.net) CSV (e.g. `exportify-exports/House.csv`).
-- A bare name that matches a CSV in [exportify-exports/](../exportify-exports/) (e.g. `House` → `exportify-exports/House.csv`, or `"Drum & Bass"` → `exportify-exports/Drum_&_Bass.csv`). Matching is case-insensitive and treats spaces, underscores, and `/` separators as equivalent so the Spotify display name maps to exportify's filename mangling.
+- A bare name that matches a CSV in [exportify-exports/](../exportify-exports/) (e.g. `House` → `exportify-exports/House.csv`, or `"Drum & Bass"` → `exportify-exports/Drum_&_Bass.csv`). Matching is case-insensitive and treats spaces and underscores as equivalent. A name containing `/` (e.g. `Jazz / Funk / Soul`) is treated as a file path and does not resolve — pass the CSV path (`exportify-exports/Jazz_Funk_Soul.csv`) or the playlist's Spotify URL/ID instead.
 
 When a URL is given but Spotify returns no readable tracks (the playlist is empty, or owned by someone else — Spotify only exposes playlists you own or collaborate on), the script looks for a CSV in `exportify-exports/` whose name matches the source playlist and prompts you to use it instead. Answer `y` to fall back to the local export; `N` exits with the usual Exportify pointer.
 
@@ -456,7 +475,7 @@ Unlike `smart-add`, accept is **all-or-nothing per track** — `y` adds to every
 
 ### Flow
 
-1. Load the source playlist by URL/URI/ID and list its tracks via `playlist_items`.
+1. Load the source by URL/URI/ID **or** parse an exportify CSV — see [Source input](#source-input).
 2. For each track: run the same classification pipeline as [smart-add](#smart-add) (catch-all fallback and `--min-confidence` filter included).
 3. Show suggestions, prompt `y/N/s/q`.
 4. On `y`: for each suggested playlist, check the duplicate guard, then either dry-run print or `playlist_add_items` under `--execute`.
@@ -505,14 +524,14 @@ The `playlist` argument accepts the same three forms as [review-playlist → Sou
 
 1. Load the source by URL/URI/ID **or** parse an exportify CSV — see [Source input](#source-input).
 2. For each track: run the same classification pipeline as [smart-add](#smart-add) (catch-all fallback and `--min-confidence` filter included).
-3. Build a plan: for every (track → target playlist) pair, skip anything already in the local adds log so the tally reflects real additions.
+3. Build a plan: for every (track → target playlist) pair, skip anything already in the target (read live from Spotify once per target; `.tracks_log.json` only when Spotify hides the contents) so the tally reflects real additions.
 4. Print a per-target tally sorted by count.
 5. Ask one `y/N`. On `y`, write every planned addition (or dry-run print).
 
 ### Example output
 
 ```
-Reading source playlist: To triage (3aBcDeFgHiJkLmNoPqRsTu)
+Reading source: To triage (3aBcDeFgHiJkLmNoPqRsTu)
 Found 132 tracks. Classifying...
 
   [1/132] Bakermat - Walk That Walk
@@ -580,7 +599,7 @@ The `source` argument accepts the same three forms as [review-playlist → Sourc
 
 1. Resolve the target name (accepts the same aliases as [add](#add)) against [playlists.json](../playlists.json).
 2. Load the source by URL/URI/ID **or** parse an exportify CSV — see [Source input](#source-input).
-3. For each source track: skip if already in the target (per the local adds log); otherwise run the same classification pipeline as [smart-add](#smart-add).
+3. For each source track: skip if already in the target (per the target's live Spotify contents, fetched once; `.tracks_log.json` only as fallback); otherwise run the same classification pipeline as [smart-add](#smart-add).
 4. If the target playlist appears in the track's matches (after `--min-confidence` filtering), record it as a candidate with the classifier's confidence for that target.
 5. Sort candidates by confidence (desc), print them, and ask one `y/N`.
 6. On `y`: add every candidate to the target (or dry-run print).
@@ -637,7 +656,7 @@ The classifier is always asked for its full top-5 matches per track so the targe
 ### Limits and caveats
 
 - The classifier is invoked once per source track, same cost profile as [bulk-playlist](#bulk-playlist).
-- Duplicate detection uses the local adds log only — seed via [log-import](#log-import) if the target playlist isn't already tracked there, or the script may re-add tracks already in it.
+- Duplicate detection reads the target playlist from Spotify once per run, so tracks added in the Spotify app are recognised. Only when Spotify hides the contents does it fall back to `.tracks_log.json` (seed via [log-import](#log-import)).
 - If a track somewhat fits the target but the classifier didn't include it in its top-5 matches at all, it won't be flagged. Lower `--min-confidence` for more lenient scans, or fall back to per-track [smart-add](#smart-add).
 - If Spotify returns no readable tracks for the source, the script offers a matching CSV in [exportify-exports/](../exportify-exports/) as a fallback — same behavior as [review-playlist](#review-playlist).
 
@@ -660,7 +679,7 @@ python playlist_manager.py list-tracks exportify-exports/House.csv
 
 | Argument | Description |
 |----------|-------------|
-| `playlist` | Playlist name from `playlists.json`, Spotify playlist URL/URI/ID, or path to an exportify CSV |
+| `playlist` | Playlist name from `playlists.json`, Spotify playlist URL/URI/ID, path to an exportify CSV, or a bare name matching a file in [exportify-exports/](../exportify-exports/) |
 
 ### Output format
 
@@ -675,7 +694,7 @@ The first line is a summary header. Every subsequent line is `<spotify_uri>\t<Ar
 
 ### Empty output
 
-If the Spotify API returns no tracks (the playlist is empty, or owned by someone else), pass an exportify CSV path instead. The command does not auto-fallback in this path — that fallback is handled by `review-playlist`, `bulk-playlist`, and `scan-for`.
+For a playlist name from `playlists.json`, an empty result prints `No readable tracks returned for '<name>' …`; pass an exportify CSV path instead. For a Spotify URL/URI/ID the command applies the same CSV fallback as [review-playlist → Source input](#source-input): when Spotify returns no readable tracks (empty, or owned by someone else, which answers `403`), it offers a matching CSV in `exportify-exports/`.
 
 ## `audit-playlist`
 
@@ -699,7 +718,7 @@ python playlist_manager.py audit-playlist "House" --min-confidence 40
 | Argument | Description |
 |----------|-------------|
 | `playlist` | Playlist name or alias to audit — must be in `playlists.json` |
-| `--csv PATH` | Path to an exportify CSV — for when Spotify returns no readable tracks |
+| `--csv PATH` | Path to an exportify CSV — audits that snapshot instead of the live playlist |
 | `--min-confidence N` | Tracks below this confidence (0–100, default 60) are listed as removal candidates |
 
 ### How classification works

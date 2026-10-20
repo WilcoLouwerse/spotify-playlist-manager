@@ -19,7 +19,7 @@ For the end-user CLI reference (`python playlist_manager.py …`), see [docs/com
 | [`/playlist-config`](#playlist-config) | Workflow | Bootstraps or extends `playlists.json` from your Spotify account via `list-playlists --all` |
 | [`/event-radar`](#event-radar) | Workflow | Generates personalized concert/festival recommendations from your playlists with date-availability, genre, venue-tier and discovery filters |
 
-All eight skills produce **Dutch** user-facing prose (the user's preference); their `SKILL.md`, `references/`, `templates/`, and `examples/` stay in English so triggers and steering remain model-readable. See [writing-docs.md → Language](writing-docs.md) for the convention.
+All eight skills produce **Dutch** user-facing prose (the user's preference); their `SKILL.md`, `references/`, `templates/`, and `examples/` stay in English so triggers and steering remain model-readable. See [writing-docs.md → Language](writing-docs.md#language) for the convention.
 
 ---
 
@@ -152,7 +152,7 @@ verwijder Dua Lipa - Levitating uit Drum & Bass
 2. Resolves the target playlist(s) against `playlists.json`. Accepts a single playlist name or asks via `AskUserQuestion` with `multiSelect: true` for multiple targets.
 3. Flags `Random sht` with an extra confirmation — removing from the catch-all is almost never the intent.
 4. Shows the exact `playlist_manager.py remove "<url>" "<Playlist>" --execute` command(s) and confirms via `AskUserQuestion` before running anything.
-5. Reports the script's output verbatim (`DONE`, `SKIP: track not found in playlist`, etc.) and explains SKIP in Dutch when the track was likely added through the Spotify UI.
+5. Reports the script's output verbatim (`DONE`, `SKIP: track not found in playlist`, etc.). On SKIP it explains in Dutch that the track is not in that playlist on Spotify (wrong playlist, or a different version of the track); only when the output contains the fallback `WARN` does it suggest `/playlist-log-import`.
 
 **Guardrails:**
 
@@ -271,7 +271,7 @@ sync mijn playlists.json met Spotify
 
 **Category:** Workflow
 
-Finds concerts and festivals that fit your taste. Reads the top artists per genre from your Exportify exports in [`exportify-exports/`](../../exportify-exports/) and [`playlists.json`](../../playlists.json), researches current tour and festival dates on the web, and writes dated recommendation lists to [`docs/events/`](../../docs/events/).
+Finds concerts and festivals that fit your taste. Reads the top artists per genre from your playlists — live via `list-playlists --all` + `list-tracks`, with Exportify CSVs in [`exportify-exports/`](../../exportify-exports/) only for Liked Songs and playlists the API can't read — researches current tour and festival dates on the web, and writes dated recommendation lists to [`docs/events/`](../../docs/events/).
 
 **Usage:**
 
@@ -287,7 +287,7 @@ find festivals for me
 
 1. Loads [`event-radar.config.json`](../../event-radar.config.json) (gitignored; sample in [`event-radar.config.example.json`](../../event-radar.config.example.json)). On the first run it builds that config interactively via `AskUserQuestion`.
 2. Asks via `AskUserQuestion` for the run's parameters: period, blocked dates, genres, venue tier, list types (favourites, discovery, EDM nights, tribute).
-3. Extracts top artists per genre from the playlists, Liked Songs included.
+3. Reads your own playlists live via `list-tracks` and Liked Songs plus unreadable playlists from Exportify CSVs, then extracts top artists per genre.
 4. Dispatches parallel research agents that look up tour and festival dates via WebSearch + WebFetch.
 5. Consolidates, deduplicates and filters the results, then writes `docs/events/<date>-<list-type>.md` files and a row in the local `docs/events/INDEX.md`.
 6. Writes what it learned (distances, venues) back to the config.

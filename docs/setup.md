@@ -11,8 +11,8 @@ This document walks through every credential the project needs, where to get it,
 | `SPOTIPY_CLIENT_ID` | All commands | Spotify Developer Dashboard (see below) |
 | `SPOTIPY_CLIENT_SECRET` | All commands | Spotify Developer Dashboard |
 | `SPOTIPY_REDIRECT_URI` | OAuth flow | Set to `http://127.0.0.1:8888/callback` (must match the dashboard exactly) |
-| `OPENAI_API_KEY` | `smart-add` only | OpenAI platform (see below) |
-| `OPENAI_MODEL` | `smart-add` only (optional) | Defaults to `gpt-4.1-mini` if unset |
+| `OPENAI_API_KEY` | Classifying commands: `smart-add`, `analyze-only`, `review-playlist`, `bulk-playlist`, `scan-for`, `audit-playlist` | OpenAI platform (see below) |
+| `OPENAI_MODEL` | Classifying commands (optional) | Defaults to `gpt-4.1-mini` if unset |
 
 ## Spotify credentials
 
@@ -50,11 +50,11 @@ The OAuth flow asks for the following scopes (defined in [playlist_manager.py](.
 
 You only consent once. The token is cached in `.spotify_token_cache` (also gitignored) and refreshes automatically.
 
-When a new version adds a scope to this list, the cached token does not pick it up and commands that need it fail with `403`. Delete `.spotify_token_cache` and run any command to consent again.
+When a new version adds a scope to this list, the next command that talks to Spotify notices that the cached token lacks it and reopens the consent page. If a command still fails with `403`, delete `.spotify_token_cache` and run `python tests/test_spotify.py` to consent again.
 
 ## OpenAI credential
 
-Only required for `smart-add`. The plain `add` and `list-playlists` commands work without it.
+Required for the commands that classify tracks: `smart-add`, `analyze-only`, `review-playlist`, `bulk-playlist`, `scan-for` and `audit-playlist`. `add`, `like`, `remove`, `batch-add`, `batch-remove`, `list-tracks`, `list-playlists` and `log-import` work without it.
 
 1. Open https://platform.openai.com/api-keys.
 2. Log in (or sign up) and add a payment method if you don't have one — the API is pay-as-you-go. `gpt-4.1-mini` (the default model) costs roughly $0.0001–$0.0003 per `smart-add` call.
@@ -104,7 +104,6 @@ On Ubuntu/WSL you may need `sudo apt install python3.12-venv` before `python3 -m
 
 Run every command from the repo root with the venv activated (`source .venv/bin/activate`), or call `.venv/bin/python` directly.
 
-
 ## Connect to Spotify
 
 Log in once and check the connection before you configure playlists. The smoke test only reads, so it is safe to run at any time:
@@ -113,7 +112,7 @@ Log in once and check the connection before you configure playlists. The smoke t
 python tests/test_spotify.py
 ```
 
-1. The script opens the Spotify consent page in your browser. On WSL it opens in the Windows browser; if no browser appears, copy the URL the terminal prints into one.
+1. The script opens the Spotify consent page in your browser. On WSL it opens in the Windows browser; if nothing opens, check that a browser launcher works in your shell (on WSL: `wslview` from the `wslu` package).
 2. Log in with the app owner's account (or a user added under **User Management**) and click **Agree**.
 3. Spotify redirects to `http://127.0.0.1:8888/callback`. The script catches that callback itself, stores the token in `.spotify_token_cache` and prints `Connected as: <your name>` followed by your playlists.
 
@@ -127,7 +126,7 @@ From then on every command reuses the cached token and refreshes it silently. Ba
 | Browser shows `INVALID_CLIENT: Invalid client` | Wrong `SPOTIPY_CLIENT_ID` | Copy it again from the app's **Settings** page |
 | Token exchange fails with `invalid_client` after login | Wrong or rotated `SPOTIPY_CLIENT_SECRET` | Copy the current secret into `.env` |
 | `403` on every call, also right after login | The account is not the app owner and not listed under **User Management**, or the owner's Premium has lapsed | Add the user, or renew Premium |
-| `403` only on one command (e.g. `like`) | The cached token predates a scope that command needs | Delete `.spotify_token_cache` and run the smoke test again |
+| `403` only on one command (e.g. `like`) | The cached token lacks a scope that command needs and was not refreshed | Delete `.spotify_token_cache` and run the smoke test again |
 | Commands hang until a timeout | WSL's broken IPv6 route | The script forces IPv4 on WSL automatically; set `SPOTIFY_FORCE_IPV4=1` if auto-detection misses your setup ([architecture.md → Network quirks](architecture.md#network-quirks)) |
 
 ## Configure your playlists
@@ -205,7 +204,7 @@ The fastest path to a working config:
 - Every key in `special_rules` exists in `playlists`.
 - `catch_all.playlist` exists in `playlists`; `catch_all.threshold` (if present) is an int 0-100 (default 85); `catch_all.rule` (if present) is a string.
 
-The script exits cleanly with a pointer to this section if validation fails.
+If validation fails, the script exits with `Config file 'playlists.json' is invalid: <reason>`, naming the offending field; the rules above tell you what to fix.
 
 ### Where do playlist IDs come from?
 

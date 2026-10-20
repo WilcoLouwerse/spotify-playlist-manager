@@ -58,12 +58,14 @@ When content is duplicated, it will eventually diverge. One copy gets updated; t
 | **Code & data** |  |  |
 | CLI subcommands, flags, behavior | [playlist_manager.py](../../playlist_manager.py) | `argparse` definitions are authoritative; docs follow the code |
 | Playlist taxonomy (categories, aliases, special rules, catch-all) | [playlists.json](../../playlists.json) | Gitignored. Schema lives in [playlists.example.json](../../playlists.example.json) |
-| Pinned Python dependencies | [requirements.txt](../../requirements.txt) | Versions never duplicated into prose |
-| Local duplicate-guard log | `.tracks_log.json` | Gitignored, auto-managed by the CLI |
+| Python dependency ranges | [requirements.txt](../../requirements.txt) | Versions never duplicated into prose |
+| Fallback duplicate-guard log | `.tracks_log.json` | Gitignored, auto-managed by the CLI; only read when Spotify hides a playlist's contents |
 | Spotify OAuth token cache | `.spotify_token_cache` | Gitignored, auto-managed by Spotipy |
 | **User-facing docs** |  |  |
 | Project overview, primary entry point | [README.md](../../README.md) | Short — points to the three guides below |
-| Credentials, `.env`, venv setup | [docs/setup.md](../../docs/setup.md) | Spotify Developer Dashboard, OpenAI platform, `playlists.json` bootstrap |
+| Credentials, `.env`, venv setup, Spotify connection | [docs/setup.md](../../docs/setup.md) | Spotify Developer Dashboard, OpenAI platform, connecting to Spotify and connection troubleshooting, `playlists.json` bootstrap |
+| WSL + VS Code + Claude Code setup | [docs/vscode-claude-setup.md](../../docs/vscode-claude-setup.md) | Optional developer environment walkthrough |
+| `/event-radar` output folder | [docs/events/README.md](../../docs/events/README.md) | Describes the generated event lists (written in Dutch, see [Language](#language)) |
 | End-user CLI reference | [docs/commands.md](../../docs/commands.md) | Every subcommand, dry-run behavior, duplicate guard, aliases |
 | Code structure, OAuth flow, OpenAI classifier, IPv4-only WSL workaround | [docs/architecture.md](../../docs/architecture.md) | The "why" behind the code |
 | **Claude runtime context** |  |  |
@@ -82,7 +84,7 @@ Each document has one target audience. Don't mix them.
 | Audience | Location | Style |
 |----------|----------|-------|
 | End user running the CLI | [docs/](../../docs/) | Task-oriented, plain language, copy-pasteable commands |
-| Developer setting up the project | [README.md](../../README.md) + [docs/setup.md](../../docs/setup.md) | Technical, precise — venv, env vars, IPv4 workaround |
+| Developer setting up the project | [README.md](../../README.md) + [docs/setup.md](../../docs/setup.md) | Technical, precise — venv, env vars, Spotify connection |
 | Claude / skill runtime | [.claude/docs/](.) + [.claude/skills/](../skills/) | Instruction-style, precise — loaded into the model's context at runtime |
 
 **Developer-only setup details do not belong in user-facing docs.** Conversely, end-user CLI semantics belong in [docs/commands.md](../../docs/commands.md), not in `.claude/docs/`.
@@ -91,7 +93,7 @@ Each document has one target audience. Don't mix them.
 
 ## Language
 
-**All documentation is written in English** — `docs/`, `.claude/docs/`, `README.md`. Filenames also must be English (`setup.md`, not `installatie.md`).
+**All documentation is written in English** — `docs/`, `.claude/docs/`, `README.md`. Filenames also must be English (`setup.md`, not `installatie.md`). One exception: [docs/events/README.md](../../docs/events/README.md) accompanies the Dutch `/event-radar` output and is written in Dutch.
 
 **Skill output language is a separate concern.** Skills like [`/playlist-match`](../skills/playlist-match/SKILL.md) produce **Dutch** user-facing prose because the user authored the format spec in Dutch — but the `SKILL.md`, its `references/`, `templates/`, and `examples/` stay in English so triggers and steering remain model-readable. Quoted Dutch strings inside English docs MUST be annotated: `` `welke playlist past hierbij` (Dutch trigger phrase for /playlist-match) ``.
 

@@ -117,7 +117,7 @@ The skill contains domain-specific knowledge that makes it uniquely effective fo
 **In this repository**, L4 personalization includes:
 - The [playlists.json](../../playlists.json) taxonomy — categories, aliases, special rules, catch-all guard
 - The Spotify Web API contract (track URI/URL/ID parsing, playlist write scopes, Development Mode restrictions such as owner-only playlist contents)
-- The project's CLI surface — [`playlist_manager.py`](../../playlist_manager.py) subcommands (`add`, `smart-add`, `review-playlist`, `bulk-playlist`, `scan-for`, `analyze-only`, `list-playlists`, `log-import`), the dry-run-by-default safety pattern, and the `.tracks_log.json` duplicate guard
+- The project's CLI surface — [`playlist_manager.py`](../../playlist_manager.py) subcommands (`add`, `like`, `remove`, `batch-add`, `batch-remove`, `smart-add`, `analyze-only`, `review-playlist`, `bulk-playlist`, `scan-for`, `list-tracks`, `audit-playlist`, `list-playlists`, `log-import`), the dry-run-by-default safety pattern, and the duplicate guard (live Spotify playlist contents, with `.tracks_log.json` as fallback)
 - Dutch user-facing prose (the author's preferred output language), with English internals so triggers and steering stay model-readable
 - The OpenAI classifier's role in `smart-add` and the genre-source-verification rules documented in the skill's `references/`
 
@@ -187,6 +187,7 @@ Promotion criteria: observation confirmed across 3+ executions, or resolves a me
 
 ## Domain Knowledge
 - 2026-04-16: Dev-tier Spotify accounts get blank track lists from `/playlists/{id}/tracks`; rely on `.tracks_log.json`
+- 2026-10-20: Superseded — the blank lists came from reading the pre-migration `track` key. Spotify returns the contents under `item`, so the live playlist is authoritative again and `.tracks_log.json` is only a fallback
 
 ## Open Questions
 - Should letter `E` (extended playlist analysis) always include alternatives even when confidence is 90%+?
@@ -215,7 +216,7 @@ The skill orchestrates multiple agents or is part of a coordinated workflow wher
 | Pattern | Example application | Description |
 |---------|---------------------|-------------|
 | **Fan-out/Fan-in** | Per-track classification across a bulk playlist | Spawn N classification agents in parallel, synthesize results |
-| **Sequential chain** | `/playlist-match` -> a hypothetical `/playlist-audit` | Each skill hands off to the next |
+| **Sequential chain** | `/playlist-audit` -> `/playlist-remove` | Each skill hands off to the next |
 | **Multi-source verification** | Genre identification | Spawn N source-lookup agents (Last.fm, AllMusic, Wikipedia), reconcile findings |
 
 > **Reference:** Claude Code Agent Teams (experimental) and the Agent SDK support these patterns natively. See [Claude Code Agent Teams docs](https://code.claude.com/docs/en/agent-teams).
@@ -418,7 +419,7 @@ A skill that classifies a song should have high degrees of freedom — sources, 
 
 Skills use lowercase letters, numbers, and hyphens only. The folder name, `name` frontmatter field, and the slash command all must match exactly.
 
-This repository is small enough that there is no fixed namespace prefix yet. If a skill family emerges (e.g. several playlist-related skills), pick a short prefix and apply it consistently — e.g. `playlist-match`, `playlist-audit`, `playlist-clean` — so triggering stays predictable and the dashboard groups them naturally.
+Playlist skills share the `playlist-` prefix (`playlist-match`, `playlist-audit`, `playlist-scan`, …). Keep new playlist skills in that family so triggering stays predictable and the dashboard groups them naturally; a skill with a different purpose (like `event-radar`) gets its own name.
 
 ---
 

@@ -21,12 +21,13 @@ Ik draai deze commando's vanuit de repo-root:
   - House — 92%
   - Party — 84%
   ```
-- `{CODE_BLOCK_WITH_COMMANDS}` — fenced bash block, one command per playlist, in the user's selection order, **always with `--execute`**:
+- `{CODE_BLOCK_WITH_COMMANDS}` — fenced bash block, one command per playlist, in the user's selection order, then always one `like` line for Liked Songs, **all with `--execute`**:
   ```bash
   .venv/bin/python playlist_manager.py add "<URL>" "House" --execute
   .venv/bin/python playlist_manager.py add "<URL>" "Party" --execute
+  .venv/bin/python playlist_manager.py like "<URL>" --execute
   ```
-  Quote every playlist name with double quotes.
+  Quote every playlist name with double quotes. Liked Songs is not listed in `{LIST_OF_PLAYLISTS}` and has no confidence score — the `like` line in the code block is enough.
 
 ## Execute the commands
 
@@ -35,14 +36,16 @@ Immediately after rendering the plan, run each command via Bash sequentially. No
 End with one Dutch summary line:
 
 ```
-Klaar! {ADDED} toegevoegd, {SKIPPED} overgeslagen (al in playlist).
+Klaar! {ADDED} toegevoegd, {SKIPPED} overgeslagen (al in playlist). Liked Songs: {LIKED}.
 ```
+
+`{LIKED}` — `toegevoegd` on `DONE`, `stond er al` on `SKIP`, `mislukt` on `FAILED` (then add the token tip from `references/add-command.md`).
 
 Then call **AskUserQuestion** again (per `templates/followup.md`) so the user can chain another action or pick "Klaar".
 
 ## If the user selected zero playlists
 
-If the multi-select came back empty, skip the plan render and the Bash calls:
+If the multi-select came back empty, skip the plan render and the Bash calls (including `like`):
 
 ```
 Oké, niets gewijzigd.

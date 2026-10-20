@@ -26,7 +26,7 @@ def _force_ipv4_if_needed():
         socket.getaddrinfo = _ipv4_only_getaddrinfo
 
 
-SCOPE = "playlist-read-private playlist-read-collaborative playlist-modify-private playlist-modify-public user-library-read user-read-private"
+SCOPE = "playlist-read-private playlist-read-collaborative playlist-modify-private playlist-modify-public user-library-read user-library-modify user-read-private"
 
 
 def main() -> int:

@@ -4,15 +4,16 @@ When the user picks **Voeg toe aan playlists** in the follow-up `AskUserQuestion
 
 ---
 
-## Which command — only `add`
+## Which commands — `add`, then `like`
 
-This skill always uses **`add`** (one track, one playlist, no Python-side classifier). Claude AI is the classifier — steps 5–6 of `SKILL.md` produce a multi-source classification, and step 10 loops `add` once per playlist the user picked.
+This skill uses **`add`** for playlists (one track, one playlist, no Python-side classifier). Claude AI is the classifier — steps 5–6 of `SKILL.md` produce a multi-source classification, and step 10 loops `add` once per playlist the user picked. After the loop it always runs **`like`** once, so the track also lands in the user's Liked Songs.
 
 The project's `smart-add` and `analyze-only` commands call OpenAI to pick playlists. **This skill never invokes them.** If the user asks for "the classifier", "AI-picked playlists", or "use smart-add", re-do Claude AI's classification with whatever framing they want (stricter confidence band, different scope, etc.) and then loop `add` over the picks — never shell out to OpenAI.
 
 | Command | Picks playlists? | This skill | Why |
 |---------|------------------|------------|-----|
-| `add` | No — you pass the playlist name | **Yes — only command used.** Loop once per playlist the user chose. | Claude AI already classified; `add` just executes the write. |
+| `add` | No — you pass the playlist name | **Yes.** Loop once per playlist the user chose. | Claude AI already classified; `add` just executes the write. |
+| `like` | No — always Liked Songs | **Yes — always, once,** after the `add` loop, whenever at least one playlist was selected. | Standing user preference: every track that goes into a playlist is also liked. |
 | `smart-add` | Yes — OpenAI picks | **Never.** | Claude AI replaces the OpenAI classifier; re-do the analysis instead. |
 | `analyze-only` | Yes — OpenAI classifies, no write | **Only** in the "Inschatten zonder internet (Claude + OpenAI)" fallback path. Read-only, no Spotify changes. Never in the default web-lookup flow. | Provides a second training-data opinion to cross-check Claude's offline estimate. Falls back to Claude-only on any OpenAI error. |
 
@@ -40,6 +41,21 @@ Special playlist-name characters to handle:
 
 ---
 
+## `like` — exact invocation
+
+Once per add flow, after the last `add`, same `<track>` value, always with `--execute`:
+
+```bash
+.venv/bin/python playlist_manager.py like "<track>" --execute
+```
+
+- **No extra gate.** Liking is a standing preference of the user, so the step 10.b multi-select covers it. It is never offered as a checkbox and Liked Songs never appears in the playlist match — it is the Spotify library, not a playlist in `playlists.json`.
+- **Not when nothing was selected.** An empty multi-select means no writes at all, `like` included.
+- **Duplicate guard** asks Spotify directly (`.tracks_log.json` is not involved): `SKIP: track already in Liked Songs. No changes made.` is normal and not a failure.
+- **`FAILED: Spotify returned 403`** almost always means the cached token was granted before the `user-library-modify` scope existed in this project. Tell the user in Dutch: *"Je Spotify-token mist nog de rechten voor Liked Songs. Verwijder `.spotify_token_cache` en draai het commando opnieuw; Spotify vraagt dan eenmalig opnieuw toestemming."* The playlist adds that already ran are unaffected.
+
+---
+
 ## Behaviour the user will see
 
 From [`docs/commands.md`](../../../../docs/commands.md):
@@ -64,13 +80,13 @@ From [`docs/commands.md`](../../../../docs/commands.md):
 
 2. **Which playlists?** **AskUserQuestion** with `multiSelect: true`, listing **only the playlists you recommended in step 6**. Optionally add an "All recommended" shortcut. Honor the user's selection literally — never silently add a playlist they didn't pick. **This selection is the confirmation gate** for the write; do not add a second `AskUserQuestion` afterwards.
 
-3. **Render the plan** using `templates/add-confirmation.md`. One `add --execute` command per playlist, on its own line, in a code block.
+3. **Render the plan** using `templates/add-confirmation.md`. One `add --execute` command per playlist, on its own line, followed by one `like --execute` line, in a code block.
 
-4. **Run** each command via Bash, sequentially — immediately after rendering the plan, no extra confirmation prompt. Print the script's output verbatim. Order: same order the user selected the playlists.
+4. **Run** each command via Bash, sequentially — immediately after rendering the plan, no extra confirmation prompt. Print the script's output verbatim. Order: the `add` commands in the order the user selected the playlists, then `like`.
 
-5. **Summarise** with one Dutch sentence at the end:
+5. **Summarise** with one Dutch sentence at the end, plus the Liked Songs result:
 
-   > "Klaar! N toegevoegd, M overgeslagen (al in playlist)."
+   > "Klaar! N toegevoegd, M overgeslagen (al in playlist). Liked Songs: toegevoegd / stond er al."
 
    Then call **AskUserQuestion** again (per `templates/followup.md`) so the user can chain another action or pick "Klaar".
 
@@ -94,7 +110,7 @@ The skill **does not** call `smart-add` (OpenAI). Instead, Claude AI is the clas
    - **Standaard opnieuw** — zelfde sweep, andere bron-weging.
 3. Re-run steps 5–6 with that framing, render the playlist match block, and loop step 10's `add` calls over the picks the user selects.
 
-Do **not** invoke `smart-add`. `analyze-only` is used **only** in the "Inschatten zonder internet (Claude + OpenAI)" fallback path of the uncertainty fork — never here in the add flow. The `add` command is the only Python entry point used when adding tracks to playlists.
+Do **not** invoke `smart-add`. `analyze-only` is used **only** in the "Inschatten zonder internet (Claude + OpenAI)" fallback path of the uncertainty fork — never here in the add flow. `add` (playlists) and `like` (Liked Songs) are the only Python entry points used in the add flow.
 
 ---
 

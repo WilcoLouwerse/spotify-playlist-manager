@@ -39,6 +39,7 @@ The OAuth flow asks for the following scopes (defined in [playlist_manager.py](.
 - `playlist-modify-private`
 - `playlist-modify-public`
 - `user-library-read`
+- `user-library-modify` (used by `like` to add tracks to Liked Songs)
 - `user-read-private`
 
 You only consent once. The token is cached in `.spotify_token_cache` (also gitignored) and refreshes automatically.

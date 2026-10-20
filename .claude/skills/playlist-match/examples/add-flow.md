@@ -48,7 +48,10 @@ Ik draai deze commando's vanuit de repo-root:
 
 .venv/bin/python playlist_manager.py add "https://open.spotify.com/track/6K4t31amVTZDgR3sKmwUJJ" "Alternative / Indie" --execute
 .venv/bin/python playlist_manager.py add "https://open.spotify.com/track/6K4t31amVTZDgR3sKmwUJJ" "Pop / Mainstream" --execute
+.venv/bin/python playlist_manager.py like "https://open.spotify.com/track/6K4t31amVTZDgR3sKmwUJJ" --execute
 ```
+
+The `like` line is always appended — no extra question — so the track also lands in Liked Songs.
 
 ---
 
@@ -60,6 +63,10 @@ command via Bash. The script output, verbatim:
 ```
 Tame Impala - The Less I Know The Better -> Alternative / Indie: ADDED
 Tame Impala - The Less I Know The Better -> Pop / Mainstream: SKIP: track already in playlist
+Track: Tame Impala - The Less I Know The Better
+Target: Liked Songs
+
+DONE: track added to Liked Songs
 ```
 
 ---
@@ -67,7 +74,7 @@ Tame Impala - The Less I Know The Better -> Pop / Mainstream: SKIP: track alread
 ## Step 5 — summarise + re-offer the follow-up menu
 
 ```
-Klaar! 1 toegevoegd, 1 overgeslagen (al in playlist).
+Klaar! 1 toegevoegd, 1 overgeslagen (al in playlist). Liked Songs: toegevoegd.
 ```
 
 Then call **AskUserQuestion** again (per `templates/followup.md`) so the user can chain another action or pick "Klaar".

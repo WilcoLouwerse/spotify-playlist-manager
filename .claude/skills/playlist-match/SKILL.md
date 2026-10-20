@@ -131,6 +131,14 @@ User-facing prose is **Dutch** (the user authored the format spec in Dutch). Kee
 
        Run from the repo root. Quote playlist names verbatim from `playlists.json` (the script accepts aliases too, but exact names are unambiguous). Report the script's output back to the user verbatim — it tells them `ADD` or `SKIP (already in playlist)`. Do not paraphrase the script's own messages.
 
+       **Always also like the track.** After the last `add`, run one `like` command in the same plan, so the track also lands in the user's **Liked Songs**:
+
+       ```bash
+       .venv/bin/python playlist_manager.py like "<url>" --execute
+       ```
+
+       This is a standing user preference: it needs no extra question and is not part of the multi-select. It runs whenever at least one playlist was selected — not when the selection came back empty. Liked Songs is the Spotify library, not a playlist in `playlists.json`, so it never appears in the playlist match or the multi-select. `SKIP: track already in Liked Songs` is normal; a `FAILED: Spotify returned 403` means the cached token predates the `user-library-modify` scope — tell the user in Dutch to delete `.spotify_token_cache` and re-run so Spotify asks for consent again.
+
     d. **No `smart-add` fallback — Claude AI is the classifier.** The project's `smart-add` command calls OpenAI to pick playlists. This skill does **not** invoke it. Claude AI already classified the song in steps 5–6 with multi-source analysis that is more rigorous than `smart-add`'s single OpenAI call. If the user says "let the classifier decide", "use smart-add", or "let AI pick the playlists", explain that Claude AI is the classifier here and re-do the analysis with whatever framing they want (different sources, stricter confidence band, only electronic subgenres, broader sweep, etc.) — then loop step 10's `add` calls over the resulting picks. Never shell out to `smart-add` (or any OpenAI-driven command) from this skill.
 
 11. **Capture Learnings**
@@ -147,6 +155,7 @@ User-facing prose is **Dutch** (the user authored the format spec in Dutch). Kee
 - **Never** recommend a playlist that is not currently present in `playlists.json -> categories`. Read the file each run; user edits are authoritative.
 - **Never** print the internal step numbers (1./2./3./...) from the templates in user-facing output. They are an authoring scaffold only.
 - **Never** invoke `playlist_manager.py add` for a playlist the user did not explicitly select via the `AskUserQuestion` multi-select in step 10.b. That selection is the confirmation gate — do not add an extra "Klaar om deze commando's uit te voeren?" prompt afterwards.
+- **Always** follow the `add` commands with `playlist_manager.py like "<url>" --execute` in step 10.c, so every track added to a playlist also lands in Liked Songs. Skip it only when no playlist was selected.
 - **Never** invoke `smart-add` from this skill. `smart-add` writes to Spotify after classifying with OpenAI; Claude AI is the writer's classifier here, so use `add` directly.
 - **May** invoke the read-only `analyze-only` command **only** in the "Inschatten zonder internet (Claude + OpenAI)" path of the uncertainty fork. It calls OpenAI for a training-data second opinion without touching Spotify. Always combine the result with Claude's own training recall; fall back to Claude-only with an explicit reason message when OpenAI fails (no API key, quota, auth, connection, invalid JSON, validation rejection). Never use it as the default classifier — web lookup is still primary.
 - **Never** invent or guess a Spotify track ID. If the user only gave you `Artist - Title`, ask for a URL via **AskUserQuestion** before invoking `add`.

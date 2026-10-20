@@ -44,7 +44,7 @@ def _force_ipv4_if_needed():
 
 load_dotenv()
 
-SCOPE = "playlist-read-private playlist-read-collaborative playlist-modify-private playlist-modify-public user-library-read user-read-private"
+SCOPE = "playlist-read-private playlist-read-collaborative playlist-modify-private playlist-modify-public user-library-read user-library-modify user-read-private"
 
 CONFIG_PATH = "playlists.json"
 EXAMPLE_CONFIG_PATH = "playlists.example.json"
@@ -491,6 +491,37 @@ def add_track(sp, track_input, playlist_name, execute):
         return
     log_successful_add(playlist_id, track_uri)
     print(f"\nDONE: track added (snapshot {snapshot[:10]}…)")
+
+
+def like_track(sp, track_input, execute):
+    # Liked Songs is the user's library, not a playlist: it has no playlist
+    # ID, so it can't go through playlists.json or .tracks_log.json. The
+    # library "contains" endpoint is the duplicate guard instead.
+    track = get_track(sp, track_input)
+    track_uri = track["uri"]
+
+    print(f"Track: {track['label']}")
+    print("Target: Liked Songs")
+
+    try:
+        already_liked = sp.current_user_saved_tracks_contains([track_uri])
+    except spotipy.SpotifyException as exc:
+        print(f"\nFAILED: Spotify returned {exc.http_status} {exc.msg or exc.code}")
+        return
+    if already_liked and already_liked[0]:
+        print("\nSKIP: track already in Liked Songs. No changes made.")
+        return
+
+    if not execute:
+        print("\nDRY RUN: no changes made. Add --execute to actually like the track.")
+        return
+
+    try:
+        sp.current_user_saved_tracks_add([track_uri])
+    except spotipy.SpotifyException as exc:
+        print(f"\nFAILED: Spotify returned {exc.http_status} {exc.msg or exc.code}")
+        return
+    print("\nDONE: track added to Liked Songs")
 
 
 def remove_track(sp, track_input, playlist_name, execute):
@@ -1898,6 +1929,10 @@ def main():
         "ID is imported; other lines are ignored.",
     )
 
+    like_parser = subparsers.add_parser("like", help="Add a track to your Liked Songs")
+    like_parser.add_argument("track", help="Spotify track URL, URI, or ID")
+    like_parser.add_argument("--execute", action="store_true", help="Actually perform the change")
+
     remove_parser = subparsers.add_parser("remove", help="Remove a track from a playlist")
     remove_parser.add_argument("track", help="Spotify track URL, URI, or ID")
     remove_parser.add_argument("playlist", help="Target playlist name")
@@ -2037,6 +2072,8 @@ def main():
             args.min_playlists,
             args.min_confidence,
         )
+    elif args.command == "like":
+        like_track(sp, args.track, args.execute)
     elif args.command == "remove":
         remove_track(sp, args.track, args.playlist, args.execute)
     elif args.command == "batch-add":

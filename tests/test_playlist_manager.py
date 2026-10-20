@@ -984,6 +984,56 @@ class TestAddTrack:
         assert pm._load_tracks_log() == {}
 
 
+class _LikeSpotify(_AddSpotify):
+    """Stub extending _AddSpotify with the Liked Songs library endpoints."""
+
+    def __init__(self, *args, liked=False, like_raises=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._liked = liked
+        self.like = _CallCounter(raises=like_raises)
+
+    def current_user_saved_tracks_contains(self, tracks):
+        return [self._liked for _ in tracks]
+
+    def current_user_saved_tracks_add(self, tracks):
+        return self.like(tracks)
+
+
+class TestLikeTrack:
+    def test_skips_when_already_liked(self, capsys):
+        track_id = "l" * 22
+        sp = _LikeSpotify(track_info=_track_payload(track_id), liked=True)
+        pm.like_track(sp, f"spotify:track:{track_id}", execute=True)
+        assert "SKIP" in capsys.readouterr().out
+        assert sp.like.calls == []
+
+    def test_likes_on_execute(self, capsys):
+        track_id = "m" * 22
+        uri = f"spotify:track:{track_id}"
+        sp = _LikeSpotify(track_info=_track_payload(track_id))
+        pm.like_track(sp, uri, execute=True)
+        assert "DONE" in capsys.readouterr().out
+        assert sp.like.calls == [(([uri],), {})]
+
+    def test_dry_run_does_not_call_api(self, capsys):
+        track_id = "n" * 22
+        sp = _LikeSpotify(track_info=_track_payload(track_id))
+        pm.like_track(sp, f"spotify:track:{track_id}", execute=False)
+        assert sp.like.calls == []
+        assert "DRY RUN" in capsys.readouterr().out
+
+    def test_handles_spotify_exception(self, capsys):
+        import spotipy
+
+        track_id = "o" * 22
+        sp = _LikeSpotify(
+            track_info=_track_payload(track_id),
+            like_raises=spotipy.SpotifyException(403, -1, "Insufficient client scope"),
+        )
+        pm.like_track(sp, f"spotify:track:{track_id}", execute=True)
+        assert "FAILED" in capsys.readouterr().out
+
+
 class TestRemoveTrack:
     def test_skips_when_not_present(self, config, monkeypatch, tmp_path, capsys):
         monkeypatch.setattr(pm, "TRACKS_LOG_PATH", str(tmp_path / "log.json"))

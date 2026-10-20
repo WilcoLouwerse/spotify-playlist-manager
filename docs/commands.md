@@ -142,6 +142,35 @@ Each value must match a key in `"playlists"` — that's enforced at config load 
 - Playlist name not recognised → raises `ValueError: Unknown playlist: ...`.
 - Spotify catalog endpoint times out → still adds, but prints `(track lookup failed: ReadTimeout; continuing with URI only)` and uses the URI instead of "Artist - Title" in output.
 
+## `like`
+
+Add a single track to your Liked Songs.
+
+```bash
+# Dry-run — shows what would happen, writes nothing
+python playlist_manager.py like "https://open.spotify.com/track/<id>"
+
+# Actually like the track
+python playlist_manager.py like "https://open.spotify.com/track/<id>" --execute
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `track` | Spotify track URL (`https://open.spotify.com/track/...`), URI (`spotify:track:...`), or bare ID |
+| `--execute` | Without this flag, nothing is written |
+
+### How it differs from `add`
+
+Liked Songs is your Spotify library, not a playlist, so it has no playlist ID and is not configured in `playlists.json`. The duplicate check asks Spotify directly whether the track is already saved; `.tracks_log.json` is not used. Requires the `user-library-modify` scope (see [setup.md → Scopes used](setup.md#scopes-used)).
+
+### Exit behavior
+
+- Track already liked → prints `SKIP: track already in Liked Songs. No changes made.` and exits.
+- Track liked successfully → prints `DONE: track added to Liked Songs`.
+- Spotify API error → prints `FAILED: Spotify returned <status> <msg>`. A `403` usually means the cached token predates the `user-library-modify` scope; delete `.spotify_token_cache` and run any command to consent again.
+
 ## `remove`
 
 Remove a single track from one specific playlist.

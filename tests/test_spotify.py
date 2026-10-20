@@ -69,7 +69,8 @@ def main() -> int:
                 continue
             name = playlist.get("name", "<no name>")
             pid = playlist.get("id", "<no id>")
-            tracks = playlist.get("tracks") or {}
+            # Feb 2026 migration renamed `tracks` to `items` on playlist objects.
+            tracks = playlist.get("items") or playlist.get("tracks") or {}
             total = tracks.get("total", "?")
             print(f"- {name} | tracks: {total} | id: {pid}")
         results = sp.next(results) if results.get("next") else None

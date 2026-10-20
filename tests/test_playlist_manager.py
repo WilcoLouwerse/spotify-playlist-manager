@@ -875,26 +875,59 @@ class TestPaginatedFetch:
             "next": None,
         }
         sp = _StubSpotify(pages=[page1, page2])
-        uris, any_uri = pm._fetch_playlist_uris(sp, "pid1")
-        assert any_uri
+        uris, visible = pm._fetch_playlist_uris(sp, "pid1")
+        assert visible
         assert "spotify:track:" + ("a" * 22) in uris
         assert "spotify:track:" + ("b" * 22) in uris
 
+    def test_reads_post_migration_item_key(self):
+        # Since the Feb 2026 migration Spotify returns the track under `item`.
+        page = {"items": [{"item": _track_payload("c" * 22), "track": None}], "next": None}
+        uris, visible = pm._fetch_playlist_uris(_StubSpotify(pages=[page]), "pid1")
+        assert visible
+        assert uris == {"spotify:track:" + ("c" * 22)}
+        items = pm._iter_playlist_tracks(_StubSpotify(pages=[page]), "pid1")
+        assert [i["uri"] for i in items] == ["spotify:track:" + ("c" * 22)]
+        assert items[0]["label"] == "Artist - Title"
+
 
 class TestPlaylistContainsUri:
-    def test_short_circuits_after_dev_tier_observed(self, monkeypatch, tmp_path):
-        # First call observes dev-tier stripping; second call must NOT paginate.
+    def test_spotify_is_authoritative_over_stale_log(self, monkeypatch, tmp_path):
+        # Track was removed in the Spotify app; the log still lists it.
+        monkeypatch.setattr(pm, "TRACKS_LOG_PATH", str(tmp_path / "log.json"))
+        uri = "spotify:track:" + ("a" * 22)
+        pm._save_tracks_log({"pid1": [uri]})
+        sp = _StubSpotify(pages=[{"items": [{"item": {"uri": "spotify:track:" + ("b" * 22)}}], "next": None}])
+        assert pm.playlist_contains_uri(sp, "pid1", uri) is False
+
+    def test_empty_playlist_is_not_treated_as_stripped(self, monkeypatch, tmp_path):
         monkeypatch.setattr(pm, "TRACKS_LOG_PATH", str(tmp_path / "log.json"))
         sp = _StubSpotify(pages=[{"items": [], "next": None}])
+        assert pm.playlist_contains_uri(sp, "pid1", "spotify:track:" + ("a" * 22)) is False
+        assert pm._DEV_TIER_STRIPPED is False
+
+    def test_falls_back_to_log_when_contents_stripped(self, monkeypatch, tmp_path, capsys):
+        monkeypatch.setattr(pm, "TRACKS_LOG_PATH", str(tmp_path / "log.json"))
+        uri = "spotify:track:" + ("a" * 22)
+        pm._save_tracks_log({"pid1": [uri]})
+        sp = _StubSpotify(pages=[{"items": [{"item": None, "track": None}], "next": None}])
+        assert pm.playlist_contains_uri(sp, "pid1", uri) is True
+        assert pm._DEV_TIER_STRIPPED is True
+        assert "WARN" in capsys.readouterr().out
+
+    def test_short_circuits_after_stripping_observed(self, monkeypatch, tmp_path):
+        # First call observes stripped contents; second call must NOT paginate.
+        monkeypatch.setattr(pm, "TRACKS_LOG_PATH", str(tmp_path / "log.json"))
+        sp = _StubSpotify(pages=[{"items": [{"item": {}}], "next": None}])
         first = pm.playlist_contains_uri(sp, "pid1", "spotify:track:" + ("a" * 22))
         assert first is False
-        # Replace pages with something that would lie; the cache should win.
-        sp._items_pages = [{"items": [{"track": {"uri": "spotify:track:" + ("a" * 22)}}], "next": None}]
+        # Replace pages with something that would lie; the stripped flag should win.
+        sp._items_pages = [{"items": [{"item": {"uri": "spotify:track:" + ("a" * 22)}}], "next": None}]
         second = pm.playlist_contains_uri(sp, "pid2", "spotify:track:" + ("a" * 22))
-        assert second is False  # dev-tier stripped flag bypasses fetch entirely
+        assert second is False
 
 
-class TestPlaylistUrisCombined:
+class TestPlaylistUrisKnown:
     def test_uses_cache_when_populated(self, monkeypatch, tmp_path):
         monkeypatch.setattr(pm, "TRACKS_LOG_PATH", str(tmp_path / "log.json"))
         pm._PLAYLIST_URIS_CACHE["pid1"] = {"spotify:track:" + ("a" * 22)}
@@ -909,7 +942,7 @@ class TestPlaylistUrisCombined:
             def next(self, results):
                 return None
 
-        result = pm._playlist_uris_combined(_CountedSp(), "pid1")
+        result = pm._playlist_uris_known(_CountedSp(), "pid1")
         assert "spotify:track:" + ("a" * 22) in result
         assert called["n"] == 0
 
@@ -931,12 +964,26 @@ class TestSanitizeForPrompt:
 
 
 class TestAddTrack:
+    def test_skips_when_spotify_reports_track(self, config, monkeypatch, tmp_path, capsys):
+        # Added through the Spotify app, never logged: Spotify's view catches it.
+        monkeypatch.setattr(pm, "TRACKS_LOG_PATH", str(tmp_path / "log.json"))
+        track_id = "k" * 22
+        track_uri = f"spotify:track:{track_id}"
+        sp = _AddSpotify(
+            track_info=_track_payload(track_id),
+            pages=[{"items": [{"item": {"uri": track_uri}}], "next": None}],
+        )
+        pm.add_track(sp, track_uri, "House", execute=True)
+        assert "SKIP" in capsys.readouterr().out
+        assert sp.add.calls == []
+
     def test_skips_when_already_in_log(self, config, monkeypatch, tmp_path, capsys):
         monkeypatch.setattr(pm, "TRACKS_LOG_PATH", str(tmp_path / "log.json"))
         track_id = "c" * 22
         track_uri = f"spotify:track:{track_id}"
         house_id = config["playlists"]["House"]
         pm._save_tracks_log({house_id: [track_uri]})
+        pm._DEV_TIER_STRIPPED = True  # Spotify hides contents → log is the fallback
 
         sp = _AddSpotify(track_info=_track_payload(track_id))
         pm.add_track(sp, track_uri, "House", execute=True)
@@ -1051,6 +1098,7 @@ class TestRemoveTrack:
         uri = f"spotify:track:{track_id}"
         house_id = config["playlists"]["House"]
         pm._save_tracks_log({house_id: [uri]})
+        pm._DEV_TIER_STRIPPED = True  # Spotify hides contents → log is the fallback
 
         sp = _AddSpotify(
             track_info=_track_payload(track_id),

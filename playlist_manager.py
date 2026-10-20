@@ -396,70 +396,82 @@ def remove_from_log(playlist_id, track_uri):
         cached.discard(track_uri)
 
 
+def _playlist_entry_track(entry):
+    # The Feb 2026 API migration renamed the playlist entry's `track` key to
+    # `item`. Read both so an old-shape response keeps working.
+    return entry.get("item") or entry.get("track") or {}
+
+
 def _fetch_playlist_uris(sp, playlist_id):
     """Paginate a playlist once and return the set of track URIs Spotify returns.
 
-    Returns (uris_set, api_returned_any_uri). Empty set + False means Dev Mode
-    stripped the contents.
+    Returns (uris_set, contents_visible). contents_visible is False when Spotify
+    returned entries without any track URI (stripped contents); an empty
+    playlist counts as visible.
     """
     uris = set()
-    api_returned_any_uri = False
+    saw_entry = False
     results = sp.playlist_items(
         playlist_id,
-        fields="items(track(uri)),next",
+        fields="items(item(uri),track(uri)),next",
         additional_types=("track",),
         limit=100,
     )
     while results:
-        for item in results["items"]:
-            t = item.get("track") or {}
-            uri = t.get("uri")
+        for entry in results["items"]:
+            saw_entry = True
+            uri = _playlist_entry_track(entry).get("uri")
             if uri:
-                api_returned_any_uri = True
                 uris.add(uri)
         results = sp.next(results) if results.get("next") else None
-    return uris, api_returned_any_uri
+    return uris, bool(uris) or not saw_entry
 
 
-def playlist_contains_uri(sp, playlist_id, track_uri):
+def _spotify_playlist_uris(sp, playlist_id):
+    """URIs Spotify reports for a playlist, or None when Spotify hides its contents.
+
+    Paginates once per playlist per session — review_playlist and bulk_playlist
+    ask about the same target many times, and Dev Mode has no batch fetch
+    endpoint to amortise the cost.
+    """
     global _WARNED_ABOUT_STRIPPED_DATA, _DEV_TIER_STRIPPED
-    # The local log is authoritative for everything the script has added
-    # and everything seeded via log-import. The Spotify API in this app's
-    # tier returns playlist_items with empty track URIs, so it cannot be
-    # the primary source of truth.
-    log = _load_tracks_log()
-    if track_uri in log.get(playlist_id, []):
-        return True
-
-    # Once we've observed that Spotify is stripping playlist contents,
-    # don't pay the pagination cost again — the local log is the only
-    # authoritative source in Dev Mode.
     if _DEV_TIER_STRIPPED:
-        return False
-
-    # Best-effort Spotify check as a secondary signal. Paginate once per
-    # playlist per session — review_playlist can ask this question many times
-    # for the same target playlist, and Dev Mode has no batch fetch endpoint
-    # to amortise the cost.
+        return None
     cached = _PLAYLIST_URIS_CACHE.get(playlist_id)
     if cached is not None:
-        return track_uri in cached
+        return cached
 
-    uris, api_returned_any_uri = _fetch_playlist_uris(sp, playlist_id)
-    _bounded_cache_set(_PLAYLIST_URIS_CACHE, playlist_id, uris, _PLAYLIST_URIS_CACHE_MAX)
-
-    if not api_returned_any_uri:
+    uris, contents_visible = _fetch_playlist_uris(sp, playlist_id)
+    if not contents_visible:
         _DEV_TIER_STRIPPED = True
         if not _WARNED_ABOUT_STRIPPED_DATA:
             print(
-                "WARN: Spotify returned no track URIs from playlist_items — the app is "
-                "in Development Mode and the API does not expose playlist contents. "
-                "Duplicate detection relies on .tracks_log.json; use `log-import` to "
-                "seed it from a CSV export (e.g. https://exportify.net)."
+                "WARN: Spotify returned playlist entries without track URIs, so it "
+                "does not expose playlist contents to this app. Duplicate detection "
+                "falls back to .tracks_log.json; use `log-import` to seed it from a "
+                "CSV export (e.g. https://exportify.net)."
             )
             _WARNED_ABOUT_STRIPPED_DATA = True
+        return None
+    _bounded_cache_set(_PLAYLIST_URIS_CACHE, playlist_id, uris, _PLAYLIST_URIS_CACHE_MAX)
+    return uris
 
-    return track_uri in uris
+
+def _playlist_uris_known(sp, playlist_id):
+    """Set of URIs in a playlist: Spotify's view, or the local log as fallback.
+
+    Spotify is authoritative when it exposes the contents, so tracks added or
+    removed in the Spotify app are seen too. .tracks_log.json is only consulted
+    when Spotify hides the contents.
+    """
+    uris = _spotify_playlist_uris(sp, playlist_id)
+    if uris is not None:
+        return uris
+    return set(_load_tracks_log().get(playlist_id, []))
+
+
+def playlist_contains_uri(sp, playlist_id, track_uri):
+    return track_uri in _playlist_uris_known(sp, playlist_id)
 
 
 def add_track(sp, track_input, playlist_name, execute):
@@ -587,29 +599,6 @@ def _chunked(lst, n):
         yield lst[i : i + n]
 
 
-def _playlist_uris_combined(sp, playlist_id):
-    """Combined set of URIs known to be in a playlist (local log + Spotify API).
-
-    Dev Mode strips the API contents, so the local log (.tracks_log.json) is the
-    primary source of truth. The API set is added as a secondary signal in case
-    log-import was incomplete.
-    """
-    log = _load_tracks_log()
-    combined = set(log.get(playlist_id, []))
-    cached_api = _PLAYLIST_URIS_CACHE.get(playlist_id)
-    if cached_api is not None:
-        combined |= cached_api
-        return combined
-    if _DEV_TIER_STRIPPED:
-        # Already observed that Spotify is stripping playlist contents — no
-        # point paginating again, the local log is the only authoritative set.
-        return combined
-    api_uris, _ = _fetch_playlist_uris(sp, playlist_id)
-    _bounded_cache_set(_PLAYLIST_URIS_CACHE, playlist_id, api_uris, _PLAYLIST_URIS_CACHE_MAX)
-    combined |= api_uris
-    return combined
-
-
 def batch_add(sp, playlist_name, source, execute):
     """Add many tracks to one playlist in chunks of 100 (Spotify API max)."""
     canonical_name = normalize_playlist_name(playlist_name)
@@ -624,7 +613,7 @@ def batch_add(sp, playlist_name, source, execute):
     print(f"Playlist ID: {playlist_id}")
     print(f"Input URIs: {len(uris)}")
 
-    existing = _playlist_uris_combined(sp, playlist_id)
+    existing = _playlist_uris_known(sp, playlist_id)
     skipped_existing = [u for u in uris if u in existing]
     to_add = [u for u in uris if u not in existing]
     if skipped_existing:
@@ -675,7 +664,7 @@ def batch_remove(sp, playlist_name, source, execute):
     print(f"Playlist ID: {playlist_id}")
     print(f"Input URIs: {len(uris)}")
 
-    existing = _playlist_uris_combined(sp, playlist_id)
+    existing = _playlist_uris_known(sp, playlist_id)
     to_remove = [u for u in uris if u in existing]
     not_present = [u for u in uris if u not in existing]
     if not_present:
@@ -1004,19 +993,19 @@ def _prompt_review_action(prompt):
 def _iter_playlist_tracks(sp, playlist_id):
     """Return a list of dicts ({uri, id, name, artists, label}) for every track in the playlist.
 
-    Items with stripped URIs (Spotify dev-tier behavior) are skipped silently — the caller
+    Entries without a URI (stripped contents) are skipped silently — the caller
     surfaces an empty result with a help message.
     """
     items = []
     results = sp.playlist_items(
         playlist_id,
-        fields="items(track(id,uri,name,artists(name))),next",
+        fields="items(item(id,uri,name,artists(name)),track(id,uri,name,artists(name))),next",
         additional_types=("track",),
         limit=100,
     )
     while results:
-        for item in results.get("items") or []:
-            t = item.get("track") or {}
+        for entry in results.get("items") or []:
+            t = _playlist_entry_track(entry)
             uri = t.get("uri")
             if not uri:
                 continue
@@ -1270,8 +1259,7 @@ def scan_for(sp, target_playlist_name, source_playlist_input, execute, min_confi
     total = len(items)
     print(f"Found {total} tracks. Classifying...\n")
 
-    log = _load_tracks_log()
-    already_in_target = set(log.get(target_pid, []))
+    already_in_target = _playlist_uris_known(sp, target_pid)
 
     candidates = []
     classification_failures = 0
@@ -1367,11 +1355,10 @@ def bulk_playlist(sp, playlist_input, execute, max_playlists, min_playlists, min
     print(f"Found {total} tracks. Classifying...\n")
 
     playlists = load_config()["playlists"]
-    # Trust the local adds log for duplicate detection here — the dev-tier API
-    # strips playlist contents anyway, and per-match API checks would multiply
-    # request volume by tracks × suggestions × pages.
-    log = _load_tracks_log()
-    already_in = {pid: set(uris) for pid, uris in log.items()}
+    # Fetched lazily, once per target playlist: one pagination per target
+    # instead of one per track × suggestion. Copied so the plan's own
+    # additions don't leak into the session cache.
+    already_in = {}
 
     plan = {}
     classification_failures = 0
@@ -1390,7 +1377,9 @@ def bulk_playlist(sp, playlist_input, execute, max_playlists, min_playlists, min
         for match in matches:
             name = match["playlist"]
             target_pid = playlists[name]
-            if track["uri"] in already_in.get(target_pid, set()):
+            if target_pid not in already_in:
+                already_in[target_pid] = set(_playlist_uris_known(sp, target_pid))
+            if track["uri"] in already_in[target_pid]:
                 continue
             plan.setdefault(name, []).append(
                 {
@@ -1400,7 +1389,7 @@ def bulk_playlist(sp, playlist_input, execute, max_playlists, min_playlists, min
                     "confidence": match.get("confidence", 0),
                 }
             )
-            already_in.setdefault(target_pid, set()).add(track["uri"])
+            already_in[target_pid].add(track["uri"])
 
     print()
     print(f"Found {total} tracks.")

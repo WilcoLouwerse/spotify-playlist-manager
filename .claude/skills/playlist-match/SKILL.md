@@ -14,7 +14,7 @@ User-facing prose is **Dutch** (the user authored the format spec in Dutch). Kee
 
 **Input**: A song name (`Artist - Title`), a Spotify track URL/URI/ID, or any message asking "welke playlist past hierbij" / "wat voor genre is X" / "classify this track". May also be a follow-up message responding to the most recent analysis (a natural-language request like "voeg toe aan House", or an answer selected via `AskUserQuestion`).
 
-**Source of truth**: The playlist list is [`playlists.json`](../../../playlists.json) at the repo root. Read it each run so user edits (added, renamed, removed playlists) are honored. **Never recommend `Random sht`** — it is the script-side catch-all under `catch_all` and must not appear in user-facing output.
+**Source of truth**: The playlist list is [`playlists.json`](../../../playlists.json) at the repo root. Read it each run so user edits (added, renamed, removed playlists) are honored. `Random sht` is the catch-all under `catch_all`, not a category: recommend it **only** as the low-spread fallback in step 6, never alongside a strong match.
 
 **Conversation memory**: Track which songs and artists have already been covered in this chat so artist info isn't repeated, and so follow-up answers resolve against the most recent analysis.
 
@@ -68,7 +68,9 @@ User-facing prose is **Dutch** (the user authored the format spec in Dutch). Kee
 
    - Special playlists (Funny meme / Ket420 / Hooyah) only when the song clearly meets the rule.
    - When you suggest any electronic subgenre (House, Techno, Trance, Drum & Bass, Dubstep / Bass, Hardstyle & Hardcore, Synthwave), **also** suggest `Electronic Music` — it is an inclusive umbrella, not a fallback (`special_rules` in `playlists.json`).
-   - If no playlist sensibly fits, say so plainly in the output — do not force a low-confidence match.
+   - **Artist-based, low-certainty analysis → every genre axis gets a playlist row.** When the genre scope is `artiestgebaseerd` (no track-specific source, e.g. after the uncertainty fork), give each genre the sources name its matching playlist in the match list, even at ≤ 30% (e.g. a 25% hip-hop tag → `Rap — 25% — …`). The user knows the sound better than the sources do; a low row they can tick beats a playlist they have to type in. These genre-axis rows take priority over mood guesses (Party, Happy tunes, …) when the 1-5 cap is tight.
+   - **Low spread → `Random sht` is the top match.** When the highest regular match is **below 75%**, list `Random sht — 85% — programmatische fallback: geen andere playlist haalt de 85%-drempel` as the **first** row, with the weak matches below it as alternatives. This mirrors `playlists.json -> catch_all` (threshold 85). It counts toward the 1-5 cap. When at least one regular match reaches 75%, leave `Random sht` out.
+   - If no regular playlist sensibly fits, say so plainly and recommend only `Random sht` (per the rule above) — do not force a low-confidence match. The artist-based rule above is the exception: there the low rows are deliberate options, not forced fits.
 
 7. **Uncertainty fork**
 
@@ -152,8 +154,9 @@ User-facing prose is **Dutch** (the user authored the format spec in Dutch). Kee
 
 - **Always** start genre identification with live web lookup via **WebSearch** + **WebFetch** against the sources in `references/genre-sources.md`. This is the most accurate and most up-to-date path and is the first thing tried — never skip to training-data recall when web tools are available.
 - **Never** base a genre claim solely on the artist's overall reputation. Cross-check with multiple sources, scoped to the specific track when possible.
-- **Never** recommend `Random sht`. It is the script-side fallback under `playlists.json -> catch_all` and must not appear in user-facing output.
-- **Never** recommend a playlist that is not currently present in `playlists.json -> categories`. Read the file each run; user edits are authoritative.
+- **Never** recommend `Random sht` when a regular match reaches 75%. Below that it is the **first** row, per the low-spread rule in step 6 (it is the `playlists.json -> catch_all` playlist; hiding it forces a weak fit).
+- **Never** recommend a playlist that is not currently present in `playlists.json -> categories` — the one exception is the `catch_all` playlist (`Random sht`) under the step-6 low-spread rule. Read the file each run; user edits are authoritative.
+- **Never** drop a genre axis from the playlist match in an artist-based analysis just because its confidence is low — see step 6.
 - **Never** print the internal step numbers (1./2./3./...) from the templates in user-facing output. They are an authoring scaffold only.
 - **Never** invoke `playlist_manager.py add` for a playlist the user did not explicitly select via the `AskUserQuestion` multi-select in step 10.b. That selection is the confirmation gate — do not add an extra "Klaar om deze commando's uit te voeren?" prompt afterwards.
 - **Always** follow the `add` commands with `playlist_manager.py like "<url>" --execute` in step 10.c, so every track added to a playlist also lands in Liked Songs. Skip it only when no playlist was selected.

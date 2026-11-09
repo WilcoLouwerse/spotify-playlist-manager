@@ -61,7 +61,7 @@ In practice: whenever you recommend any of House / Techno / Trance / Drum & Bass
 
 ---
 
-## What `Random sht` is — and why it stays hidden
+## What `Random sht` is — and when it is the top match
 
 `playlists.json -> catch_all`:
 
@@ -73,7 +73,12 @@ In practice: whenever you recommend any of House / Techno / Trance / Drum & Bass
 }
 ```
 
-`Random sht` is the script's safety net for every OpenAI-classified command (`smart-add`, `analyze-only`, `review-playlist`, `bulk-playlist`). **The skill must never recommend it.** If nothing else fits, the correct user-facing answer is "geen van de playlists past hier echt" — not a `Random sht` suggestion.
+`Random sht` is the script's safety net for every OpenAI-classified command (`smart-add`, `analyze-only`, `review-playlist`, `bulk-playlist`): when no playlist reaches 85%, the script adds it. The skill follows the same logic for the user:
+
+- **Highest regular match below 75%** → `Random sht` is the **first** row (`Random sht — 85% — programmatische fallback: geen andere playlist haalt de 85%-drempel`), with the weak matches below it as alternatives.
+- **At least one regular match at 75% or higher** → leave `Random sht` out.
+
+Why: when nothing scores near the threshold, `Random sht` *is* the truest match. Hiding it forces the user to pick a weak forced fit or type it in themselves.
 
 ---
 

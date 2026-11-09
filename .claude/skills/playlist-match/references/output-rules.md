@@ -57,6 +57,8 @@ Playlist matches:
 - [playlist] — [confidence]% — [reden]
 ```
 
+The uncertainty paths are usually artist-based, so apply both step-6 rules here: every named genre gets its playlist row (even ≤ 30%), and `Random sht` goes first when the highest regular match is below 75%.
+
 Then call **AskUserQuestion** again (per `templates/followup.md`) so the user can pick another action or stop.
 
 For each genre entry, **always include**: confidence %, source, reliability level, scope (track-specific or artist-based), and any source disagreement noted in `references/genre-sources.md`.
@@ -93,7 +95,7 @@ There is no printed letter menu. After the Playlist match block, the skill calls
 - The internal step numbers (1./2./3./...) from the analysis template — those are scaffolding only.
 - The old A-F / Z/Y/X/W / `?` letter menus — they are removed; every follow-up goes through **AskUserQuestion**.
 - The old footer line "*Wil je een andere optie proberen? Reageer dan met de bijbehorende letter...*" — gone with the letter mechanic.
-- `Random sht` as a playlist suggestion.
-- A playlist not in `playlists.json -> categories`.
+- `Random sht` as a playlist suggestion when a regular match reaches 75% (below that it is the first row — `SKILL.md` step 6).
+- A playlist not in `playlists.json -> categories`, except `Random sht` under that low-spread rule.
 - Guessed track IDs or invented Spotify URLs.
 - A "confidence: high/medium/low" qualifier *instead of* a percentage — always show the number.

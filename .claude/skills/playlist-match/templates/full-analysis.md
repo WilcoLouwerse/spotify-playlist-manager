@@ -46,13 +46,22 @@ Use 1-4 genres. Confidence per the bands in `references/genre-sources.md`. Reaso
 - ...
 ```
 
-1-5 entries. Playlist names verbatim from `playlists.json`. If you suggest any electronic subgenre, also include `Electronic Music`. Never include `Random sht`.
+1-5 entries. Playlist names verbatim from `playlists.json`. If you suggest any electronic subgenre, also include `Electronic Music`. In an artist-based analysis, every genre from the Genres block gets its matching playlist row, even at ≤ 30% (`SKILL.md` step 6).
 
-If genuinely nothing fits:
+When the highest regular match is below 75%, `Random sht` goes **first**; when one reaches 75%, leave it out:
 
 ```
 **Playlist match:**
-Geen van de opgegeven playlists past hier echt — dit nummer valt buiten het bereik van de huidige lijst.
+- Random sht — 85% — programmatische fallback: geen andere playlist haalt de 85%-drempel
+- {Playlistnaam} — {XX}% — {korte reden}
+- ...
+```
+
+If genuinely no regular playlist fits:
+
+```
+**Playlist match:**
+- Random sht — 85% — programmatische fallback: geen van de andere playlists past hier echt
 ```
 
 ## 6. Follow-up — *always, via AskUserQuestion (not printed)*

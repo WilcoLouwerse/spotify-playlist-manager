@@ -73,7 +73,7 @@ Run from the repo root.
 
 On failure → **fall back to Claude-only output shape** (below), prepend the failure notification.
 
-**Step E — combine on success.** Parse OpenAI's genre and playlist rows from stdout. Drop any `Random sht` / catch-all row first: `analyze-only` appends it when no match reaches the catch-all threshold, and it is the script's fallback, not a classification. Merge with Claude's results:
+**Step E — combine on success.** Parse OpenAI's genre and playlist rows from stdout. Drop any `Random sht` / catch-all row first: `analyze-only` appends it when no match reaches the catch-all threshold, and it is the script's fallback, not a classification. (After merging, the step-6 low-spread rule in `SKILL.md` decides on its own whether `Random sht` goes first.) Merge with Claude's results:
 
 - **Both agree on a genre/playlist (within ±15 pp)** → publish one row, average the confidences, cap at **75%**, label `bron: Claude + OpenAI (interne kennis), betrouwbaarheid: middel`.
 - **One source has it, the other doesn't** → publish it with the single source's confidence, cap at **65%**, label `bron: Claude (interne kennis)` or `bron: OpenAI (interne kennis)` as appropriate, note the other source didn't mention it.

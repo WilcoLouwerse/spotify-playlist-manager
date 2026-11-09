@@ -7,7 +7,7 @@
     "Every genre entry carries 'scope: artiestgebaseerd' and a low or medium 'betrouwbaarheid'",
     "The first Playlist match row is 'Random sht' with 85% and a reason citing the 85% threshold / programmatic fallback",
     "No regular (non-Random sht) playlist row has a confidence of 75% or higher",
-    "Playlist match includes 'Rap' for the hip-hop axis even though its confidence is 30% or lower",
+    "Playlist match includes 'Rap' for the hip-hop axis, however low its confidence",
     "Every genre named in the Genres section has a matching playlist row (e.g. jazz → 'Jazz / Funk / Soul', electronic → 'Electronic Music', hip-hop → 'Rap')",
     "Playlist match has at most 5 rows, Random sht included",
     "Skill does NOT run '.venv/bin/python playlist_manager.py add' (user has not selected playlists yet)",

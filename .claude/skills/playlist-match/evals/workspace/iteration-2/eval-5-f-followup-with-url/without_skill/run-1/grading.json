@@ -6,9 +6,9 @@
       "evidence": "no ADDED / SKIP execution markers in response"
     },
     {
-      "text": "Skill does NOT treat 'F https://...' as the literal letter 'F' alone \u2014 the URL is acted on",
+      "text": "Skill does NOT treat 'F https://...' as the literal letter 'F' alone \u2014 the URL is acted on (the response echoes the URL or explicitly refers to the pasted link)",
       "passed": true,
-      "evidence": "Spotify URL referenced in response"
+      "evidence": "Spotify URL echoed in response"
     },
     {
       "text": "If add commands are rendered, each uses '.venv/bin/python playlist_manager.py add'",

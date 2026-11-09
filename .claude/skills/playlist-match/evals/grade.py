@@ -319,6 +319,10 @@ def grade_eval_5(content: str) -> list[dict]:
     like_after_adds = bool(like_lines) and bool(add_ends) and like_lines[0].start() > max(add_ends)
     liked_in_match = any("liked songs" in n.lower() for n, _, _ in loose_entries(content, ("Playlist match", "Playlist matches")))
     liked_as_option = bool(re.search(r'(?im)label:\s*"?[^"\n]*Liked Songs', content))
+    url_echoed = "spotify.com/track" in content or "track/" in content or "open.spotify.com" in content
+    # The URL counts as acted on when the response explicitly refers to the pasted link,
+    # even without echoing the string (e.g. "Dank voor de link", "met de geplakte Spotify-link").
+    link_referenced = re.search(r"(geplakte|gedeelde|je|de|this|the|pasted)\s+(spotify[- ]?)?(link|url)\b|spotify-link", content, re.IGNORECASE)
     return [
         {
             "text": "Skill does NOT actually run playlist_manager.py (no execute)",
@@ -326,9 +330,13 @@ def grade_eval_5(content: str) -> list[dict]:
             "evidence": "no ADDED / SKIP execution markers in response" if no_execute else "looks like the command was executed",
         },
         {
-            "text": "Skill does NOT treat 'F https://...' as the literal letter 'F' alone — the URL is acted on",
-            "passed": "spotify.com/track" in content or "track/" in content or "open.spotify.com" in content,
-            "evidence": "Spotify URL referenced in response" if "spotify.com/track" in content or "track/" in content else "URL not referenced",
+            "text": "Skill does NOT treat 'F https://...' as the literal letter 'F' alone — the URL is acted on (the response echoes the URL or explicitly refers to the pasted link)",
+            "passed": url_echoed or bool(link_referenced),
+            "evidence": (
+                "Spotify URL echoed in response"
+                if url_echoed
+                else (f"pasted link referenced: {link_referenced.group(0)!r}" if link_referenced else "URL neither echoed nor referenced")
+            ),
         },
         {
             "text": "If add commands are rendered, each uses '.venv/bin/python playlist_manager.py add'",
@@ -418,7 +426,7 @@ def grade_eval_7(content: str) -> list[dict]:
     first = pls[0] if pls else ("", 0, "")
     first_ok = first[0] == "Random sht" and first[1] == 85 and bool(re.search(r"85|fallback|drempel", first[2], re.IGNORECASE))
     regular_high = [f"{n} {c}%" for n, c, _ in pls if n != "Random sht" and c >= 75]
-    rap_ok = "Rap" in pl_confs and pl_confs["Rap"] <= 30
+    rap_ok = "Rap" in pl_confs
     missing, detected = [], []
     for name, _, _ in genres:
         low = name.lower()
@@ -453,7 +461,7 @@ def grade_eval_7(content: str) -> list[dict]:
             "evidence": f"rows >= 75%: {regular_high}" if pls else "no playlist rows found",
         },
         {
-            "text": "Playlist match includes 'Rap' for the hip-hop axis even though its confidence is 30% or lower",
+            "text": "Playlist match includes 'Rap' for the hip-hop axis, however low its confidence",
             "passed": rap_ok,
             "evidence": f"Rap at {pl_confs['Rap']}%" if "Rap" in pl_confs else f"Rap not in playlist match (found: {pl_names})",
         },

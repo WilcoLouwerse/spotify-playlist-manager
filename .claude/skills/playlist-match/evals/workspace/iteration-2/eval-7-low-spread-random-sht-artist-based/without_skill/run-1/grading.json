@@ -21,7 +21,7 @@
       "evidence": "no playlist rows found"
     },
     {
-      "text": "Playlist match includes 'Rap' for the hip-hop axis even though its confidence is 30% or lower",
+      "text": "Playlist match includes 'Rap' for the hip-hop axis, however low its confidence",
       "passed": false,
       "evidence": "Rap not in playlist match (found: [])"
     },

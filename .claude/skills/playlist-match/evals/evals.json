@@ -87,6 +87,24 @@
         "Skill does NOT produce a Genres section with fabricated entries",
         "Skill does NOT produce a Playlist match section (user has not picked an option yet)"
       ]
+    },
+    {
+      "id": 7,
+      "prompt": "Zwakkere webbronnen",
+      "context": "Answers the uncertainty fork for https://open.spotify.com/track/3q5pd71UVh8jPbAfpjgBzM (Michael Wilbur, Tonio Sagan - Victory, 2023). Track-level lookups returned nothing; artist-level sources say Michael Wilbur is a jazz-fusion saxophonist (Moon Hooch) and Tonio Sagan a producer with a hip-hop background working with modern/future electronic techniques. Tests the step-6 low-spread and artist-based rules.",
+      "expected_output": "Uncertainty response with artist-based genres (jazz fusion / sax-dance, electronic, hip-hop influences). Because no regular playlist reaches 75%, the Playlist match starts with 'Random sht — 85% — programmatische fallback…'. Every named genre has its own playlist row, including Rap for the low hip-hop axis. Does NOT run playlist_manager.py.",
+      "files": [],
+      "expectations": [
+        "Response opens with the Dutch uncertainty-response line naming the chosen option 'Zwakkere webbronnen'",
+        "Every genre entry carries 'scope: artiestgebaseerd' and a low or medium 'betrouwbaarheid'",
+        "The first Playlist match row is 'Random sht' with 85% and a reason citing the 85% threshold / programmatic fallback",
+        "No regular (non-Random sht) playlist row has a confidence of 75% or higher",
+        "Playlist match includes 'Rap' for the hip-hop axis even though its confidence is 30% or lower",
+        "Every genre named in the Genres section has a matching playlist row (e.g. jazz → 'Jazz / Funk / Soul', electronic → 'Electronic Music', hip-hop → 'Rap')",
+        "Playlist match has at most 5 rows, Random sht included",
+        "Skill does NOT run '.venv/bin/python playlist_manager.py add' (user has not selected playlists yet)",
+        "Response is in Dutch"
+      ]
     }
   ],
   "trigger_tests": {

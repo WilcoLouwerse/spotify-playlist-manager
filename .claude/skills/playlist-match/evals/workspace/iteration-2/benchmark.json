@@ -1,0 +1,738 @@
+{
+  "metadata": {
+    "skill_name": "playlist-match",
+    "skill_path": "/home/wilco/spotify-playlist-manager/.claude/skills/playlist-match",
+    "executor_model": "claude-opus-5-5",
+    "analyzer_model": "claude-opus-5-5",
+    "timestamp": "2026-11-09T11:56:02Z",
+    "evals_run": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 48.7,
+        "tokens": 86318,
+        "tool_calls": 11,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "title line is exactly 'Tame Impala - The Less I Know The Better'",
+          "passed": true,
+          "evidence": "found heading line"
+        },
+        {
+          "text": "Artiestinformatie block is present (first occurrence in chat)",
+          "passed": true,
+          "evidence": "Artiestinformatie header present"
+        },
+        {
+          "text": "Genres section has 2-4 bullets with percentage and short reason",
+          "passed": true,
+          "evidence": "found 3 genre bullets matching `name \u2014 XX% \u2014 reason`"
+        },
+        {
+          "text": "Playlist match includes 'Alternative / Indie' with confidence >= 80%",
+          "passed": true,
+          "evidence": "Alternative / Indie at 88%"
+        },
+        {
+          "text": "Playlist match does NOT include 'Random sht'",
+          "passed": true,
+          "evidence": "Random sht not mentioned"
+        },
+        {
+          "text": "Output does NOT print the old A-F / Z-Y-X-W letter menu",
+          "passed": true,
+          "evidence": "no letter menu detected"
+        },
+        {
+          "text": "User-facing prose is in Dutch (Artiestinformatie, Nummeromschrijving, Genres, Playlist match)",
+          "passed": true,
+          "evidence": "Dutch section headers all present"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 57.8,
+        "tokens": 70780,
+        "tool_calls": 12,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Playlist match includes 'Techno' with confidence >= 85%",
+          "passed": true,
+          "evidence": "Techno at 95%"
+        },
+        {
+          "text": "Playlist match also includes 'Electronic Music' alongside Techno (umbrella rule)",
+          "passed": true,
+          "evidence": "present=['Techno', 'Electronic Music']"
+        },
+        {
+          "text": "Playlist match does NOT include 'Random sht'",
+          "passed": true,
+          "evidence": "Random sht absent"
+        },
+        {
+          "text": "Genres section identifies Techno (or a Techno subgenre) as primary",
+          "passed": true,
+          "evidence": "techno-family keyword found in Genres"
+        },
+        {
+          "text": "Output does NOT print the old A-F / Z-Y-X-W letter menu",
+          "passed": true,
+          "evidence": "no letter menu detected"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 72.6,
+        "tokens": 83924,
+        "tool_calls": 16,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Playlist match includes 'Funny meme' with confidence >= 80% (Rick Roll cultural context)",
+          "passed": true,
+          "evidence": "Funny meme at 95%"
+        },
+        {
+          "text": "Playlist match includes 'Pop / Mainstream' or 'Happy tunes'",
+          "passed": true,
+          "evidence": "present from set=['Pop / Mainstream', 'Happy tunes']"
+        },
+        {
+          "text": "Funny meme reason explicitly cites the meme / Rick Roll / cultural context, not just genre",
+          "passed": true,
+          "evidence": "reason='h\u00e9t Rickroll-nummer, het schoolvoorbeeld van een internetklassieker'"
+        },
+        {
+          "text": "Genres section identifies the track as 80s synth-pop / dance-pop / pop, not 'meme music'",
+          "passed": true,
+          "evidence": "genres section text head='- dance-pop \u2014 88% \u2014 wikipedia-infobox en simple wikipedia eens; saw-productie, n...'"
+        },
+        {
+          "text": "Output does NOT print the old A-F / Z-Y-X-W letter menu",
+          "passed": true,
+          "evidence": "no letter menu detected"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 4,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 76.8,
+        "tokens": 52107,
+        "tool_calls": 4,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Skill does NOT call '.venv/bin/python playlist_manager.py add' on the basis of 'F'",
+          "passed": true,
+          "evidence": "no executed add command"
+        },
+        {
+          "text": "Skill does NOT invent or guess a Spotify track ID",
+          "passed": true,
+          "evidence": "no Spotify track id pattern"
+        },
+        {
+          "text": "Skill either treats 'F' as unrelated OR uses AskUserQuestion-style disambiguation rather than executing the add flow",
+          "passed": true,
+          "evidence": "disambiguation/AskUserQuestion-style language present"
+        },
+        {
+          "text": "Response is in Dutch",
+          "passed": true,
+          "evidence": "dutch token score=8/3 minimum"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 5,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.8571,
+        "passed": 6,
+        "failed": 1,
+        "total": 7,
+        "time_seconds": 38.5,
+        "tokens": 64244,
+        "tool_calls": 7,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Skill does NOT actually run playlist_manager.py (no execute)",
+          "passed": true,
+          "evidence": "no ADDED / SKIP execution markers in response"
+        },
+        {
+          "text": "Skill does NOT treat 'F https://...' as the literal letter 'F' alone \u2014 the URL is acted on",
+          "passed": false,
+          "evidence": "URL not referenced"
+        },
+        {
+          "text": "If add commands are rendered, each uses '.venv/bin/python playlist_manager.py add'",
+          "passed": true,
+          "evidence": "no add command rendered, vacuously true"
+        },
+        {
+          "text": "If add commands are rendered, each quotes the playlist name with double quotes",
+          "passed": true,
+          "evidence": "no add command rendered, vacuously true"
+        },
+        {
+          "text": "Response is in Dutch",
+          "passed": true,
+          "evidence": "dutch token score=7/3 minimum"
+        },
+        {
+          "text": "If add commands are rendered, they are followed by exactly one '.venv/bin/python playlist_manager.py like \"<url>\" --execute' line",
+          "passed": true,
+          "evidence": "no add command rendered, vacuously true"
+        },
+        {
+          "text": "Liked Songs does not appear in the playlist match or as a multi-select option",
+          "passed": true,
+          "evidence": "in playlist match=False, as option label=False"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 6,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 59.0,
+        "tokens": 79162,
+        "tool_calls": 15,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Output contains the Dutch uncertainty lead-in 'Sorry, ik heb moeite om de genres voor dit nummer te vinden'",
+          "passed": true,
+          "evidence": "lead-in line present"
+        },
+        {
+          "text": "Output does NOT print the old Z/Y/X/W letter menu",
+          "passed": true,
+          "evidence": "no Z/Y/X/W menu"
+        },
+        {
+          "text": "Skill does NOT produce a Genres section with fabricated entries",
+          "passed": true,
+          "evidence": "no Genres section / no fabricated bullets"
+        },
+        {
+          "text": "Skill does NOT produce a Playlist match section (user has not picked an option yet)",
+          "passed": true,
+          "evidence": "no Playlist match section / no bullets"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 7,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.8889,
+        "passed": 8,
+        "failed": 1,
+        "total": 9,
+        "time_seconds": 84.4,
+        "tokens": 77718,
+        "tool_calls": 17,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Response opens with the Dutch uncertainty-response line naming the chosen option 'Zwakkere webbronnen'",
+          "passed": true,
+          "evidence": "uncertainty-response line with the chosen label found"
+        },
+        {
+          "text": "Every genre entry carries 'scope: artiestgebaseerd' and a low or medium 'betrouwbaarheid'",
+          "passed": true,
+          "evidence": "3 genre bullets; all scoped artist-based with laag/middel=True"
+        },
+        {
+          "text": "The first Playlist match row is 'Random sht' with 85% and a reason citing the 85% threshold / programmatic fallback",
+          "passed": true,
+          "evidence": "first row='Random sht' 85% \u2014 'programmatische fallback: geen andere playlist haalt de 85%-drempel'"
+        },
+        {
+          "text": "No regular (non-Random sht) playlist row has a confidence of 75% or higher",
+          "passed": true,
+          "evidence": "rows >= 75%: []"
+        },
+        {
+          "text": "Playlist match includes 'Rap' for the hip-hop axis even though its confidence is 30% or lower",
+          "passed": false,
+          "evidence": "Rap at 55%"
+        },
+        {
+          "text": "Every genre named in the Genres section has a matching playlist row (e.g. jazz \u2192 'Jazz / Funk / Soul', electronic \u2192 'Electronic Music', hip-hop \u2192 'Rap')",
+          "passed": true,
+          "evidence": "detected=['Hip-hop\u2192Rap', 'Jazz / jazz fusion\u2192Jazz / Funk / Soul', 'Elektronisch / dance\u2192Electronic Music']; missing=[]"
+        },
+        {
+          "text": "Playlist match has at most 5 rows, Random sht included",
+          "passed": true,
+          "evidence": "4 playlist rows"
+        },
+        {
+          "text": "Skill does NOT run '.venv/bin/python playlist_manager.py add' (user has not selected playlists yet)",
+          "passed": true,
+          "evidence": "no add command or DONE output"
+        },
+        {
+          "text": "Response is in Dutch",
+          "passed": true,
+          "evidence": "dutch token score=10/3 minimum"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.2857,
+        "passed": 2,
+        "failed": 5,
+        "total": 7,
+        "time_seconds": 36.8,
+        "tokens": 46357,
+        "tool_calls": 6,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "title line is exactly 'Tame Impala - The Less I Know The Better'",
+          "passed": false,
+          "evidence": "no exact-match title line found"
+        },
+        {
+          "text": "Artiestinformatie block is present (first occurrence in chat)",
+          "passed": false,
+          "evidence": "no Artiestinformatie header found"
+        },
+        {
+          "text": "Genres section has 2-4 bullets with percentage and short reason",
+          "passed": false,
+          "evidence": "found 0 genre bullets matching `name \u2014 XX% \u2014 reason`"
+        },
+        {
+          "text": "Playlist match includes 'Alternative / Indie' with confidence >= 80%",
+          "passed": false,
+          "evidence": "Alternative / Indie not in playlist match (found: [])"
+        },
+        {
+          "text": "Playlist match does NOT include 'Random sht'",
+          "passed": true,
+          "evidence": "Random sht not mentioned"
+        },
+        {
+          "text": "Output does NOT print the old A-F / Z-Y-X-W letter menu",
+          "passed": true,
+          "evidence": "no letter menu detected"
+        },
+        {
+          "text": "User-facing prose is in Dutch (Artiestinformatie, Nummeromschrijving, Genres, Playlist match)",
+          "passed": false,
+          "evidence": "one or more Dutch headers missing"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.2,
+        "passed": 1,
+        "failed": 4,
+        "total": 5,
+        "time_seconds": 35.2,
+        "tokens": 46390,
+        "tool_calls": 6,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Playlist match includes 'Techno' with confidence >= 85%",
+          "passed": false,
+          "evidence": "Techno not in playlist match (found: [])"
+        },
+        {
+          "text": "Playlist match also includes 'Electronic Music' alongside Techno (umbrella rule)",
+          "passed": false,
+          "evidence": "present=[]"
+        },
+        {
+          "text": "Playlist match does NOT include 'Random sht'",
+          "passed": false,
+          "evidence": "Random sht appears"
+        },
+        {
+          "text": "Genres section identifies Techno (or a Techno subgenre) as primary",
+          "passed": false,
+          "evidence": "no techno-family keyword found in Genres section"
+        },
+        {
+          "text": "Output does NOT print the old A-F / Z-Y-X-W letter menu",
+          "passed": true,
+          "evidence": "no letter menu detected"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.2,
+        "passed": 1,
+        "failed": 4,
+        "total": 5,
+        "time_seconds": 39.4,
+        "tokens": 48582,
+        "tool_calls": 7,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Playlist match includes 'Funny meme' with confidence >= 80% (Rick Roll cultural context)",
+          "passed": false,
+          "evidence": "Funny meme not in playlist match (found: [])"
+        },
+        {
+          "text": "Playlist match includes 'Pop / Mainstream' or 'Happy tunes'",
+          "passed": false,
+          "evidence": "present from set=[]"
+        },
+        {
+          "text": "Funny meme reason explicitly cites the meme / Rick Roll / cultural context, not just genre",
+          "passed": false,
+          "evidence": "reason=''"
+        },
+        {
+          "text": "Genres section identifies the track as 80s synth-pop / dance-pop / pop, not 'meme music'",
+          "passed": false,
+          "evidence": "genres section text head='...'"
+        },
+        {
+          "text": "Output does NOT print the old A-F / Z-Y-X-W letter menu",
+          "passed": true,
+          "evidence": "no letter menu detected"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 4,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.25,
+        "passed": 1,
+        "failed": 3,
+        "total": 4,
+        "time_seconds": 20.7,
+        "tokens": 43616,
+        "tool_calls": 4,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Skill does NOT call '.venv/bin/python playlist_manager.py add' on the basis of 'F'",
+          "passed": false,
+          "evidence": "add command appears in output"
+        },
+        {
+          "text": "Skill does NOT invent or guess a Spotify track ID",
+          "passed": true,
+          "evidence": "no Spotify track id pattern"
+        },
+        {
+          "text": "Skill either treats 'F' as unrelated OR uses AskUserQuestion-style disambiguation rather than executing the add flow",
+          "passed": false,
+          "evidence": "no disambiguation language found"
+        },
+        {
+          "text": "Response is in Dutch",
+          "passed": false,
+          "evidence": "dutch token score=2/3 minimum"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 5,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.7143,
+        "passed": 5,
+        "failed": 2,
+        "total": 7,
+        "time_seconds": 78.5,
+        "tokens": 48604,
+        "tool_calls": 8,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Skill does NOT actually run playlist_manager.py (no execute)",
+          "passed": true,
+          "evidence": "no ADDED / SKIP execution markers in response"
+        },
+        {
+          "text": "Skill does NOT treat 'F https://...' as the literal letter 'F' alone \u2014 the URL is acted on",
+          "passed": true,
+          "evidence": "Spotify URL referenced in response"
+        },
+        {
+          "text": "If add commands are rendered, each uses '.venv/bin/python playlist_manager.py add'",
+          "passed": false,
+          "evidence": "no add command rendered, vacuously true"
+        },
+        {
+          "text": "If add commands are rendered, each quotes the playlist name with double quotes",
+          "passed": true,
+          "evidence": "no add command rendered, vacuously true"
+        },
+        {
+          "text": "Response is in Dutch",
+          "passed": false,
+          "evidence": "dutch token score=2/3 minimum"
+        },
+        {
+          "text": "If add commands are rendered, they are followed by exactly one '.venv/bin/python playlist_manager.py like \"<url>\" --execute' line",
+          "passed": true,
+          "evidence": "no add command rendered, vacuously true"
+        },
+        {
+          "text": "Liked Songs does not appear in the playlist match or as a multi-select option",
+          "passed": true,
+          "evidence": "in playlist match=False, as option label=False"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 6,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.75,
+        "passed": 3,
+        "failed": 1,
+        "total": 4,
+        "time_seconds": 44.0,
+        "tokens": 51638,
+        "tool_calls": 10,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Output contains the Dutch uncertainty lead-in 'Sorry, ik heb moeite om de genres voor dit nummer te vinden'",
+          "passed": false,
+          "evidence": "lead-in line not found"
+        },
+        {
+          "text": "Output does NOT print the old Z/Y/X/W letter menu",
+          "passed": true,
+          "evidence": "no Z/Y/X/W menu"
+        },
+        {
+          "text": "Skill does NOT produce a Genres section with fabricated entries",
+          "passed": true,
+          "evidence": "no Genres section / no fabricated bullets"
+        },
+        {
+          "text": "Skill does NOT produce a Playlist match section (user has not picked an option yet)",
+          "passed": true,
+          "evidence": "no Playlist match section / no bullets"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 7,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.1111,
+        "passed": 1,
+        "failed": 8,
+        "total": 9,
+        "time_seconds": 75.5,
+        "tokens": 58226,
+        "tool_calls": 18,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Response opens with the Dutch uncertainty-response line naming the chosen option 'Zwakkere webbronnen'",
+          "passed": false,
+          "evidence": "no 'Op basis van je keuze (Zwakkere webbronnen)' line"
+        },
+        {
+          "text": "Every genre entry carries 'scope: artiestgebaseerd' and a low or medium 'betrouwbaarheid'",
+          "passed": false,
+          "evidence": "0 genre bullets; all scoped artist-based with laag/middel=False"
+        },
+        {
+          "text": "The first Playlist match row is 'Random sht' with 85% and a reason citing the 85% threshold / programmatic fallback",
+          "passed": false,
+          "evidence": "first row='' 0% \u2014 ''"
+        },
+        {
+          "text": "No regular (non-Random sht) playlist row has a confidence of 75% or higher",
+          "passed": false,
+          "evidence": "no playlist rows found"
+        },
+        {
+          "text": "Playlist match includes 'Rap' for the hip-hop axis even though its confidence is 30% or lower",
+          "passed": false,
+          "evidence": "Rap not in playlist match (found: [])"
+        },
+        {
+          "text": "Every genre named in the Genres section has a matching playlist row (e.g. jazz \u2192 'Jazz / Funk / Soul', electronic \u2192 'Electronic Music', hip-hop \u2192 'Rap')",
+          "passed": false,
+          "evidence": "detected=[]; missing=[]"
+        },
+        {
+          "text": "Playlist match has at most 5 rows, Random sht included",
+          "passed": false,
+          "evidence": "0 playlist rows"
+        },
+        {
+          "text": "Skill does NOT run '.venv/bin/python playlist_manager.py add' (user has not selected playlists yet)",
+          "passed": false,
+          "evidence": "add command or DONE output present"
+        },
+        {
+          "text": "Response is in Dutch",
+          "passed": true,
+          "evidence": "dutch token score=4/3 minimum"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 0.9637,
+        "stddev": 0.0626,
+        "min": 0.8571,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 62.5429,
+        "stddev": 16.2628,
+        "min": 38.5,
+        "max": 84.4
+      },
+      "tokens": {
+        "mean": 73464.7143,
+        "stddev": 12066.029,
+        "min": 52107,
+        "max": 86318
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.3587,
+        "stddev": 0.2609,
+        "min": 0.1111,
+        "max": 0.75
+      },
+      "time_seconds": {
+        "mean": 47.1571,
+        "stddev": 21.6258,
+        "min": 20.7,
+        "max": 78.5
+      },
+      "tokens": {
+        "mean": 49059.0,
+        "stddev": 4746.4074,
+        "min": 43616,
+        "max": 58226
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.60",
+      "time_seconds": "+15.4",
+      "tokens": "+24406"
+    }
+  },
+  "notes": [
+    "with_skill 96.4% vs baseline 35.9% (+0.60); iteration-1 was 94.3% vs 49.8% on evals 1-6.",
+    "eval-5 with_skill fail is a grader false negative: the run recognised the pasted URL as the analysed track and kept it for the add flow, but did not echo the URL string, and grade.py checks for a literal 'spotify.com/track'.",
+    "eval-7 with_skill fail: the run found a track-level Shazam tag Hip-Hop/Rap, so Rap landed at 55% instead of <= 30%. Both new rules held (Random sht first at 85%, every genre axis has a playlist row); the '<= 30%' clause is tied to the data of the original session.",
+    "eval-7 baseline passed 1/9: without the skill there is no Random sht fallback and no per-axis playlist rows, so the eval discriminates the new step-6 rules well.",
+    "Non-discriminating: eval-5 'no execute' and the vacuous 'if add commands are rendered' checks pass in both configurations; eval-6 baseline passes 3/4.",
+    "Cost: with_skill uses about 24k more tokens and 15s more per run than baseline."
+  ]
+}

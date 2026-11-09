@@ -2,9 +2,9 @@
   "skill_name": "playlist-match",
   "version": "1.0.0",
   "created": "2026-05-13",
-  "last_validated": "2026-05-13",
-  "baseline_score": 0.9429,
-  "notes": "Iteration-1 ran on 2026-05-13: with-skill scored 94.3% mean pass rate vs 49.8% baseline (+0.45). See evals/workspace/iteration-1/benchmark.md and the static viewer at evals/workspace/eval-review-iteration-1.html.",
+  "last_validated": "2026-11-09",
+  "baseline_score": 0.9637,
+  "notes": "Iteration-2 ran on 2026-11-09: with-skill scored 96.4% mean pass rate vs 35.9% baseline (+0.60) over 7 evals. See evals/workspace/iteration-2/benchmark.md and the static viewer at evals/workspace/eval-review-iteration-2.html. Iteration-1 (2026-05-13, evals 1-6): 94.3% vs 49.8%.",
   "evals": [
     {
       "id": 1,

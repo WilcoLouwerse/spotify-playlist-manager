@@ -1,0 +1,12 @@
+{
+  "eval_id": 3,
+  "eval_name": "rickroll-meme-detection",
+  "prompt": "Rick Astley - Never Gonna Give You Up",
+  "assertions": [
+    "Playlist match includes 'Funny meme' with confidence >= 80% (Rick Roll cultural context)",
+    "Playlist match includes 'Pop / Mainstream' or 'Happy tunes'",
+    "Funny meme reason explicitly cites the meme / Rick Roll / cultural context, not just genre",
+    "Genres section identifies the track as 80s synth-pop / dance-pop / pop, not 'meme music'",
+    "Output does NOT print the old A-F / Z-Y-X-W letter menu"
+  ]
+}

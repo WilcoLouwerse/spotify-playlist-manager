@@ -1,0 +1,42 @@
+{
+  "expectations": [
+    {
+      "text": "Playlist match includes 'Funny meme' with confidence >= 80% (Rick Roll cultural context)",
+      "passed": true,
+      "evidence": "Funny meme at 95%"
+    },
+    {
+      "text": "Playlist match includes 'Pop / Mainstream' or 'Happy tunes'",
+      "passed": true,
+      "evidence": "present from set=['Pop / Mainstream', 'Happy tunes']"
+    },
+    {
+      "text": "Funny meme reason explicitly cites the meme / Rick Roll / cultural context, not just genre",
+      "passed": true,
+      "evidence": "reason='h\u00e9t Rickroll-nummer, het schoolvoorbeeld van een internetklassieker'"
+    },
+    {
+      "text": "Genres section identifies the track as 80s synth-pop / dance-pop / pop, not 'meme music'",
+      "passed": true,
+      "evidence": "genres section text head='- dance-pop \u2014 88% \u2014 wikipedia-infobox en simple wikipedia eens; saw-productie, n...'"
+    },
+    {
+      "text": "Output does NOT print the old A-F / Z-Y-X-W letter menu",
+      "passed": true,
+      "evidence": "no letter menu detected"
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 0,
+    "total": 5,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "total_tool_calls": 16,
+    "errors_encountered": 0,
+    "output_chars": 1888,
+    "tokens": 83924
+  },
+  "timing": {}
+}

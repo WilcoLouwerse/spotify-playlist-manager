@@ -103,6 +103,30 @@ def genre_entries(content: str) -> list[tuple[str, int, str]]:
     return entries
 
 
+def loose_entries(content: str, headers: tuple[str, ...]) -> list[tuple[str, int, str]]:
+    """Bullets under a header that may be bold or plain (`Genres:` / `**Genres:**`).
+
+    The uncertainty-response format in references/output-rules.md uses plain
+    headers, so the bold-only find_section() misses it.
+    """
+    alts = "|".join(re.escape(h) for h in headers)
+    header_re = re.compile(rf"^\s*(\*\*)?\s*({alts})\s*:?\s*(\*\*)?\s*:?\s*$", re.IGNORECASE)
+    stop_re = re.compile(r"^\s*(\*\*|#|---|```|[A-Z][^-*\n]{0,40}:\s*$)")
+    lines = content.splitlines()
+    for i, ln in enumerate(lines):
+        if header_re.match(ln):
+            body = []
+            for nxt in lines[i + 1 :]:
+                if stop_re.match(nxt):
+                    break
+                body.append(nxt)
+            entries = []
+            for m in PLAYLIST_BULLET_RE.finditer("\n".join(body)):
+                entries.append((m.group(1).strip().strip("`*").strip(), int(m.group(2)), m.group(3).strip()))
+            return entries
+    return []
+
+
 def dutch_score(content: str) -> int:
     return sum(1 for t in DUTCH_TOKENS if t.lower() in content.lower())
 
@@ -289,6 +313,12 @@ def grade_eval_5(content: str) -> list[dict]:
     no_execute = "ADDED" not in content and "SKIP: track already in playlist" not in content
     quoted_playlist = re.search(r'\.venv/bin/python\s+playlist_manager\.py\s+add\s+"https?://[^"]+"\s+"[^"]+"', content)
     dutch = dutch_score(content) >= 3
+    like_re = re.compile(r'\.venv/bin/python\s+playlist_manager\.py\s+like\s+"[^"]+"\s+--execute')
+    like_lines = list(like_re.finditer(content))
+    add_ends = [m.end() for m in re.finditer(r"\.venv/bin/python\s+playlist_manager\.py\s+add\b[^\n]*", content)]
+    like_after_adds = bool(like_lines) and bool(add_ends) and like_lines[0].start() > max(add_ends)
+    liked_in_match = any("liked songs" in n.lower() for n, _, _ in loose_entries(content, ("Playlist match", "Playlist matches")))
+    liked_as_option = bool(re.search(r'(?im)label:\s*"?[^"\n]*Liked Songs', content))
     return [
         {
             "text": "Skill does NOT actually run playlist_manager.py (no execute)",
@@ -318,6 +348,20 @@ def grade_eval_5(content: str) -> list[dict]:
             "text": "Response is in Dutch",
             "passed": dutch,
             "evidence": f"dutch token score={dutch_score(content)}/3 minimum",
+        },
+        {
+            "text": "If add commands are rendered, they are followed by exactly one '.venv/bin/python playlist_manager.py like \"<url>\" --execute' line",
+            "passed": (len(like_lines) == 1 and like_after_adds) if cli_in_output else True,
+            "evidence": (
+                f"{len(like_lines)} like line(s), after the last add={like_after_adds}"
+                if cli_in_output
+                else "no add command rendered, vacuously true"
+            ),
+        },
+        {
+            "text": "Liked Songs does not appear in the playlist match or as a multi-select option",
+            "passed": not liked_in_match and not liked_as_option,
+            "evidence": f"in playlist match={liked_in_match}, as option label={liked_as_option}",
         },
     ]
 
@@ -355,6 +399,87 @@ def grade_eval_6(content: str) -> list[dict]:
     ]
 
 
+GENRE_AXES = (
+    (("hip-hop", "hiphop", "hip hop", "rap", "trap"), "Rap"),
+    (("jazz", "fusion", "sax", "funk", "soul"), "Jazz / Funk / Soul"),
+    (("electronic", "elektron", "future", "edm", "house", "techno", "dance"), "Electronic Music"),
+)
+
+
+def grade_eval_7(content: str) -> list[dict]:
+    genres = loose_entries(content, ("Genres",))
+    pls = loose_entries(content, ("Playlist match", "Playlist matches"))
+    pl_names = [n for n, _, _ in pls]
+    pl_confs = {n: c for n, c, _ in pls}
+    leadin = re.search(r"op basis van je keuze.{0,8}zwakkere webbronnen", content, re.IGNORECASE)
+    scoped = bool(genres) and all(
+        "artiestgebaseerd" in r.lower() and re.search(r"betrouwbaarheid:\s*(laag|middel)", r, re.IGNORECASE) for _, _, r in genres
+    )
+    first = pls[0] if pls else ("", 0, "")
+    first_ok = first[0] == "Random sht" and first[1] == 85 and bool(re.search(r"85|fallback|drempel", first[2], re.IGNORECASE))
+    regular_high = [f"{n} {c}%" for n, c, _ in pls if n != "Random sht" and c >= 75]
+    rap_ok = "Rap" in pl_confs and pl_confs["Rap"] <= 30
+    missing, detected = [], []
+    for name, _, _ in genres:
+        low = name.lower()
+        for keys, target in GENRE_AXES:
+            if any(k in low for k in keys):
+                detected.append(f"{name}→{target}")
+                if target not in pl_names:
+                    missing.append(f"{name}→{target}")
+                break
+    axes_ok = bool(detected) and not missing
+    no_add = "playlist_manager.py add" not in content and "DONE: track added" not in content
+    dutch = dutch_score(content) >= 3
+    return [
+        {
+            "text": "Response opens with the Dutch uncertainty-response line naming the chosen option 'Zwakkere webbronnen'",
+            "passed": bool(leadin),
+            "evidence": "uncertainty-response line with the chosen label found" if leadin else "no 'Op basis van je keuze (Zwakkere webbronnen)' line",
+        },
+        {
+            "text": "Every genre entry carries 'scope: artiestgebaseerd' and a low or medium 'betrouwbaarheid'",
+            "passed": scoped,
+            "evidence": f"{len(genres)} genre bullets; all scoped artist-based with laag/middel={scoped}",
+        },
+        {
+            "text": "The first Playlist match row is 'Random sht' with 85% and a reason citing the 85% threshold / programmatic fallback",
+            "passed": first_ok,
+            "evidence": f"first row={first[0]!r} {first[1]}% — {first[2][:80]!r}",
+        },
+        {
+            "text": "No regular (non-Random sht) playlist row has a confidence of 75% or higher",
+            "passed": bool(pls) and not regular_high,
+            "evidence": f"rows >= 75%: {regular_high}" if pls else "no playlist rows found",
+        },
+        {
+            "text": "Playlist match includes 'Rap' for the hip-hop axis even though its confidence is 30% or lower",
+            "passed": rap_ok,
+            "evidence": f"Rap at {pl_confs['Rap']}%" if "Rap" in pl_confs else f"Rap not in playlist match (found: {pl_names})",
+        },
+        {
+            "text": "Every genre named in the Genres section has a matching playlist row (e.g. jazz → 'Jazz / Funk / Soul', electronic → 'Electronic Music', hip-hop → 'Rap')",
+            "passed": axes_ok,
+            "evidence": f"detected={detected}; missing={missing}",
+        },
+        {
+            "text": "Playlist match has at most 5 rows, Random sht included",
+            "passed": 1 <= len(pls) <= 5,
+            "evidence": f"{len(pls)} playlist rows",
+        },
+        {
+            "text": "Skill does NOT run '.venv/bin/python playlist_manager.py add' (user has not selected playlists yet)",
+            "passed": no_add,
+            "evidence": "no add command or DONE output" if no_add else "add command or DONE output present",
+        },
+        {
+            "text": "Response is in Dutch",
+            "passed": dutch,
+            "evidence": f"dutch token score={dutch_score(content)}/3 minimum",
+        },
+    ]
+
+
 GRADERS = {
     1: grade_eval_1,
     2: grade_eval_2,
@@ -362,6 +487,7 @@ GRADERS = {
     4: grade_eval_4,
     5: grade_eval_5,
     6: grade_eval_6,
+    7: grade_eval_7,
 }
 
 

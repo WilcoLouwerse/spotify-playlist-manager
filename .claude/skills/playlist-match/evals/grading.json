@@ -1,7 +1,7 @@
 {
   "skill_name": "playlist-match",
   "schema_version": "1.0.0",
-  "notes": "Iteration-1 ran 2026-05-13: 6 evals, 12 subagent runs (6 with_skill + 6 baseline). Grading is programmatic via evals/grade.py.",
+  "notes": "Iteration-1 ran 2026-05-13: 6 evals, 12 subagent runs. Iteration-2 ran 2026-11-09: 7 evals, 14 subagent runs (7 with_skill + 7 baseline). Grading is programmatic via evals/grade.py.",
   "runs": [
     {
       "date": "2026-05-13",
@@ -130,7 +130,7 @@
           "result": "pass"
         },
         {
-          "id": "Skill does NOT treat 'F https://...' as the literal letter 'F' alone \u2014 the URL is acted on",
+          "id": "Skill does NOT treat 'F https://...' as the literal letter 'F' alone — the URL is acted on",
           "result": "pass"
         },
         {
@@ -170,19 +170,246 @@
           "result": "pass"
         }
       ]
+    },
+    {
+      "date": "2026-11-09",
+      "method": "parallel subagents (with_skill vs baseline) graded by evals/grade.py",
+      "iteration": 2,
+      "eval_id": 1,
+      "score": 1.0,
+      "assertions": [
+        {
+          "id": "title line is exactly 'Tame Impala - The Less I Know The Better'",
+          "result": "pass"
+        },
+        {
+          "id": "Artiestinformatie block is present (first occurrence in chat)",
+          "result": "pass"
+        },
+        {
+          "id": "Genres section has 2-4 bullets with percentage and short reason",
+          "result": "pass"
+        },
+        {
+          "id": "Playlist match includes 'Alternative / Indie' with confidence >= 80%",
+          "result": "pass"
+        },
+        {
+          "id": "Playlist match does NOT include 'Random sht'",
+          "result": "pass"
+        },
+        {
+          "id": "Output does NOT print the old A-F / Z-Y-X-W letter menu",
+          "result": "pass"
+        },
+        {
+          "id": "User-facing prose is in Dutch (Artiestinformatie, Nummeromschrijving, Genres, Playlist match)",
+          "result": "pass"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-09",
+      "method": "parallel subagents (with_skill vs baseline) graded by evals/grade.py",
+      "iteration": 2,
+      "eval_id": 2,
+      "score": 1.0,
+      "assertions": [
+        {
+          "id": "Playlist match includes 'Techno' with confidence >= 85%",
+          "result": "pass"
+        },
+        {
+          "id": "Playlist match also includes 'Electronic Music' alongside Techno (umbrella rule)",
+          "result": "pass"
+        },
+        {
+          "id": "Playlist match does NOT include 'Random sht'",
+          "result": "pass"
+        },
+        {
+          "id": "Genres section identifies Techno (or a Techno subgenre) as primary",
+          "result": "pass"
+        },
+        {
+          "id": "Output does NOT print the old A-F / Z-Y-X-W letter menu",
+          "result": "pass"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-09",
+      "method": "parallel subagents (with_skill vs baseline) graded by evals/grade.py",
+      "iteration": 2,
+      "eval_id": 3,
+      "score": 1.0,
+      "assertions": [
+        {
+          "id": "Playlist match includes 'Funny meme' with confidence >= 80% (Rick Roll cultural context)",
+          "result": "pass"
+        },
+        {
+          "id": "Playlist match includes 'Pop / Mainstream' or 'Happy tunes'",
+          "result": "pass"
+        },
+        {
+          "id": "Funny meme reason explicitly cites the meme / Rick Roll / cultural context, not just genre",
+          "result": "pass"
+        },
+        {
+          "id": "Genres section identifies the track as 80s synth-pop / dance-pop / pop, not 'meme music'",
+          "result": "pass"
+        },
+        {
+          "id": "Output does NOT print the old A-F / Z-Y-X-W letter menu",
+          "result": "pass"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-09",
+      "method": "parallel subagents (with_skill vs baseline) graded by evals/grade.py",
+      "iteration": 2,
+      "eval_id": 4,
+      "score": 1.0,
+      "assertions": [
+        {
+          "id": "Skill does NOT call '.venv/bin/python playlist_manager.py add' on the basis of 'F'",
+          "result": "pass"
+        },
+        {
+          "id": "Skill does NOT invent or guess a Spotify track ID",
+          "result": "pass"
+        },
+        {
+          "id": "Skill either treats 'F' as unrelated OR uses AskUserQuestion-style disambiguation rather than executing the add flow",
+          "result": "pass"
+        },
+        {
+          "id": "Response is in Dutch",
+          "result": "pass"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-09",
+      "method": "parallel subagents (with_skill vs baseline) graded by evals/grade.py",
+      "iteration": 2,
+      "eval_id": 5,
+      "score": 0.86,
+      "assertions": [
+        {
+          "id": "Skill does NOT actually run playlist_manager.py (no execute)",
+          "result": "pass"
+        },
+        {
+          "id": "Skill does NOT treat 'F https://...' as the literal letter 'F' alone — the URL is acted on",
+          "result": "fail"
+        },
+        {
+          "id": "If add commands are rendered, each uses '.venv/bin/python playlist_manager.py add'",
+          "result": "pass"
+        },
+        {
+          "id": "If add commands are rendered, each quotes the playlist name with double quotes",
+          "result": "pass"
+        },
+        {
+          "id": "Response is in Dutch",
+          "result": "pass"
+        },
+        {
+          "id": "If add commands are rendered, they are followed by exactly one '.venv/bin/python playlist_manager.py like \"<url>\" --execute' line",
+          "result": "pass"
+        },
+        {
+          "id": "Liked Songs does not appear in the playlist match or as a multi-select option",
+          "result": "pass"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-09",
+      "method": "parallel subagents (with_skill vs baseline) graded by evals/grade.py",
+      "iteration": 2,
+      "eval_id": 6,
+      "score": 1.0,
+      "assertions": [
+        {
+          "id": "Output contains the Dutch uncertainty lead-in 'Sorry, ik heb moeite om de genres voor dit nummer te vinden'",
+          "result": "pass"
+        },
+        {
+          "id": "Output does NOT print the old Z/Y/X/W letter menu",
+          "result": "pass"
+        },
+        {
+          "id": "Skill does NOT produce a Genres section with fabricated entries",
+          "result": "pass"
+        },
+        {
+          "id": "Skill does NOT produce a Playlist match section (user has not picked an option yet)",
+          "result": "pass"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-09",
+      "method": "parallel subagents (with_skill vs baseline) graded by evals/grade.py",
+      "iteration": 2,
+      "eval_id": 7,
+      "score": 0.89,
+      "assertions": [
+        {
+          "id": "Response opens with the Dutch uncertainty-response line naming the chosen option 'Zwakkere webbronnen'",
+          "result": "pass"
+        },
+        {
+          "id": "Every genre entry carries 'scope: artiestgebaseerd' and a low or medium 'betrouwbaarheid'",
+          "result": "pass"
+        },
+        {
+          "id": "The first Playlist match row is 'Random sht' with 85% and a reason citing the 85% threshold / programmatic fallback",
+          "result": "pass"
+        },
+        {
+          "id": "No regular (non-Random sht) playlist row has a confidence of 75% or higher",
+          "result": "pass"
+        },
+        {
+          "id": "Playlist match includes 'Rap' for the hip-hop axis even though its confidence is 30% or lower",
+          "result": "fail"
+        },
+        {
+          "id": "Every genre named in the Genres section has a matching playlist row (e.g. jazz → 'Jazz / Funk / Soul', electronic → 'Electronic Music', hip-hop → 'Rap')",
+          "result": "pass"
+        },
+        {
+          "id": "Playlist match has at most 5 rows, Random sht included",
+          "result": "pass"
+        },
+        {
+          "id": "Skill does NOT run '.venv/bin/python playlist_manager.py add' (user has not selected playlists yet)",
+          "result": "pass"
+        },
+        {
+          "id": "Response is in Dutch",
+          "result": "pass"
+        }
+      ]
     }
   ],
   "summary": {
-    "date": "2026-05-13",
-    "iteration": 1,
-    "eval_count": 6,
+    "date": "2026-11-09",
+    "iteration": 2,
+    "eval_count": 7,
     "pass_threshold": 0.8,
-    "baseline_score": 0.9428,
-    "with_skill_pass_rate": 0.9428,
-    "without_skill_pass_rate": 0.4976,
-    "delta": 0.4452,
-    "passing_evals": 6,
+    "baseline_score": 0.9637,
+    "with_skill_pass_rate": 0.9637,
+    "without_skill_pass_rate": 0.3587,
+    "delta": 0.605,
+    "passing_evals": 7,
     "below_threshold": [],
-    "improve_cycle_next": "Eval-1 (Tame Impala) is the weakest at 6/7 \u2014 the failing assertion is likely the title heading format. Re-run after the SKILL.md edit lands."
+    "improve_cycle_next": "Eval-7's 'Rap <= 30%' clause is tied to the original session's data (the run found a track-level Hip-Hop/Rap tag and scored Rap 55%); eval-5's URL check is a literal-string false negative. Both are assertion/grader fixes, not skill fixes."
   }
 }

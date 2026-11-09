@@ -1,0 +1,12 @@
+{
+  "eval_id": 2,
+  "eval_name": "techno-with-umbrella",
+  "prompt": "Charlotte de Witte - Doppler",
+  "assertions": [
+    "Playlist match includes 'Techno' with confidence >= 85%",
+    "Playlist match also includes 'Electronic Music' alongside Techno (umbrella rule)",
+    "Playlist match does NOT include 'Random sht'",
+    "Genres section identifies Techno (or a Techno subgenre) as primary",
+    "Output does NOT print the old A-F / Z-Y-X-W letter menu"
+  ]
+}

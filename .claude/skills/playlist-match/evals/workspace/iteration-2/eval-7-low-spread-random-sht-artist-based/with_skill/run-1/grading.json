@@ -1,0 +1,62 @@
+{
+  "expectations": [
+    {
+      "text": "Response opens with the Dutch uncertainty-response line naming the chosen option 'Zwakkere webbronnen'",
+      "passed": true,
+      "evidence": "uncertainty-response line with the chosen label found"
+    },
+    {
+      "text": "Every genre entry carries 'scope: artiestgebaseerd' and a low or medium 'betrouwbaarheid'",
+      "passed": true,
+      "evidence": "3 genre bullets; all scoped artist-based with laag/middel=True"
+    },
+    {
+      "text": "The first Playlist match row is 'Random sht' with 85% and a reason citing the 85% threshold / programmatic fallback",
+      "passed": true,
+      "evidence": "first row='Random sht' 85% \u2014 'programmatische fallback: geen andere playlist haalt de 85%-drempel'"
+    },
+    {
+      "text": "No regular (non-Random sht) playlist row has a confidence of 75% or higher",
+      "passed": true,
+      "evidence": "rows >= 75%: []"
+    },
+    {
+      "text": "Playlist match includes 'Rap' for the hip-hop axis even though its confidence is 30% or lower",
+      "passed": false,
+      "evidence": "Rap at 55%"
+    },
+    {
+      "text": "Every genre named in the Genres section has a matching playlist row (e.g. jazz \u2192 'Jazz / Funk / Soul', electronic \u2192 'Electronic Music', hip-hop \u2192 'Rap')",
+      "passed": true,
+      "evidence": "detected=['Hip-hop\u2192Rap', 'Jazz / jazz fusion\u2192Jazz / Funk / Soul', 'Elektronisch / dance\u2192Electronic Music']; missing=[]"
+    },
+    {
+      "text": "Playlist match has at most 5 rows, Random sht included",
+      "passed": true,
+      "evidence": "4 playlist rows"
+    },
+    {
+      "text": "Skill does NOT run '.venv/bin/python playlist_manager.py add' (user has not selected playlists yet)",
+      "passed": true,
+      "evidence": "no add command or DONE output"
+    },
+    {
+      "text": "Response is in Dutch",
+      "passed": true,
+      "evidence": "dutch token score=10/3 minimum"
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 1,
+    "total": 9,
+    "pass_rate": 0.8889
+  },
+  "execution_metrics": {
+    "total_tool_calls": 17,
+    "errors_encountered": 0,
+    "output_chars": 2534,
+    "tokens": 77718
+  },
+  "timing": {}
+}

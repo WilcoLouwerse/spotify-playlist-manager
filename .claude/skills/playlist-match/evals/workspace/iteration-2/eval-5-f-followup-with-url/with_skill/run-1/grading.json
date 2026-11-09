@@ -1,0 +1,52 @@
+{
+  "expectations": [
+    {
+      "text": "Skill does NOT actually run playlist_manager.py (no execute)",
+      "passed": true,
+      "evidence": "no ADDED / SKIP execution markers in response"
+    },
+    {
+      "text": "Skill does NOT treat 'F https://...' as the literal letter 'F' alone \u2014 the URL is acted on",
+      "passed": false,
+      "evidence": "URL not referenced"
+    },
+    {
+      "text": "If add commands are rendered, each uses '.venv/bin/python playlist_manager.py add'",
+      "passed": true,
+      "evidence": "no add command rendered, vacuously true"
+    },
+    {
+      "text": "If add commands are rendered, each quotes the playlist name with double quotes",
+      "passed": true,
+      "evidence": "no add command rendered, vacuously true"
+    },
+    {
+      "text": "Response is in Dutch",
+      "passed": true,
+      "evidence": "dutch token score=7/3 minimum"
+    },
+    {
+      "text": "If add commands are rendered, they are followed by exactly one '.venv/bin/python playlist_manager.py like \"<url>\" --execute' line",
+      "passed": true,
+      "evidence": "no add command rendered, vacuously true"
+    },
+    {
+      "text": "Liked Songs does not appear in the playlist match or as a multi-select option",
+      "passed": true,
+      "evidence": "in playlist match=False, as option label=False"
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 1,
+    "total": 7,
+    "pass_rate": 0.8571
+  },
+  "execution_metrics": {
+    "total_tool_calls": 7,
+    "errors_encountered": 0,
+    "output_chars": 1103,
+    "tokens": 64244
+  },
+  "timing": {}
+}
